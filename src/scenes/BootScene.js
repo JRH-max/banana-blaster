@@ -20,6 +20,9 @@ export class BootScene extends Phaser.Scene {
     this._weaponModels();
     this._botGun();
     this._coin();
+    this._slothPirate();
+    this._rockNinja();
+    this._trashCan();
     this.scene.start('MenuScene');
   }
 
@@ -244,6 +247,116 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xffe566, 1); g.fillCircle(8, 8, 4);
     g.lineStyle(2, 0xcc8800, 1); g.strokeCircle(10, 10, 10);
     g.generateTexture('coin', 20, 20); g.destroy();
+  }
+
+  _slothPirate() {
+    const g = this._g();
+    const cx = 22, cy = 34;
+    // Legs
+    g.fillStyle(0x6b4a10, 1); g.fillRect(cx-9, cy+20, 8, 16); g.fillRect(cx+1, cy+20, 8, 16);
+    g.fillStyle(0x3a2200, 1); g.fillRect(cx-11, cy+34, 10, 6); g.fillRect(cx+1, cy+34, 10, 6);
+    // Body
+    g.fillStyle(0x7a5214, 1); g.fillEllipse(cx, cy+6, 30, 32);
+    g.fillStyle(0x9a7230, 1); g.fillEllipse(cx, cy+4, 20, 22);
+    // Arms with long sloth claws
+    g.fillStyle(0x7a5214, 1); g.fillRect(cx-18, cy-2, 7, 20); g.fillRect(cx+11, cy-2, 7, 20);
+    g.fillStyle(0x3a2200, 1);
+    for (let i = 0; i < 3; i++) { g.fillRect(cx-18+i*2, cy+17, 2, 7); g.fillRect(cx+11+i*2, cy+17, 2, 7); }
+    // Head
+    g.fillStyle(0x7a5214, 1); g.fillCircle(cx, cy-10, 16);
+    g.fillStyle(0x9a7230, 1); g.fillEllipse(cx, cy-7, 21, 16);
+    // Pirate hat
+    g.fillStyle(0x111111, 1);
+    g.fillRect(cx-17, cy-24, 34, 7);
+    g.fillTriangle(cx-12, cy-24, cx+12, cy-24, cx, cy-42);
+    g.fillStyle(0xddaa00, 1); g.fillRect(cx-17, cy-26, 34, 4);
+    g.fillStyle(0xeeeeee, 1); g.fillCircle(cx, cy-32, 4);
+    g.fillStyle(0x111111, 1); g.fillCircle(cx-1, cy-33, 1); g.fillCircle(cx+2, cy-33, 1);
+    g.lineStyle(1, 0xeeeeee, 1);
+    g.lineBetween(cx-5, cy-28, cx+5, cy-28); g.lineBetween(cx-3, cy-26, cx+3, cy-30);
+    // Eye patch on right eye
+    g.fillStyle(0x111111, 1); g.fillCircle(cx+6, cy-12, 6);
+    g.lineStyle(2, 0x222222, 1); g.lineBetween(cx+6, cy-18, cx+14, cy-22);
+    // Left eye (sleepy, half-closed)
+    g.fillStyle(0x2a1800, 1); g.fillCircle(cx-6, cy-12, 5);
+    g.fillStyle(0x7a5214, 1); g.fillRect(cx-11, cy-17, 10, 6);
+    g.fillStyle(0xffffff, 0.6); g.fillCircle(cx-4, cy-13, 1.5);
+    // Nose & smile
+    g.fillStyle(0x4a2a00, 1); g.fillEllipse(cx, cy-4, 7, 5);
+    g.lineStyle(2, 0x3a2200, 1);
+    g.beginPath(); g.arc(cx, cy+1, 5, 0.2, Math.PI-0.2); g.strokePath();
+    g.generateTexture('sloth_pirate', 44, 60); g.destroy();
+  }
+
+  _rockNinja() {
+    const g = this._g();
+    const cx = 22, cy = 34;
+    // Legs
+    g.fillStyle(0x3a3a3a, 1); g.fillRect(cx-9, cy+20, 9, 16); g.fillRect(cx, cy+20, 9, 16);
+    g.fillStyle(0x222222, 1); g.fillRect(cx-11, cy+34, 11, 6); g.fillRect(cx, cy+34, 11, 6);
+    // Body - rocky lumpy shape
+    g.fillStyle(0x555555, 1); g.fillEllipse(cx, cy+8, 30, 34);
+    g.fillStyle(0x6a6a6a, 1); g.fillEllipse(cx-3, cy+2, 18, 20);
+    g.fillStyle(0x3a3a3a, 1); g.fillEllipse(cx+6, cy+14, 12, 14);
+    g.lineStyle(1, 0x333333, 0.9); g.lineBetween(cx+2, cy-2, cx+10, cy+10); g.lineBetween(cx-8, cy+6, cx-2, cy+18);
+    // Arms
+    g.fillStyle(0x4a4a4a, 1); g.fillRect(cx-18, cy-2, 7, 18); g.fillRect(cx+11, cy-2, 7, 18);
+    g.fillStyle(0x333333, 1);
+    for (let i = 0; i < 3; i++) { g.fillRect(cx-18+i*2, cy+15, 2, 6); g.fillRect(cx+11+i*2, cy+15, 2, 6); }
+    // Head
+    g.fillStyle(0x555555, 1); g.fillCircle(cx, cy-10, 16);
+    g.fillStyle(0x4a4a4a, 1); g.fillCircle(cx+4, cy-8, 8);
+    // Ninja mask (dark, lower face)
+    g.fillStyle(0x1a1a1a, 1); g.fillRect(cx-16, cy-10, 32, 14);
+    g.lineStyle(1, 0x333333, 0.5); g.lineBetween(cx-16, cy-4, cx+16, cy-4);
+    // White headband + red circle
+    g.fillStyle(0xeeeeee, 1); g.fillRect(cx-16, cy-22, 32, 7);
+    g.fillStyle(0xcc1111, 1); g.fillCircle(cx, cy-18, 5);
+    // Fierce eyes
+    g.fillStyle(0xffffff, 1); g.fillRect(cx-13, cy-14, 10, 6); g.fillRect(cx+3, cy-14, 10, 6);
+    g.fillStyle(0x000000, 1); g.fillRect(cx-11, cy-13, 6, 4); g.fillRect(cx+5, cy-13, 6, 4);
+    g.fillStyle(0xff2222, 1); g.fillRect(cx-12, cy-15, 8, 2); g.fillRect(cx+4, cy-15, 8, 2);
+    // Shuriken on chest
+    g.fillStyle(0x888888, 1);
+    g.fillRect(cx-1, cy+6, 3, 12); g.fillRect(cx-6, cy+11, 13, 3);
+    g.fillCircle(cx+1, cy+12, 3);
+    g.generateTexture('rock_ninja', 44, 60); g.destroy();
+  }
+
+  _trashCan() {
+    const g = this._g();
+    const cx = 22, cy = 34;
+    // Legs (stubby)
+    g.fillStyle(0x666666, 1); g.fillRect(cx-9, cy+22, 8, 14); g.fillRect(cx+1, cy+22, 8, 14);
+    g.fillStyle(0x444444, 1); g.fillRect(cx-11, cy+34, 10, 6); g.fillRect(cx+1, cy+34, 10, 6);
+    // Cylinder body
+    g.fillStyle(0x787878, 1); g.fillRect(cx-14, cy-10, 28, 36);
+    g.fillStyle(0x999999, 0.55); g.fillRect(cx-14, cy-10, 8, 36);
+    g.fillStyle(0x555555, 0.5); g.fillRect(cx+7, cy-10, 7, 36);
+    g.lineStyle(2, 0x555555, 0.7);
+    g.lineBetween(cx-14, cy-1, cx+14, cy-1); g.lineBetween(cx-14, cy+10, cx+14, cy+10); g.lineBetween(cx-14, cy+21, cx+14, cy+21);
+    // Dents / scratches
+    g.lineStyle(2, 0x444444, 0.9); g.lineBetween(cx+4, cy+2, cx+10, cy+7); g.lineBetween(cx-8, cy+13, cx-4, cy+20);
+    // Stub arms
+    g.fillStyle(0x787878, 1); g.fillRect(cx-18, cy-4, 6, 16); g.fillRect(cx+12, cy-4, 6, 16);
+    g.fillStyle(0x666666, 1); g.fillCircle(cx-15, cy+13, 5); g.fillCircle(cx+15, cy+13, 5);
+    // Lid (slightly wider, darker)
+    g.fillStyle(0x555555, 1); g.fillRect(cx-16, cy-12, 32, 8);
+    g.fillStyle(0x444444, 1); g.fillRect(cx-16, cy-12, 32, 3);
+    g.fillStyle(0x444444, 1); g.fillRect(cx-5, cy-18, 10, 8);
+    g.fillStyle(0x666666, 1); g.fillRect(cx-4, cy-16, 8, 6);
+    // Face — angry glowing eyes
+    g.fillStyle(0x111111, 1); g.fillRect(cx-12, cy-9, 24, 10);
+    g.fillStyle(0xffaa00, 1); g.fillCircle(cx-6, cy-4, 5); g.fillCircle(cx+6, cy-4, 5);
+    g.fillStyle(0xff5500, 1); g.fillCircle(cx-6, cy-4, 3); g.fillCircle(cx+6, cy-4, 3);
+    g.fillStyle(0x111111, 1); g.fillCircle(cx-5, cy-5, 1.5); g.fillCircle(cx+7, cy-5, 1.5);
+    // Angry brow ridges
+    g.fillStyle(0x444444, 1); g.fillRect(cx-10, cy-10, 8, 3); g.fillRect(cx+2, cy-10, 8, 3);
+    // Trash peeking out top
+    g.fillStyle(0x8b6914, 0.9); g.fillRect(cx-4, cy-20, 4, 9);
+    g.fillStyle(0x2a8a2a, 0.9); g.fillRect(cx+2, cy-22, 3, 11);
+    g.fillStyle(0xcc4422, 0.9); g.fillEllipse(cx-9, cy-17, 6, 8);
+    g.generateTexture('trash_can', 44, 60); g.destroy();
   }
 
   _weaponModels() {

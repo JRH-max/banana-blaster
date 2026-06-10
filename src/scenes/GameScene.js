@@ -11,8 +11,9 @@ function loadSave() {
 function writeSave(data) {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch {}
 }
-function getSavedCoins()    { return loadSave().coins    || 0; }
-function getSavedUpgrades() { return loadSave().upgrades || [[0,0,0],[0,0,0],[0,0,0]]; }
+function getSavedCoins()    { return loadSave().coins     || 0; }
+function getSavedUpgrades() { return loadSave().upgrades  || [[0,0,0],[0,0,0],[0,0,0]]; }
+function getSavedChar()     { return loadSave().character || 'banana'; }
 function saveCoins(c)       { writeSave({ ...loadSave(), coins: c }); }
 function saveUpgrades(ups)  { writeSave({ ...loadSave(), upgrades: ups }); }
 
@@ -48,7 +49,8 @@ export class GameScene extends Phaser.Scene {
     // Player
     this.player = { wx: GRID / 2, wy: GRID / 2, angle: 0, hp: 300, maxHp: 300, lives: 3, score: 0, coins: getSavedCoins() };
     const ps = iso(this.player.wx, this.player.wy);
-    this.playerSpr    = this.add.image(ps.x, ps.y - 22, 'banana').setOrigin(0.5, 1).setScale(0.55).setDepth(9000);
+    const charKey = getSavedChar();
+    this.playerSpr    = this.add.image(ps.x, ps.y - 22, charKey).setOrigin(0.5, 1).setScale(0.55).setDepth(9000);
     this.playerGun    = this.add.image(ps.x + 14, ps.y - 28, 'bot_gun').setOrigin(0, 0.5).setScale(1.2).setDepth(9001);
     this.playerShadow = this.add.ellipse(ps.x, ps.y - 4, 28, 10, 0x000000, 0.25).setDepth(8990);
     // Blue team ring under player
