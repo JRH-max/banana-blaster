@@ -3,6 +3,19 @@ import Phaser from 'phaser';
 const GRID = 50;
 const TW = 64, TH = 32;
 
+// ── Persistent save helpers ────────────────────────────────────────────────
+const SAVE_KEY = 'bananaBlasterSave';
+function loadSave() {
+  try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch { return {}; }
+}
+function writeSave(data) {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch {}
+}
+function getSavedCoins()    { return loadSave().coins    || 0; }
+function getSavedUpgrades() { return loadSave().upgrades || [[0,0,0],[0,0,0],[0,0,0]]; }
+function saveCoins(c)       { writeSave({ ...loadSave(), coins: c }); }
+function saveUpgrades(ups)  { writeSave({ ...loadSave(), upgrades: ups }); }
+
 function iso(wx, wy) {
   return { x: (wx - wy) * (TW / 2), y: (wx + wy) * (TH / 2) };
 }
@@ -33,7 +46,7 @@ export class GameScene extends Phaser.Scene {
     this._drawTrees();
 
     // Player
-    this.player = { wx: GRID / 2, wy: GRID / 2, angle: 0, hp: 300, maxHp: 300, lives: 3, score: 0, coins: this.registry.get('savedCoins') || 0 };
+    this.player = { wx: GRID / 2, wy: GRID / 2, angle: 0, hp: 300, maxHp: 300, lives: 3, score: 0, coins: getSavedCoins() };
     const ps = iso(this.player.wx, this.player.wy);
     this.playerSpr    = this.add.image(ps.x, ps.y - 22, 'banana').setOrigin(0.5, 1).setScale(0.55).setDepth(9000);
     this.playerGun    = this.add.image(ps.x + 14, ps.y - 28, 'bot_gun').setOrigin(0, 0.5).setScale(1.2).setDepth(9001);
@@ -58,8 +71,7 @@ export class GameScene extends Phaser.Scene {
     this.isFiring      = false;
     this.reloading     = false;
     this.shopOpen      = false;
-    const savedUps = this.registry.get('savedUpgrades') || [[0,0,0],[0,0,0],[0,0,0]];
-    this.weaponUpgrades = savedUps.map(u => ({ damage: u[0], speed: u[1], ammo: u[2] }));
+    this.weaponUpgrades = getSavedUpgrades().map(u => ({ damage: u[0], speed: u[1], ammo: u[2] }));
 
     // Camera — manual behind-character follow (no startFollow)
     this.cameras.main.setBounds(
@@ -592,7 +604,7 @@ export class GameScene extends Phaser.Scene {
         if (p.type === 'coin') {
           this.player.coins += p.value;
           this.registry.set('coins', this.player.coins);
-          this.registry.set('savedCoins', this.player.coins);
+          saveCoins(this.player.coins);
         } else {
           this.player.hp = Math.min(this.player.maxHp, this.player.hp + 28);
           this.registry.set('health', this.player.hp);
@@ -681,8 +693,8 @@ export class GameScene extends Phaser.Scene {
     this.player.coins -= cost;
     up[type]++;
     this.registry.set('coins', this.player.coins);
-    this.registry.set('savedCoins', this.player.coins);
-    this.registry.set('savedUpgrades', this.weaponUpgrades.map(u => [u.damage, u.speed, u.ammo]));
+    saveCoins(this.player.coins);
+    saveUpgrades(this.weaponUpgrades.map(u => [u.damage, u.speed, u.ammo]));
   }
 
   switchWeapon(idx) {

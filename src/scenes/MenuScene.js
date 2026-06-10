@@ -1,5 +1,18 @@
 import Phaser from 'phaser';
 
+// ── Persistent save helpers ────────────────────────────────────────────────
+const SAVE_KEY = 'bananaBlasterSave';
+function loadSave() {
+  try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch { return {}; }
+}
+function writeSave(data) {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch {}
+}
+function getSavedCoins()    { return loadSave().coins    || 0; }
+function getSavedUpgrades() { return loadSave().upgrades || [[0,0,0],[0,0,0],[0,0,0]]; }
+function saveCoins(c)       { writeSave({ ...loadSave(), coins: c }); }
+function saveUpgrades(ups)  { writeSave({ ...loadSave(), upgrades: ups }); }
+
 const SW = 800, SH = 600;
 const WEAPON_NAMES  = ['Peel Launcher', 'Auto Rifle', 'Sniper'];
 const WEAPON_COLORS = ['#c8960a', '#4caf50', '#2196f3'];
@@ -124,7 +137,7 @@ export class MenuScene extends Phaser.Scene {
   _setShopVisible(v) { for (const el of this.shopItems) el.setVisible(v); }
 
   _refreshCoins() {
-    const coins = this.registry.get('savedCoins') || 0;
+    const coins = getSavedCoins();
     if (this.menuCoinText) this.menuCoinText.setText('💰 Bank: ' + coins + ' coins');
   }
 
@@ -240,24 +253,19 @@ export class MenuScene extends Phaser.Scene {
     const level = ups[weaponIdx][type];
     if (level >= 3) return;
     const cost = UPGRADES.find(u => u.key === type).costs[level];
-    const coins = this.registry.get('savedCoins') || 0;
+    const coins = getSavedCoins();
     if (coins < cost) return;
     ups[weaponIdx][type]++;
-    this.registry.set('savedCoins', coins - cost);
-    this._saveUpgrades(ups);
+    saveCoins(coins - cost);
+    saveUpgrades(ups.map(u => [u.damage, u.speed, u.ammo]));
   }
 
   _loadUpgrades() {
-    const raw = this.registry.get('savedUpgrades') || [[0,0,0],[0,0,0],[0,0,0]];
-    return raw.map(u => ({ damage: u[0], speed: u[1], ammo: u[2] }));
-  }
-
-  _saveUpgrades(ups) {
-    this.registry.set('savedUpgrades', ups.map(u => [u.damage, u.speed, u.ammo]));
+    return getSavedUpgrades().map(u => ({ damage: u[0], speed: u[1], ammo: u[2] }));
   }
 
   _refreshShop() {
-    const coins = this.registry.get('savedCoins') || 0;
+    const coins = getSavedCoins();
     const ups   = this._loadUpgrades();
     if (this.shopCoinText) this.shopCoinText.setText('💰 ' + coins);
 
