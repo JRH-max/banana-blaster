@@ -16,10 +16,10 @@ function saveUnlocked(arr) { writeSave({ ...loadSave(), unlocked: arr }); }
 const SW = 800, SH = 600;
 
 const CHARACTERS = [
-  { key: 'banana',       name: 'Banana',    subtitle: '(Default)',  price: 0,    ability: 'PEEL TRAP',      rarity: 'STARTING FIGHTER', rarityColor: '#aaaaaa' },
-  { key: 'sloth_pirate', name: 'Sloth',     subtitle: 'Pirate',     price: 200,  ability: 'CANNONBALL',     rarity: 'RARE',             rarityColor: '#4488ff' },
-  { key: 'rock_ninja',   name: 'Rock',      subtitle: 'Ninja',      price: 500,  ability: 'SHURIKEN STORM', rarity: 'EPIC',             rarityColor: '#aa44ff' },
-  { key: 'trash_can',    name: 'Trash Can', subtitle: '',           price: 1000, ability: 'TRASH WAVE',     rarity: 'MYTHIC',           rarityColor: '#ff8800' },
+  { key: 'banana',       name: 'Banana',    subtitle: '(Default)',  price: 0,    ability: 'PEEL TRAP',      rarity: 'STARTING FIGHTER', rarityColor: '#aaaaaa', gun: 'Peel Launcher', gunIcon: '🍌' },
+  { key: 'sloth_pirate', name: 'Sloth',     subtitle: 'Pirate',     price: 200,  ability: 'CANNONBALL',     rarity: 'RARE',             rarityColor: '#4488ff', gun: 'Sniper',        gunIcon: '🔭' },
+  { key: 'rock_ninja',   name: 'Rock',      subtitle: 'Ninja',      price: 500,  ability: 'SHURIKEN STORM', rarity: 'EPIC',             rarityColor: '#aa44ff', gun: 'Auto Rifle',    gunIcon: '⚡' },
+  { key: 'trash_can',    name: 'Trash Can', subtitle: '',           price: 1000, ability: 'TRASH WAVE',     rarity: 'MYTHIC',           rarityColor: '#ff8800', gun: 'Peel Launcher', gunIcon: '🗑️' },
 ];
 
 const WEAPON_NAMES  = ['Peel Launcher', 'Auto Rifle', 'Sniper'];
@@ -227,17 +227,25 @@ export class MenuScene extends Phaser.Scene {
 
       if (unlocked) {
         // Ability badge
-        add(this.add.rectangle(bx, BOX_Y + 106, BOX_W - 20, 24, 0x003322, 0.8)
+        add(this.add.rectangle(bx, BOX_Y + 100, BOX_W - 20, 22, 0x003322, 0.8)
           .setStrokeStyle(1, 0x44ff88, 0.5).setDepth(12));
-        add(this.add.text(bx, BOX_Y + 106, `⚡ ${ch.ability}`, {
+        add(this.add.text(bx, BOX_Y + 100, `⚡ ${ch.ability}`, {
           fontSize: '10px', fontFamily: 'Arial Black', color: '#55ffaa',
           stroke: '#000', strokeThickness: 2,
         }).setOrigin(0.5).setDepth(13));
 
+        // Starting gun badge
+        add(this.add.rectangle(bx, BOX_Y + 124, BOX_W - 20, 22, 0x1a1a00, 0.8)
+          .setStrokeStyle(1, 0xccaa00, 0.5).setDepth(12));
+        add(this.add.text(bx, BOX_Y + 124, `🔫 ${ch.gun}`, {
+          fontSize: '10px', fontFamily: 'Arial Black', color: '#ffdd44',
+          stroke: '#000', strokeThickness: 2,
+        }).setOrigin(0.5).setDepth(13));
+
         // SELECT button
-        const selBg = add(this.add.rectangle(bx, BOX_Y + 138, BOX_W - 20, 30, 0x1a4c1a, 0.9)
+        const selBg = add(this.add.rectangle(bx, BOX_Y + 152, BOX_W - 20, 30, 0x1a4c1a, 0.9)
           .setStrokeStyle(2, 0x66ee66, 0.7).setInteractive().setDepth(12));
-        add(this.add.text(bx, BOX_Y + 138, 'SELECT', {
+        add(this.add.text(bx, BOX_Y + 152, 'SELECT', {
           fontSize: '13px', fontFamily: 'Arial Black', color: '#88ff88',
           stroke: '#000', strokeThickness: 2,
         }).setOrigin(0.5).setDepth(13));

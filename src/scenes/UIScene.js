@@ -285,6 +285,12 @@ export class UIScene extends Phaser.Scene {
     if (key === 'specialName' && this.specNameTxt) {
       this.specNameTxt.setText(value);
     }
+    if (key === 'weaponNames' && this.weaponBtns) {
+      value.forEach((name, i) => { if (this.weaponBtns[i]) this.weaponBtns[i].lbl.setText(name); });
+    }
+    if (key === 'gunSprite0' && this.gunSprites) {
+      this.gunSprites[0].setTexture(value);
+    }
   }
 
   _buildShop() {

@@ -22,11 +22,51 @@ function iso(wx, wy) {
 }
 function isoDepth(wx, wy) { return Math.round((wx + wy) * 100); }
 
+// Slot 1 is character-specific (set in create()). Slots 2+3 are the same for everyone.
 const WEAPONS = [
-  { name: 'Peel Launcher', type: 'projectile', fireRate: 700,  damage: 55,  speed: 8,  auto: false, splash: 1.5, reloadTime: 0    },
+  { name: 'Peel Launcher', type: 'projectile', fireRate: 700,  damage: 55,  speed: 8,  auto: false, splash: 1.5,  reloadTime: 0,    projKey: 'peel',     projScale: 0.30 },
   { name: 'Auto Rifle',    type: 'hitscan',    fireRate: 120,  damage: 18,  speed: 28, auto: true,  ammo: 30, maxAmmo: 30, reloadTime: 1600 },
   { name: 'Sniper',        type: 'hitscan',    fireRate: 1800, damage: 130, speed: 50, auto: false, ammo: 5,  maxAmmo: 5,  reloadTime: 2600 },
 ];
+
+// Bots always use this fixed set so player's custom slot-1 doesn't affect them
+const BOT_WEAPONS = [
+  { name: 'Peel Launcher', type: 'projectile', fireRate: 700,  damage: 55,  speed: 8,  auto: false, splash: 1.5,  reloadTime: 0,    projKey: 'peel', projScale: 0.30 },
+  { name: 'Auto Rifle',    type: 'hitscan',    fireRate: 120,  damage: 18,  speed: 28, auto: true,  ammo: 30, maxAmmo: 30, reloadTime: 1600 },
+  { name: 'Sniper',        type: 'hitscan',    fireRate: 1800, damage: 130, speed: 50, auto: false, ammo: 5,  maxAmmo: 5,  reloadTime: 2600 },
+];
+
+// Custom slot-1 weapon per character
+const CHAR_SLOT1 = {
+  banana: {
+    name: 'Peel Launcher', type: 'projectile', fireRate: 700, damage: 55, speed: 8,
+    auto: false, splash: 1.5, reloadTime: 0, projKey: 'peel', projScale: 0.30,
+  },
+  sloth_pirate: {
+    // Single-shot flintlock pistol — slow reload, high punch (pirate musket)
+    name: 'Flintlock', type: 'hitscan', fireRate: 1800, damage: 110, speed: 50,
+    auto: false, ammo: 1, maxAmmo: 1, reloadTime: 1600,
+  },
+  rock_ninja: {
+    // Rapid-fire shuriken launcher — quick throws, medium damage (ninja speed)
+    name: 'Shuriken', type: 'projectile', fireRate: 185, damage: 30, speed: 19,
+    auto: true, ammo: 24, maxAmmo: 24, reloadTime: 1100, splash: 0,
+    projKey: 'shuriken', projScale: 0.85,
+  },
+  trash_can: {
+    // Junk cannon — lobs heavy garbage with big splash (trash theme)
+    name: 'Junk Cannon', type: 'projectile', fireRate: 1000, damage: 65, speed: 7,
+    auto: false, splash: 2.2, reloadTime: 0, projKey: 'pickup', projScale: 0.55, projTint: 0x886633,
+  },
+};
+
+// Gun sprite shown at bottom-center for each character's slot-1
+const CHAR_GUN_SPRITE = {
+  banana:       'gun_peel',
+  sloth_pirate: 'gun_sniper',
+  rock_ninja:   'gun_rifle',
+  trash_can:    'gun_peel',
+};
 
 const BOT_STATS = {
   banana:  { normal:  { hp: 100, speed: 5.2, weaponIdx: 1, scale: 0.48 } },
@@ -64,12 +104,16 @@ export class GameScene extends Phaser.Scene {
 
     this._spawnBots();
 
+    // Apply character's custom slot-1 weapon
+    WEAPONS[0] = { ...(CHAR_SLOT1[charKey] ?? CHAR_SLOT1.banana) };
+
     this.waveNum       = 1;
     this.waveTimer     = 0;
     this.scoped        = false;
     this.scopeMode     = 0;
-    this.currentWeapon = 1;
-    this.ammo          = WEAPONS[1].maxAmmo;
+    this.currentWeapon = 0;   // all characters start on their custom gun
+    const _startW      = WEAPONS[0];
+    this.ammo          = _startW.ammo !== undefined ? _startW.maxAmmo : -1;
     this.fireCooldown  = 0;
     this.isFiring      = false;
     this.reloading     = false;
@@ -341,10 +385,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   _shootFrom(shooter, weaponIdx, faction, overrideDamage = null) {
-    const w     = WEAPONS[weaponIdx];
+    // Player uses WEAPONS (which has custom slot-1); bots use the fixed BOT_WEAPONS
+    const w      = (shooter === this.player) ? WEAPONS[weaponIdx] : BOT_WEAPONS[weaponIdx];
     const damage = overrideDamage !== null ? overrideDamage : w.damage;
-    const angle = shooter.angle;
-    const s     = iso(shooter.wx, shooter.wy);
+    const angle  = shooter.angle;
+    const s      = iso(shooter.wx, shooter.wy);
 
     const flash = this.add.image(
       s.x + Math.cos(angle) * 18, s.y - 22 + Math.sin(angle) * 7, 'muzzle_flash'
@@ -354,6 +399,8 @@ export class GameScene extends Phaser.Scene {
     if (w.type === 'hitscan') {
       this._hitscanShot(shooter, angle, w, faction, damage);
     } else {
+      const projSpr = this.add.image(0, 0, w.projKey || 'peel').setScale(w.projScale || 0.30).setDepth(5000);
+      if (w.projTint) projSpr.setTint(w.projTint);
       this.bullets.push({
         wx: shooter.wx + Math.cos(angle) * 0.7,
         wy: shooter.wy + Math.sin(angle) * 0.7,
@@ -362,7 +409,7 @@ export class GameScene extends Phaser.Scene {
         damage, faction,
         splash: w.splash ?? 0,
         life: 3.5,
-        sprite: this.add.image(0, 0, 'peel').setScale(0.30).setDepth(5000),
+        sprite: projSpr,
       });
     }
   }
@@ -764,6 +811,8 @@ export class GameScene extends Phaser.Scene {
     this.registry.set('shopOpen',  false);
     const _abilityNames = { banana: 'PEEL TRAP', sloth_pirate: 'CANNONBALL', rock_ninja: 'SHURIKEN STORM', trash_can: 'TRASH WAVE' };
     this.registry.set('specialName', _abilityNames[getSavedChar()] || 'SPECIAL');
+    this.registry.set('weaponNames',  WEAPONS.map(w => w.name));
+    this.registry.set('gunSprite0',   CHAR_GUN_SPRITE[getSavedChar()] || 'gun_peel');
   }
 
   // ── Special abilities ──────────────────────────────────────────────────────
