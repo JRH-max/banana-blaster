@@ -58,11 +58,8 @@ export class GameScene extends Phaser.Scene {
     this.isFiring      = false;
     this.reloading     = false;
     this.shopOpen      = false;
-    this.weaponUpgrades = [
-      { damage: 0, speed: 0, ammo: 0 },
-      { damage: 0, speed: 0, ammo: 0 },
-      { damage: 0, speed: 0, ammo: 0 },
-    ];
+    const savedUps = this.registry.get('savedUpgrades') || [[0,0,0],[0,0,0],[0,0,0]];
+    this.weaponUpgrades = savedUps.map(u => ({ damage: u[0], speed: u[1], ammo: u[2] }));
 
     // Camera — manual behind-character follow (no startFollow)
     this.cameras.main.setBounds(
@@ -647,7 +644,14 @@ export class GameScene extends Phaser.Scene {
   _playerDied() {
     this.player.lives--;
     this.registry.set('lives', this.player.lives);
-    if (this.player.lives <= 0) { this.time.delayedCall(1400, () => this.scene.restart()); return; }
+    if (this.player.lives <= 0) {
+      this.cameras.main.flash(600, 255, 0, 0);
+      this.time.delayedCall(1800, () => {
+        this.scene.stop('UIScene');
+        this.scene.start('MenuScene');
+      });
+      return;
+    }
     this.player.hp = this.player.maxHp;
     this.player.wx = GRID / 2; this.player.wy = GRID / 2;
     this.registry.set('health', this.player.hp);
@@ -678,6 +682,7 @@ export class GameScene extends Phaser.Scene {
     up[type]++;
     this.registry.set('coins', this.player.coins);
     this.registry.set('savedCoins', this.player.coins);
+    this.registry.set('savedUpgrades', this.weaponUpgrades.map(u => [u.damage, u.speed, u.ammo]));
   }
 
   switchWeapon(idx) {
