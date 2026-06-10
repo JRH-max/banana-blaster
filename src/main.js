@@ -9,6 +9,9 @@ new Phaser.Game({
   width: 800,
   height: 600,
   backgroundColor: '#1a3a0a',
+  antialias: true,
+  antialiasGL: true,
+  roundPixels: false,
   scene: [BootScene, MenuScene, GameScene, UIScene],
   scale: {
     mode: Phaser.Scale.FIT,
