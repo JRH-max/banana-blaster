@@ -52,7 +52,7 @@ export class MenuScene extends Phaser.Scene {
     const push = (...els) => { this.menuItems.push(...els); return els[0]; };
 
     // Title
-    const title = push(this.add.text(SW / 2, 60, 'BANANA BLASTER', {
+    const title = push(this.add.text(SW / 2, 60, 'GUN STARS', {
       fontSize: '50px', fontFamily: 'Arial Black', color: '#ffd700',
       stroke: '#000000', strokeThickness: 10,
     }).setOrigin(0.5));
