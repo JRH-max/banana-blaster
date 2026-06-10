@@ -1,0 +1,675 @@
+import Phaser from 'phaser';
+
+const GRID = 50;
+const TW = 64, TH = 32;
+
+function iso(wx, wy) {
+  return { x: (wx - wy) * (TW / 2), y: (wx + wy) * (TH / 2) };
+}
+function isoDepth(wx, wy) { return Math.round((wx + wy) * 100); }
+
+const WEAPONS = [
+  { name: 'Peel Launcher', type: 'projectile', fireRate: 700,  damage: 55,  speed: 8,  auto: false, splash: 1.5, reloadTime: 0    },
+  { name: 'Auto Rifle',    type: 'hitscan',    fireRate: 120,  damage: 18,  speed: 28, auto: true,  ammo: 30, maxAmmo: 30, reloadTime: 1600 },
+  { name: 'Sniper',        type: 'hitscan',    fireRate: 1800, damage: 130, speed: 50, auto: false, ammo: 5,  maxAmmo: 5,  reloadTime: 2600 },
+];
+
+const BOT_STATS = {
+  banana:  { normal:  { hp: 100, speed: 5.2, weaponIdx: 1, scale: 0.48 } },
+  raccoon: {
+    normal:  { hp: 60,  speed: 5.5, weaponIdx: 1, scale: 0.37 },
+    armored: { hp: 220, speed: 3.5, weaponIdx: 1, scale: 0.40 },
+    boss:    { hp: 600, speed: 6.2, weaponIdx: 0, scale: 0.50 },
+  },
+};
+
+export class GameScene extends Phaser.Scene {
+  constructor() { super('GameScene'); }
+
+  // ── create ─────────────────────────────────────────────────────────────────
+  create() {
+    this._genTrees();
+    this._drawGround();
+    this._drawTrees();
+
+    // Player
+    this.player = { wx: GRID / 2, wy: GRID / 2, angle: 0, hp: 300, maxHp: 300, lives: 3, score: 0 };
+    const ps = iso(this.player.wx, this.player.wy);
+    this.playerSpr    = this.add.image(ps.x, ps.y - 22, 'banana').setOrigin(0.5, 1).setScale(0.55).setDepth(9000);
+    this.playerGun    = this.add.image(ps.x + 14, ps.y - 28, 'bot_gun').setOrigin(0, 0.5).setScale(1.2).setDepth(9001);
+    this.playerShadow = this.add.ellipse(ps.x, ps.y - 4, 28, 10, 0x000000, 0.25).setDepth(8990);
+    // Blue team ring under player
+    this.playerRing   = this.add.ellipse(ps.x, ps.y - 4, 36, 14, 0x44aaff, 0.22).setDepth(8989);
+
+    this.bots    = [];
+    this.bullets = [];
+    this.pickups = [];
+    this.effects = [];
+
+    this._spawnBots();
+
+    this.waveNum       = 1;
+    this.waveTimer     = 0;
+    this.scoped        = false;
+    this.scopeMode     = 0;
+    this.currentWeapon = 1;
+    this.ammo          = WEAPONS[1].maxAmmo;
+    this.fireCooldown  = 0;
+    this.isFiring      = false;
+    this.reloading     = false;
+
+    // Camera — manual behind-character follow (no startFollow)
+    this.cameras.main.setBounds(
+      -(GRID * TW / 2 + 250), -250,
+       GRID * TW + 500,
+       GRID * TH + 500
+    );
+    const _ps0 = iso(this.player.wx, this.player.wy);
+    this._camX = _ps0.x;
+    this._camY = _ps0.y - 22;
+    this.cameras.main.centerOn(this._camX, this._camY);
+
+    // Keyboard
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.keys = this.input.keyboard.addKeys({
+      W:'W', A:'A', S:'S', D:'D',
+      Q:Phaser.Input.Keyboard.KeyCodes.Q,
+      R:Phaser.Input.Keyboard.KeyCodes.R,
+      ONE:   Phaser.Input.Keyboard.KeyCodes.ONE,
+      TWO:   Phaser.Input.Keyboard.KeyCodes.TWO,
+      THREE: Phaser.Input.Keyboard.KeyCodes.THREE,
+      SPACE: Phaser.Input.Keyboard.KeyCodes.SPACE,
+    });
+    this.input.keyboard.on('keydown-Q', () => this.toggleScope());
+    this.input.keyboard.on('keydown-R', () => this._startReload());
+    this.input.keyboard.on('keydown-ONE',   () => this.switchWeapon(0));
+    this.input.keyboard.on('keydown-TWO',   () => this.switchWeapon(1));
+    this.input.keyboard.on('keydown-THREE', () => this.switchWeapon(2));
+    this.input.on('pointerdown', p => { if (p.x > 200) this.isFiring = true; });
+    this.input.on('pointerup',   () => { this.isFiring = false; });
+
+    // Touch joystick state
+    this.joystickActive    = false;
+    this.joystickDir       = { x: 0, y: 0 };
+    this.joystickPointerId = -1;
+    this._setupTouchJoy();
+
+    this.scene.launch('UIScene');
+    this._syncAll();
+  }
+
+  // ── update ─────────────────────────────────────────────────────────────────
+  update(time, delta) {
+    const dt = delta / 1000;
+    this._movePlayer(dt);
+    this._aimPlayer();
+    this._handleFire(delta);
+    this._updateBots(delta, dt);
+    this._updateBullets(dt);
+    this._updatePickups();
+    this._updateEffects(dt);
+    this._updatePlayerSprite();
+    this._updateCamera();
+    this._waveCheck(delta);
+  }
+
+  // ── behind-character camera ────────────────────────────────────────────────
+  _updateCamera() {
+    const s   = iso(this.player.wx, this.player.wy);
+    const a   = this.player.angle;
+    // Convert facing direction from world-space to isometric screen-space
+    const fsx = (Math.cos(a) - Math.sin(a)) * (TW / 2);
+    const fsy = (Math.cos(a) + Math.sin(a)) * (TH / 2);
+    const flen = Math.hypot(fsx, fsy) || 1;
+    // Offset camera center ahead of player → player appears in lower portion of view
+    const LOOK = this.scoped ? 260 : 200;
+    const tX = s.x      + (fsx / flen) * LOOK;
+    const tY = s.y - 22 + (fsy / flen) * LOOK;
+    const LERP = this.scoped ? 0.04 : 0.07;
+    this._camX = Phaser.Math.Linear(this._camX, tX, LERP);
+    this._camY = Phaser.Math.Linear(this._camY, tY, LERP);
+    this.cameras.main.centerOn(this._camX, this._camY);
+  }
+
+  // ── map ────────────────────────────────────────────────────────────────────
+  _genTrees() {
+    this.trees = [];
+    const BORDER = 3, MIN_D = 2.6, CX = GRID / 2, CY = GRID / 2;
+    let tries = 0;
+    while (this.trees.length < 68 && tries++ < 4000) {
+      const wx = BORDER + Math.random() * (GRID - 2 * BORDER);
+      const wy = BORDER + Math.random() * (GRID - 2 * BORDER);
+      if (Math.hypot(wx - CX, wy - CY) < 5) continue;
+      if (this.trees.some(t => Math.hypot(t.wx - wx, t.wy - wy) < MIN_D)) continue;
+      this.trees.push({ wx, wy, scale: 0.72 + Math.random() * 0.52 });
+    }
+  }
+
+  _drawGround() {
+    for (let x = 0; x < GRID; x++) {
+      for (let y = 0; y < GRID; y++) {
+        const key = (x + y) % 2 === 0 ? 'tile_grass' : 'tile_grass2';
+        const s = iso(x, y);
+        this.add.image(s.x, s.y, key).setOrigin(0.5, 0.5).setDepth(-10000);
+      }
+    }
+  }
+
+  _drawTrees() {
+    const sorted = [...this.trees].sort((a, b) => (a.wx + a.wy) - (b.wx + b.wy));
+    for (const t of sorted) {
+      const s = iso(t.wx, t.wy);
+      const d = isoDepth(t.wx, t.wy);
+      this.add.ellipse(s.x, s.y, 32 * t.scale, 10 * t.scale, 0x000000, 0.18).setDepth(d - 5);
+      t.sprite = this.add.image(s.x, s.y - 8, 'tree')
+        .setOrigin(0.5, 1).setScale(t.scale).setDepth(d + 65);
+    }
+  }
+
+  _treeAt(wx, wy) {
+    return this.trees.some(t => Math.hypot(t.wx - wx, t.wy - wy) < 0.55);
+  }
+
+  _canMove(wx, wy) {
+    return wx > 0.4 && wx < GRID - 0.4 && wy > 0.4 && wy < GRID - 0.4 && !this._treeAt(wx, wy);
+  }
+
+  _tryMove(e, dx, dy) {
+    if (this._canMove(e.wx + dx, e.wy + dy)) { e.wx += dx; e.wy += dy; return; }
+    if (this._canMove(e.wx + dx, e.wy))      { e.wx += dx; return; }
+    if (this._canMove(e.wx,      e.wy + dy)) { e.wy += dy; }
+  }
+
+  // ── spawn bots ─────────────────────────────────────────────────────────────
+  _spawnBots() {
+    // Spread banana bots around different map corners so they naturally clash with raccoons
+    const bananaStarts = [
+      [8, 8], [42, 8], [8, 42], [25, 10], [10, 25],
+    ];
+    for (let i = 0; i < 5; i++)
+      this._spawnBot('banana', 'normal', bananaStarts[i][0], bananaStarts[i][1]);
+
+    const types = ['normal','normal','normal','normal','normal','armored','armored','boss','normal','normal'];
+    types.forEach((type, i) => {
+      this._spawnBot('raccoon', type,
+        30 + (i % 5) * 3 + Phaser.Math.FloatBetween(-1, 1),
+        30 + Math.floor(i / 5) * 5 + Phaser.Math.FloatBetween(-1, 1));
+    });
+  }
+
+  _spawnBot(faction, type, wx, wy) {
+    const st  = BOT_STATS[faction][type] ?? BOT_STATS[faction].normal;
+    const tex = faction === 'banana' ? 'banana' : `raccoon_${type}`;
+    const s   = iso(wx, wy);
+    const d   = isoDepth(wx, wy);
+
+    const ringCol = faction === 'banana' ? 0x44aaff : 0xff4422;
+    const ring    = this.add.ellipse(s.x, s.y - 4, 26, 10, ringCol, 0.2).setDepth(d - 2);
+    const hpBg    = this.add.rectangle(s.x, s.y - 38, 26, 5, 0x111111, 0.85).setOrigin(0.5, 0.5).setDepth(d + 150);
+    const hpBar   = this.add.rectangle(s.x - 13, s.y - 38, 26, 5, 0x33cc33).setOrigin(0, 0.5).setDepth(d + 151);
+
+    const bot = {
+      faction, type, wx, wy,
+      angle:       Math.random() * Math.PI * 2,
+      hp: st.hp,   maxHp: st.hp,
+      speed:       st.speed,
+      weaponIdx:   st.weaponIdx,
+      scale:       st.scale,
+      fireCooldown: Phaser.Math.Between(200, 800),
+      aiTimer:      Phaser.Math.Between(500, 3000),
+      wanderWx: wx, wanderWy: wy,
+      strafeDir: 1,
+      alive: true,
+      sprite: this.add.image(s.x, s.y - 20, tex).setOrigin(0.5, 1).setScale(st.scale).setDepth(d + 10),
+      gunSpr: this.add.image(s.x + 12, s.y - 28, 'bot_gun').setOrigin(0, 0.5).setScale(0.85).setDepth(d + 11),
+      shadow: this.add.ellipse(s.x, s.y - 4, 22, 8, 0x000000, 0.2).setDepth(d - 1),
+      ring, hpBg, hpBar,
+    };
+    this.bots.push(bot);
+    return bot;
+  }
+
+  // ── player movement ────────────────────────────────────────────────────────
+  _movePlayer(dt) {
+    const SPEED = this.scoped ? 2 : 6.5;
+    let dx = 0, dy = 0;
+    if (this.cursors.up.isDown    || this.keys.W.isDown) { dx -= 1; dy -= 1; }
+    if (this.cursors.down.isDown  || this.keys.S.isDown) { dx += 1; dy += 1; }
+    if (this.cursors.left.isDown  || this.keys.A.isDown) { dx -= 1; dy += 1; }
+    if (this.cursors.right.isDown || this.keys.D.isDown) { dx += 1; dy -= 1; }
+    if (this.joystickActive) { dx += this.joystickDir.x * 1.4; dy += this.joystickDir.y * 1.4; }
+    const len = Math.hypot(dx, dy);
+    if (len > 0) this._tryMove(this.player, (dx / len) * SPEED * dt, (dy / len) * SPEED * dt);
+  }
+
+  _aimPlayer() {
+    // Auto-aim: face nearest raccoon
+    let best = null, bestD = 9999;
+    for (const b of this.bots) {
+      if (!b.alive || b.faction !== 'raccoon') continue;
+      const d = Math.hypot(b.wx - this.player.wx, b.wy - this.player.wy);
+      if (d < bestD) { best = b; bestD = d; }
+    }
+    if (best) this.player.angle = Math.atan2(best.wy - this.player.wy, best.wx - this.player.wx);
+  }
+
+  _updatePlayerSprite() {
+    const s = iso(this.player.wx, this.player.wy);
+    const d = isoDepth(this.player.wx, this.player.wy);
+    this.playerSpr.setPosition(s.x, s.y - 22).setDepth(d + 12);
+    this.playerSpr.setFlipX(Math.cos(this.player.angle) < 0);
+    this.playerShadow.setPosition(s.x, s.y - 4).setDepth(d - 2);
+    this.playerRing.setPosition(s.x, s.y - 4).setDepth(d - 3);
+    const gx = s.x + Math.cos(this.player.angle) * 14;
+    const gy = s.y - 28 + Math.sin(this.player.angle) * 5;
+    this.playerGun.setPosition(gx, gy)
+      .setAngle(Phaser.Math.RadToDeg(this.player.angle))
+      .setFlipY(Math.cos(this.player.angle) < 0)
+      .setDepth(d + 13);
+  }
+
+  // ── firing ─────────────────────────────────────────────────────────────────
+  _handleFire(delta) {
+    if (this.reloading) return;
+    this.fireCooldown = Math.max(0, this.fireCooldown - delta);
+    const w = WEAPONS[this.currentWeapon];
+    const justFire = Phaser.Input.Keyboard.JustDown(this.keys.SPACE);
+    const wantFire = this.isFiring || (w.auto && this.keys.SPACE.isDown) || (!w.auto && justFire);
+    if (!wantFire || this.fireCooldown > 0) return;
+    this.fireCooldown = w.fireRate;
+    if (w.ammo !== undefined) {
+      if (this.ammo <= 0) { this._startReload(); return; }
+      this.ammo--;
+      this.registry.set('ammo', this.ammo);
+    }
+    this._shootFrom(this.player, this.currentWeapon, 'banana');
+  }
+
+  _shootFrom(shooter, weaponIdx, faction) {
+    const w     = WEAPONS[weaponIdx];
+    const angle = shooter.angle;
+    const s     = iso(shooter.wx, shooter.wy);
+
+    const flash = this.add.image(
+      s.x + Math.cos(angle) * 18, s.y - 22 + Math.sin(angle) * 7, 'muzzle_flash'
+    ).setScale(0.30).setDepth(isoDepth(shooter.wx, shooter.wy) + 30);
+    this.time.delayedCall(80, () => flash.destroy());
+
+    if (w.type === 'hitscan') {
+      this._hitscanShot(shooter, angle, w, faction);
+    } else {
+      this.bullets.push({
+        wx: shooter.wx + Math.cos(angle) * 0.7,
+        wy: shooter.wy + Math.sin(angle) * 0.7,
+        vx: Math.cos(angle) * w.speed,
+        vy: Math.sin(angle) * w.speed,
+        damage: w.damage, faction,
+        splash: w.splash ?? 0,
+        life: 3.5,
+        sprite: this.add.image(0, 0, 'peel').setScale(0.30).setDepth(5000),
+      });
+    }
+  }
+
+  _hitscanShot(shooter, angle, w, faction) {
+    const enemies = [
+      ...this.bots.filter(b => b.alive && b.faction !== faction),
+      ...(faction === 'raccoon' ? [{ wx: this.player.wx, wy: this.player.wy, _isPlayer: true }] : []),
+    ];
+    let hit = null, hitDist = 9999;
+    for (const t of enemies) {
+      const dx = t.wx - shooter.wx, dy = t.wy - shooter.wy;
+      const dist = Math.hypot(dx, dy);
+      const diff = Math.abs(Phaser.Math.Angle.Wrap(Math.atan2(dy, dx) - angle));
+      if (diff < 0.30 && dist < hitDist) { hit = t; hitDist = dist; }
+    }
+    if (hit) {
+      if (hit._isPlayer) {
+        // Bots do significantly less damage to the player
+        const dmg = w.damage * 0.22 * (0.7 + Math.random() * 0.6);
+        this.player.hp = Math.max(0, this.player.hp - dmg);
+        this.registry.set('health', this.player.hp);
+        this.cameras.main.shake(80, 0.004);
+        if (this.player.hp <= 0) this._playerDied();
+      } else {
+        this._hitEntity(hit, w.damage, faction);
+      }
+    }
+    this._spawnTrail(shooter, angle, hitDist < 9999 ? hitDist : 22, faction);
+  }
+
+  _spawnTrail(shooter, angle, dist, faction) {
+    const col = faction === 'banana' ? 0xffee44 : 0xff4422;
+    const s   = iso(shooter.wx, shooter.wy);
+    const ex  = s.x + Math.cos(angle) * dist * (TW / 2);
+    const ey  = s.y - 20 + Math.sin(angle) * dist * (TH / 2);
+    const g   = this.add.graphics().setDepth(8500);
+    g.lineStyle(1.5, col, 0.55);
+    g.lineBetween(s.x + Math.cos(angle) * 14, s.y - 22, ex, ey);
+    this.effects.push({ sprite: g, life: 0.07 });
+  }
+
+  _hitEntity(bot, damage, attackerFaction) {
+    if (!bot.alive) return;
+    bot.hp -= damage;
+    const s = iso(bot.wx, bot.wy);
+    const spark = this.add.image(s.x + Phaser.Math.Between(-6, 6), s.y - 20, 'hit_spark')
+      .setScale(0.44).setDepth(9998);
+    this.effects.push({ sprite: spark, life: 0.10 });
+    if (bot.hp <= 0) this._killBot(bot, attackerFaction);
+  }
+
+  _killBot(bot, attackerFaction) {
+    bot.alive = false;
+    const s = iso(bot.wx, bot.wy);
+    const exp = this.add.image(s.x, s.y - 20, 'explosion').setScale(0.50).setDepth(9999);
+    this.effects.push({ sprite: exp, life: 0.55, isExplosion: true });
+
+    this.pickups.push({
+      wx: bot.wx + Phaser.Math.FloatBetween(-0.4, 0.4),
+      wy: bot.wy + Phaser.Math.FloatBetween(-0.4, 0.4),
+      sprite: this.add.image(s.x, s.y - 10, 'pickup').setScale(0.62).setDepth(isoDepth(bot.wx, bot.wy) + 8),
+      bob: Math.random() * Math.PI * 2,
+    });
+
+    if (attackerFaction === 'banana' && bot.faction === 'raccoon') {
+      const pts = bot.type === 'boss' ? 500 : bot.type === 'armored' ? 200 : 100;
+      this.player.score += pts;
+      this.registry.set('score', this.player.score);
+    }
+
+    [bot.sprite, bot.gunSpr, bot.shadow, bot.hpBg, bot.hpBar, bot.ring]
+      .forEach(o => o.setVisible(false));
+
+    if (bot.faction === 'banana') {
+      this.time.delayedCall(7000, () => {
+        bot.wx = 4 + Math.random() * 10; bot.wy = 4 + Math.random() * 10;
+        bot.hp = bot.maxHp; bot.alive = true;
+        [bot.sprite, bot.gunSpr, bot.shadow, bot.hpBg, bot.hpBar, bot.ring]
+          .forEach(o => o.setVisible(true));
+      });
+    }
+  }
+
+  // ── bot AI ─────────────────────────────────────────────────────────────────
+  _updateBots(delta, dt) {
+    for (const bot of this.bots) {
+      if (!bot.alive) continue;
+      bot.fireCooldown -= delta;
+      bot.aiTimer      -= delta;
+
+      // Find nearest enemy — raccoons prefer banana bots unless player is very close
+      let best = null, bestD = 9999;
+      for (const b of this.bots) {
+        if (!b.alive || b.faction === bot.faction) continue;
+        const d = Math.hypot(b.wx - bot.wx, b.wy - bot.wy);
+        if (d < bestD) { best = b; bestD = d; }
+      }
+      if (bot.faction === 'raccoon') {
+        // Only switch to targeting player if they are noticeably closer
+        const pd = Math.hypot(this.player.wx - bot.wx, this.player.wy - bot.wy);
+        if (pd < bestD * 0.65) {
+          best = { wx: this.player.wx, wy: this.player.wy, _isPlayer: true };
+          bestD = pd;
+        }
+      }
+
+      if (best) {
+        const dx = best.wx - bot.wx, dy = best.wy - bot.wy;
+        const dist = Math.hypot(dx, dy);
+        bot.angle = Math.atan2(dy, dx);
+
+        if (dist > 16) {
+          this._tryMove(bot, (dx / dist) * bot.speed * dt, (dy / dist) * bot.speed * dt);
+        } else if (dist > 9) {
+          this._tryMove(bot, (dx / dist) * bot.speed * 0.55 * dt, (dy / dist) * bot.speed * 0.55 * dt);
+        } else {
+          // Strafe laterally
+          if (bot.aiTimer <= 0) {
+            bot.strafeDir = Math.random() > 0.5 ? 1 : -1;
+            bot.aiTimer   = Phaser.Math.Between(700, 1800);
+          }
+          const px = -(dy / dist) * bot.strafeDir;
+          const py =  (dx / dist) * bot.strafeDir;
+          this._tryMove(bot, px * bot.speed * 0.42 * dt, py * bot.speed * 0.42 * dt);
+        }
+
+        if (dist < 13 && bot.fireCooldown <= 0) {
+          const w = WEAPONS[bot.weaponIdx];
+          bot.fireCooldown = w.fireRate + Phaser.Math.Between(-80, 180);
+          this._shootFrom(bot, bot.weaponIdx, bot.faction);
+        }
+      } else {
+        // Wander
+        if (bot.aiTimer <= 0) {
+          bot.wanderWx = 3 + Math.random() * (GRID - 6);
+          bot.wanderWy = 3 + Math.random() * (GRID - 6);
+          bot.aiTimer  = Phaser.Math.Between(2000, 5000);
+        }
+        const dx   = bot.wanderWx - bot.wx;
+        const dy   = bot.wanderWy - bot.wy;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 0.5) {
+          bot.angle = Math.atan2(dy, dx);
+          this._tryMove(bot, (dx / dist) * bot.speed * 0.38 * dt, (dy / dist) * bot.speed * 0.38 * dt);
+        }
+      }
+
+      this._updateBotSprite(bot);
+    }
+  }
+
+  _updateBotSprite(bot) {
+    const s = iso(bot.wx, bot.wy);
+    const d = isoDepth(bot.wx, bot.wy);
+    bot.sprite.setPosition(s.x, s.y - 20).setDepth(d + 10);
+    bot.sprite.setFlipX(Math.cos(bot.angle) < 0);
+    bot.shadow.setPosition(s.x, s.y - 4).setDepth(d - 1);
+    bot.ring.setPosition(s.x, s.y - 4).setDepth(d - 2);
+    const gx = s.x + Math.cos(bot.angle) * 12;
+    const gy = s.y - 28 + Math.sin(bot.angle) * 5;
+    bot.gunSpr.setPosition(gx, gy)
+      .setAngle(Phaser.Math.RadToDeg(bot.angle))
+      .setFlipY(Math.cos(bot.angle) < 0)
+      .setDepth(d + 11);
+    const pct = bot.hp / bot.maxHp;
+    bot.hpBg.setPosition(s.x, s.y - 38).setDepth(d + 150);
+    bot.hpBar.setPosition(s.x - 13, s.y - 38)
+      .setDisplaySize(26 * pct, 5)
+      .setFillStyle(pct > 0.5 ? 0x33cc33 : pct > 0.25 ? 0xffaa00 : 0xff2222)
+      .setDepth(d + 151);
+  }
+
+  // ── bullets ────────────────────────────────────────────────────────────────
+  _updateBullets(dt) {
+    for (let i = this.bullets.length - 1; i >= 0; i--) {
+      const b = this.bullets[i];
+      b.life -= dt;
+      b.wx += b.vx * dt;
+      b.wy += b.vy * dt;
+      const s = iso(b.wx, b.wy);
+      b.sprite.setPosition(s.x, s.y - 8).setDepth(isoDepth(b.wx, b.wy) + 25);
+
+      let hit = false;
+      for (const t of this.bots) {
+        if (!t.alive || t.faction === b.faction) continue;
+        if (Math.hypot(t.wx - b.wx, t.wy - b.wy) < 0.65) {
+          this._hitEntity(t, b.damage, b.faction);
+          if (b.splash > 0) {
+            for (const t2 of this.bots) {
+              if (t2 !== t && t2.alive && t2.faction !== b.faction &&
+                  Math.hypot(t2.wx - b.wx, t2.wy - b.wy) < b.splash) {
+                this._hitEntity(t2, b.damage * 0.5, b.faction);
+              }
+            }
+          }
+          // Peel splash can also hit player if raccoon fires it
+          if (b.faction === 'raccoon' && b.splash > 0 &&
+              Math.hypot(this.player.wx - b.wx, this.player.wy - b.wy) < b.splash) {
+            this.player.hp = Math.max(0, this.player.hp - b.damage * 0.5);
+            this.registry.set('health', this.player.hp);
+            if (this.player.hp <= 0) this._playerDied();
+          }
+          hit = true; break;
+        }
+      }
+
+      if (!hit && b.faction === 'raccoon') {
+        if (Math.hypot(this.player.wx - b.wx, this.player.wy - b.wy) < 0.55) {
+          // Projectile from bot also reduced
+          this.player.hp = Math.max(0, this.player.hp - b.damage * 0.25);
+          this.registry.set('health', this.player.hp);
+          this.cameras.main.shake(80, 0.004);
+          if (this.player.hp <= 0) this._playerDied();
+          hit = true;
+        }
+      }
+
+      if (hit || b.life <= 0 || this._treeAt(b.wx, b.wy) ||
+          b.wx < 0 || b.wx > GRID || b.wy < 0 || b.wy > GRID) {
+        b.sprite.destroy();
+        this.bullets.splice(i, 1);
+      }
+    }
+  }
+
+  // ── pickups ────────────────────────────────────────────────────────────────
+  _updatePickups() {
+    for (let i = this.pickups.length - 1; i >= 0; i--) {
+      const p = this.pickups[i];
+      p.bob += 0.07;
+      const s = iso(p.wx, p.wy);
+      p.sprite.setPosition(s.x, s.y - 8 + Math.sin(p.bob) * 3)
+        .setDepth(isoDepth(p.wx, p.wy) + 8);
+      if (Math.hypot(this.player.wx - p.wx, this.player.wy - p.wy) < 0.75) {
+        this.player.hp = Math.min(this.player.maxHp, this.player.hp + 28);
+        this.registry.set('health', this.player.hp);
+        p.sprite.destroy();
+        this.pickups.splice(i, 1);
+      }
+    }
+  }
+
+  // ── effects ────────────────────────────────────────────────────────────────
+  _updateEffects(dt) {
+    for (let i = this.effects.length - 1; i >= 0; i--) {
+      const e = this.effects[i];
+      e.life -= dt;
+      if (e.isExplosion) {
+        e.sprite.setAlpha(Math.max(0, e.life / 0.55));
+        e.sprite.setScale(0.28 + (1 - Math.max(0, e.life) / 0.55) * 0.32);
+      }
+      if (e.life <= 0) { e.sprite.destroy(); this.effects.splice(i, 1); }
+    }
+  }
+
+  // ── wave system ────────────────────────────────────────────────────────────
+  _waveCheck(delta) {
+    const alive = this.bots.filter(b => b.faction === 'raccoon' && b.alive).length;
+    if (alive === 0) {
+      this.waveTimer += delta;
+      if (this.waveTimer > 3200) { this.waveTimer = 0; this.waveNum++; this._spawnWave(); }
+    }
+  }
+
+  _spawnWave() {
+    const count = 8 + this.waveNum * 2;
+    for (let i = 0; i < count; i++) {
+      const r    = Math.random();
+      const type = this.waveNum >= 3 ? (r < 0.12 ? 'boss' : r < 0.38 ? 'armored' : 'normal') : 'normal';
+      const edge = Phaser.Math.Between(0, 3);
+      let wx, wy;
+      if (edge === 0) { wx = 1 + Math.random() * (GRID - 2); wy = 1; }
+      else if (edge === 1) { wx = GRID - 1.5; wy = 1 + Math.random() * (GRID - 2); }
+      else if (edge === 2) { wx = 1 + Math.random() * (GRID - 2); wy = GRID - 1.5; }
+      else { wx = 1; wy = 1 + Math.random() * (GRID - 2); }
+      this._spawnBot('raccoon', type, wx, wy);
+    }
+  }
+
+  // ── player death ───────────────────────────────────────────────────────────
+  _playerDied() {
+    this.player.lives--;
+    this.registry.set('lives', this.player.lives);
+    if (this.player.lives <= 0) { this.time.delayedCall(1400, () => this.scene.restart()); return; }
+    this.player.hp = this.player.maxHp;
+    this.player.wx = GRID / 2; this.player.wy = GRID / 2;
+    this.registry.set('health', this.player.hp);
+    this.cameras.main.flash(500, 255, 0, 0);
+  }
+
+  // ── weapon controls ────────────────────────────────────────────────────────
+  switchWeapon(idx) {
+    this.currentWeapon = idx;
+    this.reloading     = false;
+    this.scoped        = false;
+    this.scopeMode     = 0;
+    const w = WEAPONS[idx];
+    this.ammo = w.ammo !== undefined ? w.maxAmmo : -1;
+    this.registry.set('weapon',    idx);
+    this.registry.set('ammo',      this.ammo === -1 ? '∞' : this.ammo);
+    this.registry.set('reloading', false);
+    this.registry.set('scopeMode', 0);
+    this.cameras.main.setZoom(1);
+  }
+
+  toggleScope() {
+    if (this.currentWeapon !== 2) return;
+    this.scoped    = !this.scoped;
+    this.scopeMode = this.scoped ? 2 : 0;
+    this.registry.set('scopeMode', this.scopeMode);
+    this.tweens.add({ targets: this.cameras.main, zoom: this.scoped ? 2.4 : 1, duration: 220, ease: 'Quad.easeOut' });
+  }
+
+  _startReload() {
+    const w = WEAPONS[this.currentWeapon];
+    if (this.reloading || w.ammo === undefined || this.ammo === w.maxAmmo) return;
+    this.reloading = true;
+    this.registry.set('reloading', true);
+    this.time.delayedCall(w.reloadTime, () => {
+      this.reloading = false;
+      this.ammo = w.maxAmmo;
+      this.registry.set('ammo', this.ammo);
+      this.registry.set('reloading', false);
+    });
+  }
+
+  _syncAll() {
+    this.registry.set('score',     this.player.score);
+    this.registry.set('health',    this.player.hp);
+    this.registry.set('lives',     this.player.lives);
+    this.registry.set('weapon',    this.currentWeapon);
+    this.registry.set('ammo',      this.ammo === -1 ? '∞' : this.ammo);
+    this.registry.set('reloading', false);
+    this.registry.set('scopeMode', 0);
+  }
+
+  // ── touch joystick ─────────────────────────────────────────────────────────
+  _setupTouchJoy() {
+    const JX = 110, JY = 478, JR = 50;
+    this.input.on('pointerdown', p => {
+      if (p.x < 200 && p.y > 360) {
+        this.joystickActive    = true;
+        this.joystickPointerId = p.id;
+        this._calcJoy(p, JX, JY, JR);
+      }
+    });
+    this.input.on('pointermove', p => {
+      if (this.joystickActive && p.id === this.joystickPointerId)
+        this._calcJoy(p, JX, JY, JR);
+    });
+    this.input.on('pointerup', p => {
+      if (p.id === this.joystickPointerId) {
+        this.joystickActive = false;
+        this.joystickDir    = { x: 0, y: 0 };
+      }
+    });
+  }
+
+  _calcJoy(p, cx, cy, r) {
+    const dx = p.x - cx, dy = p.y - cy;
+    const d  = Math.min(Math.hypot(dx, dy), r);
+    const a  = Math.atan2(dy, dx);
+    this.joystickDir = { x: Math.cos(a) * (d / r), y: Math.sin(a) * (d / r) };
+  }
+}
