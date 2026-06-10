@@ -19,7 +19,8 @@ export class BootScene extends Phaser.Scene {
     this._joystick();
     this._weaponModels();
     this._botGun();
-    this.scene.start('GameScene');
+    this._coin();
+    this.scene.start('MenuScene');
   }
 
   _g() { return this.make.graphics({ x: 0, y: 0, add: false }); }
@@ -234,6 +235,15 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0x555555, 1); g.fillRect(14, 1, 8, 4);
     g.fillStyle(0x222222, 1); g.fillRect(6, 9, 6, 8);
     g.generateTexture('bot_gun', 24, 16); g.destroy();
+  }
+
+  _coin() {
+    const g = this._g();
+    g.fillStyle(0xffd700, 1); g.fillCircle(10, 10, 10);
+    g.fillStyle(0xffaa00, 1); g.fillCircle(10, 10, 7);
+    g.fillStyle(0xffe566, 1); g.fillCircle(8, 8, 4);
+    g.lineStyle(2, 0xcc8800, 1); g.strokeCircle(10, 10, 10);
+    g.generateTexture('coin', 20, 20); g.destroy();
   }
 
   _weaponModels() {

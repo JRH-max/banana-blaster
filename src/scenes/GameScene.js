@@ -33,7 +33,7 @@ export class GameScene extends Phaser.Scene {
     this._drawTrees();
 
     // Player
-    this.player = { wx: GRID / 2, wy: GRID / 2, angle: 0, hp: 300, maxHp: 300, lives: 3, score: 0 };
+    this.player = { wx: GRID / 2, wy: GRID / 2, angle: 0, hp: 300, maxHp: 300, lives: 3, score: 0, coins: 0 };
     const ps = iso(this.player.wx, this.player.wy);
     this.playerSpr    = this.add.image(ps.x, ps.y - 22, 'banana').setOrigin(0.5, 1).setScale(0.55).setDepth(9000);
     this.playerGun    = this.add.image(ps.x + 14, ps.y - 28, 'bot_gun').setOrigin(0, 0.5).setScale(1.2).setDepth(9001);
@@ -57,6 +57,12 @@ export class GameScene extends Phaser.Scene {
     this.fireCooldown  = 0;
     this.isFiring      = false;
     this.reloading     = false;
+    this.shopOpen      = false;
+    this.weaponUpgrades = [
+      { damage: 0, speed: 0, ammo: 0 },
+      { damage: 0, speed: 0, ammo: 0 },
+      { damage: 0, speed: 0, ammo: 0 },
+    ];
 
     // Camera — manual behind-character follow (no startFollow)
     this.cameras.main.setBounds(
@@ -85,6 +91,7 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-ONE',   () => this.switchWeapon(0));
     this.input.keyboard.on('keydown-TWO',   () => this.switchWeapon(1));
     this.input.keyboard.on('keydown-THREE', () => this.switchWeapon(2));
+    this.input.keyboard.on('keydown-U', () => this.toggleShop());
     this.input.on('pointerdown', p => { if (p.x > 200) this.isFiring = true; });
     this.input.on('pointerup',   () => { this.isFiring = false; });
 
@@ -253,7 +260,21 @@ export class GameScene extends Phaser.Scene {
   }
 
   _aimPlayer() {
-    // Auto-aim: face nearest raccoon
+    // Primary: aim at mouse / pointer (Fortnite-style OTS aiming)
+    const ptr = this.input.activePointer;
+    if (ptr && (ptr.x > 0 || ptr.y > 0)) {
+      const wp = this.cameras.main.getWorldPoint(ptr.x, ptr.y);
+      // Inverse iso transform: wx = sx/TW + sy/TH, wy = sy/TH - sx/TW
+      const targetWx = wp.x / TW + wp.y / TH;
+      const targetWy = wp.y / TH - wp.x / TW;
+      const dx = targetWx - this.player.wx;
+      const dy = targetWy - this.player.wy;
+      if (Math.hypot(dx, dy) > 0.5) {
+        this.player.angle = Math.atan2(dy, dx);
+        return;
+      }
+    }
+    // Fallback: auto-aim at nearest raccoon
     let best = null, bestD = 9999;
     for (const b of this.bots) {
       if (!b.alive || b.faction !== 'raccoon') continue;
@@ -286,17 +307,20 @@ export class GameScene extends Phaser.Scene {
     const justFire = Phaser.Input.Keyboard.JustDown(this.keys.SPACE);
     const wantFire = this.isFiring || (w.auto && this.keys.SPACE.isDown) || (!w.auto && justFire);
     if (!wantFire || this.fireCooldown > 0) return;
-    this.fireCooldown = w.fireRate;
+    const up = this.weaponUpgrades[this.currentWeapon];
+    this.fireCooldown = w.fireRate / (1 + up.speed * 0.2);
     if (w.ammo !== undefined) {
       if (this.ammo <= 0) { this._startReload(); return; }
       this.ammo--;
       this.registry.set('ammo', this.ammo);
     }
-    this._shootFrom(this.player, this.currentWeapon, 'banana');
+    const effectiveDamage = Math.round(w.damage * (1 + up.damage * 0.25));
+    this._shootFrom(this.player, this.currentWeapon, 'banana', effectiveDamage);
   }
 
-  _shootFrom(shooter, weaponIdx, faction) {
+  _shootFrom(shooter, weaponIdx, faction, overrideDamage = null) {
     const w     = WEAPONS[weaponIdx];
+    const damage = overrideDamage !== null ? overrideDamage : w.damage;
     const angle = shooter.angle;
     const s     = iso(shooter.wx, shooter.wy);
 
@@ -306,14 +330,14 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(80, () => flash.destroy());
 
     if (w.type === 'hitscan') {
-      this._hitscanShot(shooter, angle, w, faction);
+      this._hitscanShot(shooter, angle, w, faction, damage);
     } else {
       this.bullets.push({
         wx: shooter.wx + Math.cos(angle) * 0.7,
         wy: shooter.wy + Math.sin(angle) * 0.7,
         vx: Math.cos(angle) * w.speed,
         vy: Math.sin(angle) * w.speed,
-        damage: w.damage, faction,
+        damage, faction,
         splash: w.splash ?? 0,
         life: 3.5,
         sprite: this.add.image(0, 0, 'peel').setScale(0.30).setDepth(5000),
@@ -321,7 +345,7 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  _hitscanShot(shooter, angle, w, faction) {
+  _hitscanShot(shooter, angle, w, faction, damage) {
     const enemies = [
       ...this.bots.filter(b => b.alive && b.faction !== faction),
       ...(faction === 'raccoon' ? [{ wx: this.player.wx, wy: this.player.wy, _isPlayer: true }] : []),
@@ -336,13 +360,13 @@ export class GameScene extends Phaser.Scene {
     if (hit) {
       if (hit._isPlayer) {
         // Bots do significantly less damage to the player
-        const dmg = w.damage * 0.22 * (0.7 + Math.random() * 0.6);
+        const dmg = damage * 0.22 * (0.7 + Math.random() * 0.6);
         this.player.hp = Math.max(0, this.player.hp - dmg);
         this.registry.set('health', this.player.hp);
         this.cameras.main.shake(80, 0.004);
         if (this.player.hp <= 0) this._playerDied();
       } else {
-        this._hitEntity(hit, w.damage, faction);
+        this._hitEntity(hit, damage, faction);
       }
     }
     this._spawnTrail(shooter, angle, hitDist < 9999 ? hitDist : 22, faction);
@@ -375,12 +399,28 @@ export class GameScene extends Phaser.Scene {
     const exp = this.add.image(s.x, s.y - 20, 'explosion').setScale(0.50).setDepth(9999);
     this.effects.push({ sprite: exp, life: 0.55, isExplosion: true });
 
+    // Health pickup
     this.pickups.push({
+      type: 'health',
       wx: bot.wx + Phaser.Math.FloatBetween(-0.4, 0.4),
       wy: bot.wy + Phaser.Math.FloatBetween(-0.4, 0.4),
       sprite: this.add.image(s.x, s.y - 10, 'pickup').setScale(0.62).setDepth(isoDepth(bot.wx, bot.wy) + 8),
       bob: Math.random() * Math.PI * 2,
     });
+    // Drop 10 coins scattered around
+    const coinValues = [4, 3, 3];
+    for (let c = 0; c < 3; c++) {
+      const cx = bot.wx + Phaser.Math.FloatBetween(-1.8, 1.8);
+      const cy = bot.wy + Phaser.Math.FloatBetween(-1.8, 1.8);
+      const cs = iso(cx, cy);
+      this.pickups.push({
+        type: 'coin',
+        value: coinValues[c],
+        wx: cx, wy: cy,
+        sprite: this.add.image(cs.x, cs.y - 10, 'coin').setScale(0.95).setDepth(isoDepth(cx, cy) + 8),
+        bob: Math.random() * Math.PI * 2,
+      });
+    }
 
     if (attackerFaction === 'banana' && bot.faction === 'raccoon') {
       const pts = bot.type === 'boss' ? 500 : bot.type === 'armored' ? 200 : 100;
@@ -552,8 +592,13 @@ export class GameScene extends Phaser.Scene {
       p.sprite.setPosition(s.x, s.y - 8 + Math.sin(p.bob) * 3)
         .setDepth(isoDepth(p.wx, p.wy) + 8);
       if (Math.hypot(this.player.wx - p.wx, this.player.wy - p.wy) < 0.75) {
-        this.player.hp = Math.min(this.player.maxHp, this.player.hp + 28);
-        this.registry.set('health', this.player.hp);
+        if (p.type === 'coin') {
+          this.player.coins += p.value;
+          this.registry.set('coins', this.player.coins);
+        } else {
+          this.player.hp = Math.min(this.player.maxHp, this.player.hp + 28);
+          this.registry.set('health', this.player.hp);
+        }
         p.sprite.destroy();
         this.pickups.splice(i, 1);
       }
@@ -609,13 +654,37 @@ export class GameScene extends Phaser.Scene {
   }
 
   // ── weapon controls ────────────────────────────────────────────────────────
+  _getEffectiveMaxAmmo(idx) {
+    const w = WEAPONS[idx];
+    if (w.ammo === undefined) return -1;
+    return w.maxAmmo + this.weaponUpgrades[idx].ammo * 10;
+  }
+
+  toggleShop() {
+    this.shopOpen = !this.shopOpen;
+    this.registry.set('shopOpen', this.shopOpen);
+    if (this.shopOpen) this.scene.pause();
+  }
+
+  buyUpgrade(weaponIdx, type) {
+    const up = this.weaponUpgrades[weaponIdx];
+    const level = up[type];
+    if (level >= 3) return;
+    const costs = { damage: [30, 60, 100], speed: [50, 90, 140], ammo: [40, 70, 110] };
+    const cost = costs[type][level];
+    if (this.player.coins < cost) return;
+    this.player.coins -= cost;
+    up[type]++;
+    this.registry.set('coins', this.player.coins);
+  }
+
   switchWeapon(idx) {
     this.currentWeapon = idx;
     this.reloading     = false;
     this.scoped        = false;
     this.scopeMode     = 0;
     const w = WEAPONS[idx];
-    this.ammo = w.ammo !== undefined ? w.maxAmmo : -1;
+    this.ammo = w.ammo !== undefined ? this._getEffectiveMaxAmmo(idx) : -1;
     this.registry.set('weapon',    idx);
     this.registry.set('ammo',      this.ammo === -1 ? '∞' : this.ammo);
     this.registry.set('reloading', false);
@@ -633,12 +702,13 @@ export class GameScene extends Phaser.Scene {
 
   _startReload() {
     const w = WEAPONS[this.currentWeapon];
-    if (this.reloading || w.ammo === undefined || this.ammo === w.maxAmmo) return;
+    const effMax = this._getEffectiveMaxAmmo(this.currentWeapon);
+    if (this.reloading || w.ammo === undefined || this.ammo === effMax) return;
     this.reloading = true;
     this.registry.set('reloading', true);
     this.time.delayedCall(w.reloadTime, () => {
       this.reloading = false;
-      this.ammo = w.maxAmmo;
+      this.ammo = this._getEffectiveMaxAmmo(this.currentWeapon);
       this.registry.set('ammo', this.ammo);
       this.registry.set('reloading', false);
     });
@@ -652,6 +722,8 @@ export class GameScene extends Phaser.Scene {
     this.registry.set('ammo',      this.ammo === -1 ? '∞' : this.ammo);
     this.registry.set('reloading', false);
     this.registry.set('scopeMode', 0);
+    this.registry.set('coins',     this.player.coins);
+    this.registry.set('shopOpen',  false);
   }
 
   // ── touch joystick ─────────────────────────────────────────────────────────

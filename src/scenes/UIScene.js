@@ -8,6 +8,12 @@ export class UIScene extends Phaser.Scene {
   constructor() { super('UIScene'); }
 
   create() {
+    // ── Coin bank (top right) ──────────────────────────────────────────────
+    this.coinsText = this.add.text(SW - 14, 10, '💰 0', {
+      fontSize: '20px', fontFamily: 'Arial Black', color: '#ffd700',
+      stroke: '#000000', strokeThickness: 4, align: 'right',
+    }).setOrigin(1, 0).setDepth(20);
+
     // ── Score ──────────────────────────────────────────────────────────────
     this.scoreText = this.add.text(12, 10, 'Score: 0', {
       fontSize: '20px', fontFamily: 'Arial Black', color: '#e8e8e8',
@@ -91,9 +97,21 @@ export class UIScene extends Phaser.Scene {
     this.add.text(SW - 70, SH - 52, 'RELOAD [R]', { fontSize: '10px', fontFamily: 'Arial Black', color: '#aaaaaa', stroke: '#000', strokeThickness: 2 }).setOrigin(0.5).setDepth(21);
     reloadBtn.on('pointerdown', () => { const gs = this.scene.get('GameScene'); if (gs) gs._startReload(); });
 
+    // ── SHOP button ────────────────────────────────────────────────────────
+    const shopBtn = this.add.rectangle(SW - 70, SH - 212, 110, 32, 0x886600, 0.7)
+      .setStrokeStyle(2, 0xffcc00, 0.7).setInteractive().setDepth(20);
+    this.add.text(SW - 70, SH - 212, 'SHOP [U]', {
+      fontSize: '12px', fontFamily: 'Arial Black', color: '#ffcc00',
+      stroke: '#000000', strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(21);
+    shopBtn.on('pointerdown', () => { const gs = this.scene.get('GameScene'); if (gs) gs.toggleShop(); });
+
     // ── Virtual joystick ───────────────────────────────────────────────────
     this.joyBase  = this.add.image(110, 478, 'joy_base').setAlpha(0.28).setDepth(20);
     this.joyThumb = this.add.image(110, 478, 'joy_thumb').setAlpha(0.45).setDepth(21);
+
+    // ── Shop overlay ───────────────────────────────────────────────────────
+    this._buildShop();
 
     this.registry.events.on('changedata', this._onData, this);
     this._highlightWeapon(0);
@@ -213,8 +231,13 @@ export class UIScene extends Phaser.Scene {
 
   _onData(parent, key, value) {
     if (key === 'score') this.scoreText.setText(`Score: ${value}`);
+    if (key === 'coins') this.coinsText.setText('💰 ' + value);
+    if (key === 'shopOpen') {
+      this._setShopVisible(!!value);
+      if (value) this._refreshShop();
+    }
     if (key === 'health') {
-      const pct = value / 100;
+      const pct = value / 300;
       this.healthBar.setDisplaySize(Math.max(0, 200 * pct), 14);
       this.healthBar.setFillStyle(pct > 0.5 ? 0x33cc33 : pct > 0.25 ? 0xffaa00 : 0xff2222);
     }
@@ -233,6 +256,159 @@ export class UIScene extends Phaser.Scene {
       this.scopeOverlay.setVisible(mode === 2);
       this.ironOverlay.setVisible(mode === 1);
       this._drawCrosshair(mode);
+    }
+  }
+
+  _buildShop() {
+    const SW = 800, SH = 600;
+    const PW = 612, PH = 444;
+    const PX = SW / 2, PY = SH / 2;
+    this.shopElements = [];
+    this.shopBuyBtns  = [];
+
+    // Dim overlay
+    const ov = this.add.rectangle(PX, PY, SW, SH, 0x000000, 0.68).setDepth(48).setInteractive();
+    this.shopElements.push(ov);
+
+    // Panel
+    const panel = this.add.rectangle(PX, PY, PW, PH, 0x111128).setDepth(49)
+      .setStrokeStyle(2, 0x5555cc, 0.9);
+    this.shopElements.push(panel);
+
+    // Title
+    const titleTxt = this.add.text(PX - PW / 2 + 16, PY - PH / 2 + 20, '🛒  WEAPON SHOP', {
+      fontSize: '19px', fontFamily: 'Arial Black', color: '#ffdd44',
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(0, 0.5).setDepth(50);
+    this.shopElements.push(titleTxt);
+
+    this.shopCoinText = this.add.text(PX + PW / 2 - 14, PY - PH / 2 + 20, '💰 0', {
+      fontSize: '18px', fontFamily: 'Arial Black', color: '#ffd700',
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(1, 0.5).setDepth(50);
+    this.shopElements.push(this.shopCoinText);
+
+    // Header divider
+    const hdiv = this.add.graphics().setDepth(50);
+    hdiv.lineStyle(1, 0x5555aa, 0.6);
+    hdiv.lineBetween(PX - PW / 2 + 10, PY - PH / 2 + 36, PX + PW / 2 - 10, PY - PH / 2 + 36);
+    this.shopElements.push(hdiv);
+
+    const WNAMES  = ['Peel Launcher', 'Auto Rifle', 'Sniper'];
+    const WCOLS   = ['#c8960a', '#4caf50', '#2196f3'];
+    const UPGRADES = [
+      { key: 'damage', label: 'DAMAGE',    costs: [30, 60, 100] },
+      { key: 'speed',  label: 'FIRE RATE', costs: [50, 90, 140] },
+      { key: 'ammo',   label: 'AMMO',      costs: [40, 70, 110] },
+    ];
+
+    const startY  = PY - PH / 2 + 52;
+    const secH    = 124;
+    const lx      = PX - PW / 2 + 18;
+
+    for (let wi = 0; wi < 3; wi++) {
+      const secY = startY + wi * secH;
+
+      // Weapon name
+      const wt = this.add.text(lx, secY + 10, WNAMES[wi], {
+        fontSize: '13px', fontFamily: 'Arial Black', color: WCOLS[wi],
+        stroke: '#000', strokeThickness: 2,
+      }).setOrigin(0, 0.5).setDepth(50);
+      this.shopElements.push(wt);
+
+      // Section divider (between weapons)
+      if (wi < 2) {
+        const sd = this.add.graphics().setDepth(50);
+        sd.lineStyle(1, 0x333355, 0.7);
+        sd.lineBetween(lx, secY + secH - 2, PX + PW / 2 - 18, secY + secH - 2);
+        this.shopElements.push(sd);
+      }
+
+      for (let ui = 0; ui < 3; ui++) {
+        const upg  = UPGRADES[ui];
+        const rowY = secY + 32 + ui * 28;
+
+        const lbl = this.add.text(lx + 6, rowY, upg.label, {
+          fontSize: '11px', fontFamily: 'Arial Black', color: '#999999',
+          stroke: '#000', strokeThickness: 2,
+        }).setOrigin(0, 0.5).setDepth(50);
+        this.shopElements.push(lbl);
+
+        const lvlTxt = this.add.text(PX - 60, rowY, 'Lv 0/3', {
+          fontSize: '11px', fontFamily: 'Arial', color: '#888888',
+          stroke: '#000', strokeThickness: 2,
+        }).setOrigin(0.5, 0.5).setDepth(50);
+        this.shopElements.push(lvlTxt);
+
+        const costTxt = this.add.text(PX + 60, rowY, '', {
+          fontSize: '12px', fontFamily: 'Arial Black', color: '#ffd700',
+          stroke: '#000', strokeThickness: 2,
+        }).setOrigin(0.5, 0.5).setDepth(50);
+        this.shopElements.push(costTxt);
+
+        const buyBtn = this.add.rectangle(PX + PW / 2 - 52, rowY, 84, 22, 0x1a5c1a, 0.9)
+          .setStrokeStyle(1, 0x88ee88, 0.6).setInteractive().setDepth(50);
+        const buyTxt = this.add.text(PX + PW / 2 - 52, rowY, 'BUY', {
+          fontSize: '12px', fontFamily: 'Arial Black', color: '#88ff88',
+          stroke: '#000', strokeThickness: 2,
+        }).setOrigin(0.5).setDepth(51);
+        this.shopElements.push(buyBtn, buyTxt);
+
+        buyBtn.on('pointerover', () => buyBtn.setFillStyle(0x2a8c2a));
+        buyBtn.on('pointerout',  () => buyBtn.setFillStyle(0x1a5c1a));
+        buyBtn.on('pointerdown', () => {
+          const gs = this.scene.get('GameScene');
+          if (gs) gs.buyUpgrade(wi, upg.key);
+          this._refreshShop();
+        });
+
+        this.shopBuyBtns.push({ weaponIdx: wi, type: upg.key, buyBtn, buyTxt, costTxt, lvlTxt });
+      }
+    }
+
+    // Close button
+    const closeBtn = this.add.rectangle(PX + PW / 2 - 62, PY + PH / 2 - 22, 104, 32, 0x661111, 0.85)
+      .setStrokeStyle(2, 0xff6666, 0.7).setInteractive().setDepth(50);
+    const closeTxt = this.add.text(PX + PW / 2 - 62, PY + PH / 2 - 22, '✕  CLOSE', {
+      fontSize: '14px', fontFamily: 'Arial Black', color: '#ff9999',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(51);
+    closeBtn.on('pointerover', () => closeBtn.setFillStyle(0x992222));
+    closeBtn.on('pointerout',  () => closeBtn.setFillStyle(0x661111));
+    closeBtn.on('pointerdown', () => {
+      const gs = this.scene.get('GameScene');
+      if (gs) { gs.shopOpen = false; gs.registry.set('shopOpen', false); }
+      this.scene.resume('GameScene');
+    });
+    this.shopElements.push(closeBtn, closeTxt);
+
+    this._setShopVisible(false);
+  }
+
+  _setShopVisible(visible) {
+    for (const el of this.shopElements) el.setVisible(visible);
+  }
+
+  _refreshShop() {
+    const gs = this.scene.get('GameScene');
+    if (!gs) return;
+    const coins    = gs.player ? gs.player.coins : 0;
+    const upgrades = gs.weaponUpgrades || [];
+    if (this.shopCoinText) this.shopCoinText.setText('💰 ' + coins);
+
+    const COSTS = { damage: [30,60,100], speed: [50,90,140], ammo: [40,70,110] };
+
+    for (const e of this.shopBuyBtns) {
+      const up    = upgrades[e.weaponIdx] || { damage: 0, speed: 0, ammo: 0 };
+      const level = up[e.type] || 0;
+      const maxed = level >= 3;
+      const cost  = maxed ? 0 : COSTS[e.type][level];
+      const canBuy = !maxed && coins >= cost;
+
+      e.lvlTxt.setText(`Lv ${level}/3`).setColor(level >= 3 ? '#ffd700' : '#888888');
+      e.costTxt.setText(maxed ? 'MAX' : `💰${cost}`).setColor(maxed ? '#666666' : (canBuy ? '#ffd700' : '#ff5555'));
+      e.buyBtn.setFillStyle(maxed ? 0x333333 : (canBuy ? 0x1a5c1a : 0x4a1111), 0.9);
+      e.buyTxt.setText(maxed ? '——' : 'BUY').setColor(maxed ? '#555555' : (canBuy ? '#88ff88' : '#ff7777'));
     }
   }
 
