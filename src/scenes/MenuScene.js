@@ -16,10 +16,10 @@ function saveUnlocked(arr) { writeSave({ ...loadSave(), unlocked: arr }); }
 const SW = 800, SH = 600;
 
 const CHARACTERS = [
-  { key: 'banana',       name: 'Banana',    subtitle: '(Default)',  price: 0,    ability: 'PEEL TRAP'     },
-  { key: 'sloth_pirate', name: 'Sloth',     subtitle: 'Pirate',     price: 200,  ability: 'CANNONBALL'    },
-  { key: 'rock_ninja',   name: 'Rock',      subtitle: 'Ninja',      price: 500,  ability: 'SHURIKEN STORM'},
-  { key: 'trash_can',    name: 'Trash Can', subtitle: '',           price: 1000, ability: 'TRASH WAVE'    },
+  { key: 'banana',       name: 'Banana',    subtitle: '(Default)',  price: 0,    ability: 'PEEL TRAP',      rarity: 'STARTING FIGHTER', rarityColor: '#aaaaaa' },
+  { key: 'sloth_pirate', name: 'Sloth',     subtitle: 'Pirate',     price: 200,  ability: 'CANNONBALL',     rarity: 'RARE',             rarityColor: '#4488ff' },
+  { key: 'rock_ninja',   name: 'Rock',      subtitle: 'Ninja',      price: 500,  ability: 'SHURIKEN STORM', rarity: 'EPIC',             rarityColor: '#aa44ff' },
+  { key: 'trash_can',    name: 'Trash Can', subtitle: '',           price: 1000, ability: 'TRASH WAVE',     rarity: 'MYTHIC',           rarityColor: '#ff8800' },
 ];
 
 const WEAPON_NAMES  = ['Peel Launcher', 'Auto Rifle', 'Sniper'];
@@ -196,6 +196,14 @@ export class MenuScene extends Phaser.Scene {
       const border = add(this.add.rectangle(bx, BOX_Y, BOX_W, BOX_H, 0x000000, 0)
         .setStrokeStyle(4, 0xffd700, 1).setDepth(12));
       this.charBoxBorders.push({ key: ch.key, border, bg });
+
+      // Rarity label (above sprite)
+      add(this.add.rectangle(bx, BOX_Y - 142, BOX_W - 16, 20, 0x000000, 0.55)
+        .setStrokeStyle(1, Phaser.Display.Color.HexStringToColor(ch.rarityColor.slice(1)).color, 0.7).setDepth(12));
+      add(this.add.text(bx, BOX_Y - 142, ch.rarity, {
+        fontSize: '10px', fontFamily: 'Arial Black', color: ch.rarityColor,
+        stroke: '#000000', strokeThickness: 2,
+      }).setOrigin(0.5).setDepth(13));
 
       // Character sprite
       const spr = add(this.add.image(bx, BOX_Y - 65, ch.key)
