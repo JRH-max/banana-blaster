@@ -23,6 +23,8 @@ export class BootScene extends Phaser.Scene {
     this._slothPirate();
     this._rockNinja();
     this._trashCan();
+    this._shuriken();
+    this._cannonball();
     this.scene.start('MenuScene');
   }
 
@@ -627,5 +629,33 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xcc4422,0.9); g.fillEllipse(cx-10,cy-18,7,9);
     g.fillStyle(0xff6644,0.5); g.fillEllipse(cx-11,cy-19,4,5);
     g.generateTexture('trash_can', 44, 60); g.destroy();
+  }
+
+  // ── Shuriken (Rock Ninja special) ──────────────────────────────────────────
+  _shuriken() {
+    const g = this._g();
+    // Cross blades
+    g.fillStyle(0x999999, 1); g.fillRect(5, 0, 6, 16); g.fillRect(0, 5, 16, 6);
+    // Diagonal blade points
+    g.fillStyle(0x888888, 0.9);
+    g.fillRect(2, 2, 4, 4); g.fillRect(10, 2, 4, 4);
+    g.fillRect(2, 10, 4, 4); g.fillRect(10, 10, 4, 4);
+    // Dark center
+    g.fillStyle(0x444444, 1); g.fillCircle(8, 8, 3);
+    // Shine
+    g.fillStyle(0xdddddd, 0.7); g.fillRect(6, 1, 2, 2); g.fillRect(1, 7, 2, 2);
+    g.generateTexture('shuriken', 16, 16); g.destroy();
+  }
+
+  // ── Cannonball (Sloth Pirate special) ──────────────────────────────────────
+  _cannonball() {
+    const g = this._g();
+    // Base sphere
+    g.fillStyle(0x1a1a1a, 1); g.fillCircle(11, 11, 11);
+    g.fillStyle(0x333333, 0.85); g.fillCircle(11, 11, 9);
+    g.fillStyle(0x555555, 0.6); g.fillCircle(9, 9, 6);
+    g.fillStyle(0x888888, 0.6); g.fillCircle(7, 7, 3);
+    g.fillStyle(0xcccccc, 0.5); g.fillCircle(6, 6, 1.5);
+    g.generateTexture('cannonball', 22, 22); g.destroy();
   }
 }

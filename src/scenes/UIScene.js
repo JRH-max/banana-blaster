@@ -97,6 +97,23 @@ export class UIScene extends Phaser.Scene {
     this.add.text(SW - 70, SH - 52, 'RELOAD [R]', { fontSize: '10px', fontFamily: 'Arial Black', color: '#aaaaaa', stroke: '#000', strokeThickness: 2 }).setOrigin(0.5).setDepth(21);
     reloadBtn.on('pointerdown', () => { const gs = this.scene.get('GameScene'); if (gs) gs._startReload(); });
 
+    // ── SPECIAL ability button ─────────────────────────────────────────────
+    this.specBg = this.add.rectangle(SW - 70, SH - 268, 110, 46, 0x003322, 0.75)
+      .setStrokeStyle(2, 0x44ff88, 0.8).setInteractive().setDepth(20);
+    this.specNameTxt = this.add.text(SW - 70, SH - 274, 'SPECIAL', {
+      fontSize: '10px', fontFamily: 'Arial Black', color: '#55ffaa',
+      stroke: '#000000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(21);
+    this.add.text(SW - 70, SH - 261, '[E]', {
+      fontSize: '10px', fontFamily: 'Arial', color: '#338855',
+      stroke: '#000000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(21);
+    // Cooldown track + bar
+    this.add.rectangle(SW - 70, SH - 250, 104, 5, 0x001108, 0.95).setOrigin(0.5).setDepth(21);
+    this.specCDBar = this.add.rectangle(SW - 123, SH - 250, 104, 5, 0x44ff88, 1)
+      .setOrigin(0, 0.5).setDepth(22);
+    this.specBg.on('pointerdown', () => { const gs = this.scene.get('GameScene'); if (gs) gs._useSpecial(); });
+
     // ── SHOP button ────────────────────────────────────────────────────────
     const shopBtn = this.add.rectangle(SW - 70, SH - 212, 110, 32, 0x886600, 0.7)
       .setStrokeStyle(2, 0xffcc00, 0.7).setInteractive().setDepth(20);
@@ -227,6 +244,14 @@ export class UIScene extends Phaser.Scene {
       this.joyThumb.setPosition(110, 478);
       this.joyBase.setAlpha(0.22);
     }
+    // Update special ability cooldown bar
+    if (this.specCDBar && gs.specialMaxCD) {
+      const pct    = 1 - (gs.specialCD / gs.specialMaxCD);   // 0=just used, 1=ready
+      const ready  = gs.specialCD <= 0;
+      const barW   = Math.max(0, 104 * pct);
+      this.specCDBar.setDisplaySize(barW, 5).setFillStyle(ready ? 0x44ff88 : 0xffaa00);
+      this.specBg.setStrokeStyle(2, ready ? 0x44ff88 : 0xffaa00, ready ? 0.9 : 0.55);
+    }
   }
 
   _onData(parent, key, value) {
@@ -256,6 +281,9 @@ export class UIScene extends Phaser.Scene {
       this.scopeOverlay.setVisible(mode === 2);
       this.ironOverlay.setVisible(mode === 1);
       this._drawCrosshair(mode);
+    }
+    if (key === 'specialName' && this.specNameTxt) {
+      this.specNameTxt.setText(value);
     }
   }
 

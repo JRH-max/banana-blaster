@@ -7,17 +7,19 @@ function writeSave(data)   { try { localStorage.setItem(SAVE_KEY, JSON.stringify
 function getSavedCoins()   { return loadSave().coins     || 0; }
 function getSavedUpgrades(){ return loadSave().upgrades  || [[0,0,0],[0,0,0],[0,0,0]]; }
 function getSavedChar()    { return loadSave().character || 'banana'; }
+function getSavedUnlocked(){ return loadSave().unlocked  || ['banana']; }
 function saveCoins(c)      { writeSave({ ...loadSave(), coins: c }); }
 function saveUpgrades(ups) { writeSave({ ...loadSave(), upgrades: ups }); }
 function saveCharacter(k)  { writeSave({ ...loadSave(), character: k }); }
+function saveUnlocked(arr) { writeSave({ ...loadSave(), unlocked: arr }); }
 
 const SW = 800, SH = 600;
 
 const CHARACTERS = [
-  { key: 'banana',       name: 'Banana',       subtitle: '(Default)'      },
-  { key: 'sloth_pirate', name: 'Sloth',         subtitle: 'Pirate'        },
-  { key: 'rock_ninja',   name: 'Rock',          subtitle: 'Ninja'         },
-  { key: 'trash_can',    name: 'Trash Can',     subtitle: ''              },
+  { key: 'banana',       name: 'Banana',    subtitle: '(Default)',  price: 0,    ability: 'PEEL TRAP'    },
+  { key: 'sloth_pirate', name: 'Sloth',     subtitle: 'Pirate',     price: 200,  ability: 'CANNONBALL'   },
+  { key: 'rock_ninja',   name: 'Rock',      subtitle: 'Ninja',      price: 500,  ability: 'SHURIKEN STORM'},
+  { key: 'trash_can',    name: 'Trash Can', subtitle: '',           price: 1000, ability: 'TRASH WAVE'   },
 ];
 
 const WEAPON_NAMES  = ['Peel Launcher', 'Auto Rifle', 'Sniper'];
@@ -36,8 +38,9 @@ export class MenuScene extends Phaser.Scene {
     this.add.rectangle(SW / 2, SH / 2, SW, SH, 0x0d1f08);
 
     // ── Build all views ────────────────────────────────────────────────────
-    this.menuItems = [];
-    this.shopItems = [];
+    this.menuItems    = [];
+    this.shopItems    = [];
+    this.charBoxItems = [];
     this._buildMenu();
     this._buildShopPanel();
     this._showMenu();
@@ -66,67 +69,15 @@ export class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
     this.menuItems.push(cHdr);
 
-    // Character boxes — 4 across, centered
-    // Total width: 4*165 + 3*10 = 690, left margin: (800-690)/2 = 55
-    // Centers: 55+82=137, 137+175=312, 312+175=487, 487+175=662
-    const BOX_CENTERS = [137, 312, 487, 662];
-    const BOX_W = 165, BOX_H = 148, BOX_Y = 246;
-
-    this.charBoxBorders = [];
-    this.charSprites    = [];
-
-    CHARACTERS.forEach((ch, i) => {
-      const bx = BOX_CENTERS[i];
-
-      // Box background
-      const bg = this.add.rectangle(bx, BOX_Y, BOX_W, BOX_H, 0x000000, 0.45)
-        .setStrokeStyle(3, 0x444444, 0.7).setInteractive();
-      this.menuItems.push(bg);
-
-      // Selection border (shown when selected)
-      const border = this.add.rectangle(bx, BOX_Y, BOX_W, BOX_H, 0x000000, 0)
-        .setStrokeStyle(4, 0xffd700, 1);
-      this.menuItems.push(border);
-      this.charBoxBorders.push({ key: ch.key, border, bg });
-
-      // Character sprite (scaled up for portrait)
-      const spr = this.add.image(bx, BOX_Y - 14, ch.key).setScale(2.0);
-      this.menuItems.push(spr);
-      this.charSprites.push(spr);
-
-      // Name
-      const nm = this.add.text(bx, BOX_Y + 52, ch.name, {
-        fontSize: '14px', fontFamily: 'Arial Black', color: '#ffffff',
-        stroke: '#000000', strokeThickness: 3,
-      }).setOrigin(0.5);
-      this.menuItems.push(nm);
-
-      if (ch.subtitle) {
-        const st = this.add.text(bx, BOX_Y + 68, ch.subtitle, {
-          fontSize: '12px', fontFamily: 'Arial', color: '#aaaaaa',
-          stroke: '#000000', strokeThickness: 2,
-        }).setOrigin(0.5);
-        this.menuItems.push(st);
-      }
-
-      // Click to select
-      bg.on('pointerover', () => bg.setFillStyle(0x224422, 0.6));
-      bg.on('pointerout',  () => bg.setFillStyle(0x000000, 0.45));
-      bg.on('pointerdown', () => {
-        this.selectedChar = ch.key;
-        saveCharacter(ch.key);
-        this._updateCharSelect();
-      });
-    });
-
-    this._updateCharSelect();
+    // Character boxes built by _buildCharBoxes()
+    this._buildCharBoxes();
 
     // Compact instructions
     const ibox = this.add.rectangle(SW / 2, 388, 580, 68, 0x000000, 0.45).setStrokeStyle(1, 0x336633, 0.5);
     this.menuItems.push(ibox);
     [
       'WASD/Arrows — Move   |   Mouse/Pointer — Aim   |   SPACE/FIRE — Shoot',
-      '1/2/3 — Switch Weapons   |   R — Reload   |   Q — Sniper Scope   |   U — Shop',
+      '1/2/3 — Weapons   |   R — Reload   |   Q — Scope   |   E — Special Ability   |   U — Shop',
     ].forEach((line, i) => {
       const t = this.add.text(SW / 2, 374 + i * 26, line, {
         fontSize: '13px', fontFamily: 'Arial', color: '#bbbbbb',
@@ -175,11 +126,122 @@ export class MenuScene extends Phaser.Scene {
     this.menuItems.push(hint);
   }
 
+  // ── Character box builder (supports lock/unlock) ───────────────────────────
+  _buildCharBoxes() {
+    // Destroy any previously built char box elements
+    for (const el of this.charBoxItems) { try { el.destroy(); } catch {} }
+    this.charBoxItems   = [];
+    this.charBoxBorders = [];
+    this.charSprites    = [];
+
+    const BOX_CENTERS = [137, 312, 487, 662];
+    const BOX_W = 165, BOX_H = 150, BOX_Y = 246;
+    const unlockedKeys = getSavedUnlocked();
+    const coins        = getSavedCoins();
+
+    const add = el => { this.charBoxItems.push(el); return el; };
+
+    CHARACTERS.forEach((ch, i) => {
+      const bx       = BOX_CENTERS[i];
+      const unlocked = unlockedKeys.includes(ch.key);
+      const canAfford = coins >= ch.price;
+
+      // Box background
+      const bg = add(this.add.rectangle(bx, BOX_Y, BOX_W, BOX_H, 0x000000, 0.45)
+        .setStrokeStyle(3, 0x444444, 0.7));
+
+      // Gold selection border
+      const border = add(this.add.rectangle(bx, BOX_Y, BOX_W, BOX_H, 0x000000, 0)
+        .setStrokeStyle(4, 0xffd700, 1));
+      this.charBoxBorders.push({ key: ch.key, border, bg });
+
+      // Character sprite
+      const spr = add(this.add.image(bx, BOX_Y - 18, ch.key).setScale(2.0));
+      if (!unlocked) spr.setTint(0x222222);
+      this.charSprites.push(spr);
+
+      // Character name
+      add(this.add.text(bx, BOX_Y + 46, ch.name, {
+        fontSize: '13px', fontFamily: 'Arial Black',
+        color: unlocked ? '#ffffff' : '#555555',
+        stroke: '#000000', strokeThickness: 3,
+      }).setOrigin(0.5));
+
+      if (ch.subtitle) {
+        add(this.add.text(bx, BOX_Y + 61, ch.subtitle, {
+          fontSize: '11px', fontFamily: 'Arial',
+          color: unlocked ? '#aaaaaa' : '#444444',
+          stroke: '#000000', strokeThickness: 2,
+        }).setOrigin(0.5));
+      }
+
+      if (unlocked) {
+        // Ability label
+        add(this.add.text(bx, BOX_Y + 76, `⚡ ${ch.ability}`, {
+          fontSize: '10px', fontFamily: 'Arial Black', color: '#55ffaa',
+          stroke: '#000000', strokeThickness: 2,
+        }).setOrigin(0.5));
+
+        // Click to select
+        bg.setInteractive();
+        bg.on('pointerover', () => bg.setFillStyle(0x224422, 0.6));
+        bg.on('pointerout',  () => bg.setFillStyle(0x000000, 0.45));
+        bg.on('pointerdown', () => {
+          this.selectedChar = ch.key;
+          saveCharacter(ch.key);
+          this._updateCharSelect();
+        });
+      } else {
+        // Lock overlay
+        add(this.add.rectangle(bx, BOX_Y - 18, BOX_W - 8, 94, 0x000000, 0.65));
+        add(this.add.text(bx, BOX_Y - 26, '🔒', { fontSize: '22px' }).setOrigin(0.5));
+        add(this.add.text(bx, BOX_Y + 2, `${ch.price} 💰`, {
+          fontSize: '12px', fontFamily: 'Arial Black',
+          color: canAfford ? '#ffd700' : '#ff4444',
+          stroke: '#000', strokeThickness: 2,
+        }).setOrigin(0.5));
+
+        // BUY button
+        const buyColor = canAfford ? 0x1a5c1a : 0x3a1111;
+        const buyBrdr  = canAfford ? 0x88ee88 : 0x884444;
+        const buyBg = add(this.add.rectangle(bx, BOX_Y + 60, 108, 27, buyColor, 0.9)
+          .setStrokeStyle(1, buyBrdr, 0.8));
+        add(this.add.text(bx, BOX_Y + 60, canAfford ? '💰 BUY' : 'NEED COINS', {
+          fontSize: '11px', fontFamily: 'Arial Black',
+          color: canAfford ? '#88ff88' : '#aa5555',
+          stroke: '#000', strokeThickness: 2,
+        }).setOrigin(0.5));
+
+        if (canAfford) {
+          buyBg.setInteractive();
+          buyBg.on('pointerover', () => buyBg.setFillStyle(0x2a8c2a));
+          buyBg.on('pointerout',  () => buyBg.setFillStyle(0x1a5c1a));
+          buyBg.on('pointerdown', () => this._buyCharacter(ch.key, ch.price));
+        }
+      }
+    });
+
+    this._updateCharSelect();
+  }
+
+  _buyCharacter(key, price) {
+    const coins = getSavedCoins();
+    if (coins < price) return;
+    saveCoins(coins - price);
+    const unlocked = getSavedUnlocked();
+    if (!unlocked.includes(key)) { unlocked.push(key); saveUnlocked(unlocked); }
+    this.selectedChar = key;
+    saveCharacter(key);
+    this._buildCharBoxes();
+    this._refreshMenuCoins();
+  }
+
   _updateCharSelect() {
     for (const { key, border, bg } of this.charBoxBorders) {
-      const sel = key === this.selectedChar;
+      const unlocked = getSavedUnlocked().includes(key);
+      const sel = unlocked && key === this.selectedChar;
       border.setStrokeStyle(4, sel ? 0xffd700 : 0x444444, sel ? 1 : 0);
-      bg.setFillStyle(sel ? 0x334400 : 0x000000, sel ? 0.6 : 0.45);
+      if (unlocked) bg.setFillStyle(sel ? 0x334400 : 0x000000, sel ? 0.6 : 0.45);
     }
   }
 
@@ -194,14 +256,16 @@ export class MenuScene extends Phaser.Scene {
   }
 
   _showMenu() {
-    for (const el of this.menuItems) el.setVisible(true);
-    for (const el of this.shopItems) el.setVisible(false);
+    for (const el of this.menuItems)    el.setVisible(true);
+    for (const el of this.charBoxItems) el.setVisible(true);
+    for (const el of this.shopItems)    el.setVisible(false);
     this._refreshMenuCoins();
   }
 
   _openShop() {
-    for (const el of this.menuItems) el.setVisible(false);
-    for (const el of this.shopItems) el.setVisible(true);
+    for (const el of this.menuItems)    el.setVisible(false);
+    for (const el of this.charBoxItems) el.setVisible(false);
+    for (const el of this.shopItems)    el.setVisible(true);
     this._refreshShop();
   }
 

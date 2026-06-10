@@ -60,6 +60,7 @@ export class GameScene extends Phaser.Scene {
     this.bullets = [];
     this.pickups = [];
     this.effects = [];
+    this.hazards = [];
 
     this._spawnBots();
 
@@ -74,6 +75,12 @@ export class GameScene extends Phaser.Scene {
     this.reloading     = false;
     this.shopOpen      = false;
     this.weaponUpgrades = getSavedUpgrades().map(u => ({ damage: u[0], speed: u[1], ammo: u[2] }));
+
+    // Special ability
+    const _charKey = getSavedChar();
+    const _cdMap   = { banana: 5000, sloth_pirate: 8000, rock_ninja: 6000, trash_can: 9000 };
+    this.specialMaxCD = _cdMap[_charKey] || 5000;
+    this.specialCD    = 0; // ready to use immediately
 
     // Camera — manual behind-character follow (no startFollow)
     this.cameras.main.setBounds(
@@ -92,6 +99,7 @@ export class GameScene extends Phaser.Scene {
       W:'W', A:'A', S:'S', D:'D',
       Q:Phaser.Input.Keyboard.KeyCodes.Q,
       R:Phaser.Input.Keyboard.KeyCodes.R,
+      E:Phaser.Input.Keyboard.KeyCodes.E,
       ONE:   Phaser.Input.Keyboard.KeyCodes.ONE,
       TWO:   Phaser.Input.Keyboard.KeyCodes.TWO,
       THREE: Phaser.Input.Keyboard.KeyCodes.THREE,
@@ -99,6 +107,7 @@ export class GameScene extends Phaser.Scene {
     });
     this.input.keyboard.on('keydown-Q', () => this.toggleScope());
     this.input.keyboard.on('keydown-R', () => this._startReload());
+    this.input.keyboard.on('keydown-E', () => this._useSpecial());
     this.input.keyboard.on('keydown-ONE',   () => this.switchWeapon(0));
     this.input.keyboard.on('keydown-TWO',   () => this.switchWeapon(1));
     this.input.keyboard.on('keydown-THREE', () => this.switchWeapon(2));
@@ -125,10 +134,12 @@ export class GameScene extends Phaser.Scene {
     this._updateBots(delta, dt);
     this._updateBullets(dt);
     this._updatePickups();
+    this._updateHazards(dt);
     this._updateEffects(dt);
     this._updatePlayerSprite();
     this._updateCamera();
     this._waveCheck(delta);
+    if (this.specialCD > 0) this.specialCD = Math.max(0, this.specialCD - delta);
   }
 
   // ── over-the-shoulder third-person camera ─────────────────────────────────
@@ -246,7 +257,7 @@ export class GameScene extends Phaser.Scene {
       fireCooldown: Phaser.Math.Between(200, 800),
       aiTimer:      Phaser.Math.Between(500, 3000),
       wanderWx: wx, wanderWy: wy,
-      strafeDir: 1,
+      strafeDir: 1, stunTimer: 0,
       alive: true,
       sprite: this.add.image(s.x, s.y - 20, tex).setOrigin(0.5, 1).setScale(st.scale).setDepth(d + 10),
       gunSpr: this.add.image(s.x + 12, s.y - 28, 'bot_gun').setOrigin(0, 0.5).setScale(0.85).setDepth(d + 11),
@@ -456,6 +467,12 @@ export class GameScene extends Phaser.Scene {
   _updateBots(delta, dt) {
     for (const bot of this.bots) {
       if (!bot.alive) continue;
+      // Stun from banana peel trap
+      if (bot.stunTimer > 0) {
+        bot.stunTimer -= delta;
+        this._updateBotSprite(bot);
+        continue;
+      }
       bot.fireCooldown -= delta;
       bot.aiTimer      -= delta;
 
@@ -745,6 +762,122 @@ export class GameScene extends Phaser.Scene {
     this.registry.set('scopeMode', 0);
     this.registry.set('coins',     this.player.coins);
     this.registry.set('shopOpen',  false);
+    const _abilityNames = { banana: 'PEEL TRAP', sloth_pirate: 'CANNONBALL', rock_ninja: 'SHURIKEN STORM', trash_can: 'TRASH WAVE' };
+    this.registry.set('specialName', _abilityNames[getSavedChar()] || 'SPECIAL');
+  }
+
+  // ── Special abilities ──────────────────────────────────────────────────────
+  _useSpecial() {
+    if (this.specialCD > 0 || this.shopOpen) return;
+    this.specialCD = this.specialMaxCD;
+    const char = getSavedChar();
+    if      (char === 'banana')       this._specialPeelTrap();
+    else if (char === 'sloth_pirate') this._specialCannon();
+    else if (char === 'rock_ninja')   this._specialShurikenStorm();
+    else if (char === 'trash_can')    this._specialTrashWave();
+  }
+
+  // Banana — drop 3 banana peels behind the player; bots that step on them
+  // take 60 damage and are stunned for 1.5 s (slapstick theme ✓)
+  _specialPeelTrap() {
+    for (let i = 0; i < 3; i++) {
+      const a  = this.player.angle + Math.PI + (i - 1) * 0.65;
+      const px = this.player.wx + Math.cos(a) * 1.9;
+      const py = this.player.wy + Math.sin(a) * 1.9;
+      if (px < 1 || px > GRID - 1 || py < 1 || py > GRID - 1) continue;
+      const ps = iso(px, py);
+      this.hazards.push({
+        type: 'peel', wx: px, wy: py,
+        damage: 60, stun: 1500,
+        life: 9,
+        sprite: this.add.image(ps.x, ps.y - 6, 'peel')
+          .setScale(0.7).setDepth(isoDepth(px, py) + 5).setTint(0xffff44),
+        bob: Math.random() * Math.PI * 2,
+      });
+    }
+    this.cameras.main.flash(100, 255, 220, 0, 0.3);
+  }
+
+  // Sloth Pirate — fire a slow, massive cannonball with huge splash damage
+  // (pirates have cannons ✓)
+  _specialCannon() {
+    const a = this.player.angle;
+    const s = iso(this.player.wx, this.player.wy);
+    const flash = this.add.image(s.x + Math.cos(a) * 24, s.y - 22 + Math.sin(a) * 9, 'muzzle_flash')
+      .setScale(0.95).setDepth(9100);
+    this.time.delayedCall(150, () => flash.destroy());
+    this.cameras.main.shake(200, 0.014);
+    this.bullets.push({
+      wx: this.player.wx + Math.cos(a) * 0.9,
+      wy: this.player.wy + Math.sin(a) * 0.9,
+      vx: Math.cos(a) * 5, vy: Math.sin(a) * 5,
+      damage: 130, faction: 'banana', splash: 3.5, life: 4.5,
+      sprite: this.add.image(0, 0, 'cannonball').setScale(1.2).setDepth(5000),
+    });
+  }
+
+  // Rock Ninja — throw 8 shurikens in all directions simultaneously
+  // (ninjas throw shurikens, rock = extra-hard hits ✓)
+  _specialShurikenStorm() {
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      this.bullets.push({
+        wx: this.player.wx + Math.cos(a) * 0.9,
+        wy: this.player.wy + Math.sin(a) * 0.9,
+        vx: Math.cos(a) * 17, vy: Math.sin(a) * 17,
+        damage: 72, faction: 'banana', splash: 0, life: 1.9,
+        sprite: this.add.image(0, 0, 'shuriken').setScale(0.9).setDepth(5000),
+      });
+    }
+    this.cameras.main.flash(100, 220, 220, 200, 0.25);
+  }
+
+  // Trash Can — instant AOE damage nearby + fling 6 pieces of trash outward
+  // (trash can exploding with garbage ✓)
+  _specialTrashWave() {
+    // Instant close-range blast
+    for (const bot of this.bots) {
+      if (!bot.alive) continue;
+      if (Math.hypot(bot.wx - this.player.wx, bot.wy - this.player.wy) < 3.5)
+        this._hitEntity(bot, 90, 'banana');
+    }
+    // Fling 6 trash projectiles
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      this.bullets.push({
+        wx: this.player.wx + Math.cos(a) * 0.8,
+        wy: this.player.wy + Math.sin(a) * 0.8,
+        vx: Math.cos(a) * 10, vy: Math.sin(a) * 10,
+        damage: 75, faction: 'banana', splash: 0.9, life: 2.0,
+        sprite: this.add.image(0, 0, 'pickup').setTint(0x886633).setScale(0.55).setDepth(5000),
+      });
+    }
+    this.cameras.main.shake(250, 0.02);
+    this.cameras.main.flash(180, 100, 180, 80, 0.35);
+  }
+
+  // ── Ground hazards (peel traps etc.) ──────────────────────────────────────
+  _updateHazards(dt) {
+    for (let i = this.hazards.length - 1; i >= 0; i--) {
+      const h = this.hazards[i];
+      h.life -= dt;
+      h.bob   = (h.bob || 0) + 0.07;
+      const s = iso(h.wx, h.wy);
+      h.sprite.setPosition(s.x, s.y - 6 + Math.sin(h.bob) * 2).setDepth(isoDepth(h.wx, h.wy) + 5);
+
+      // Check if a raccoon steps on it
+      for (const bot of this.bots) {
+        if (!bot.alive || bot.faction !== 'raccoon') continue;
+        if (Math.hypot(bot.wx - h.wx, bot.wy - h.wy) < 0.7) {
+          this._hitEntity(bot, h.damage, 'banana');
+          if (h.stun) bot.stunTimer = h.stun;
+          h.life = 0;
+          break;
+        }
+      }
+
+      if (h.life <= 0) { h.sprite.destroy(); this.hazards.splice(i, 1); }
+    }
   }
 
   // ── touch joystick ─────────────────────────────────────────────────────────
