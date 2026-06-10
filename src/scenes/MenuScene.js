@@ -16,10 +16,10 @@ function saveUnlocked(arr) { writeSave({ ...loadSave(), unlocked: arr }); }
 const SW = 800, SH = 600;
 
 const CHARACTERS = [
-  { key: 'banana',       name: 'Banana',    subtitle: '(Default)',  price: 0,    ability: 'PEEL TRAP'    },
-  { key: 'sloth_pirate', name: 'Sloth',     subtitle: 'Pirate',     price: 200,  ability: 'CANNONBALL'   },
+  { key: 'banana',       name: 'Banana',    subtitle: '(Default)',  price: 0,    ability: 'PEEL TRAP'     },
+  { key: 'sloth_pirate', name: 'Sloth',     subtitle: 'Pirate',     price: 200,  ability: 'CANNONBALL'    },
   { key: 'rock_ninja',   name: 'Rock',      subtitle: 'Ninja',      price: 500,  ability: 'SHURIKEN STORM'},
-  { key: 'trash_can',    name: 'Trash Can', subtitle: '',           price: 1000, ability: 'TRASH WAVE'   },
+  { key: 'trash_can',    name: 'Trash Can', subtitle: '',           price: 1000, ability: 'TRASH WAVE'    },
 ];
 
 const WEAPON_NAMES  = ['Peel Launcher', 'Auto Rifle', 'Sniper'];
@@ -34,112 +34,154 @@ export class MenuScene extends Phaser.Scene {
   constructor() { super('MenuScene'); }
 
   create() {
-    this.selectedChar = getSavedChar();
+    this.selectedChar  = getSavedChar();
     this.add.rectangle(SW / 2, SH / 2, SW, SH, 0x0d1f08);
 
-    // ── Build all views ────────────────────────────────────────────────────
     this.menuItems    = [];
     this.shopItems    = [];
-    this.charBoxItems = [];
+    this.charItems    = [];   // character panel overlay
+
     this._buildMenu();
     this._buildShopPanel();
+    this._buildCharPanel();
     this._showMenu();
   }
 
-  // ── Menu view ──────────────────────────────────────────────────────────────
+  // ── Main menu ──────────────────────────────────────────────────────────────
   _buildMenu() {
+    const push = (...els) => { this.menuItems.push(...els); return els[0]; };
+
     // Title
-    const title = this.add.text(SW / 2, 58, 'BANANA BLASTER', {
+    const title = push(this.add.text(SW / 2, 60, 'BANANA BLASTER', {
       fontSize: '50px', fontFamily: 'Arial Black', color: '#ffd700',
       stroke: '#000000', strokeThickness: 10,
-    }).setOrigin(0.5);
+    }).setOrigin(0.5));
     this.tweens.add({ targets: title, alpha: { from: 0.82, to: 1 }, duration: 950, yoyo: true, repeat: -1 });
-    this.menuItems.push(title);
 
-    const sub = this.add.text(SW / 2, 110, 'Bananas vs Raccoons — Survive the waves!', {
+    push(this.add.text(SW / 2, 114, 'Bananas vs Raccoons — Survive the waves!', {
       fontSize: '17px', fontFamily: 'Arial', color: '#aaffaa',
       stroke: '#000000', strokeThickness: 3,
-    }).setOrigin(0.5);
-    this.menuItems.push(sub);
+    }).setOrigin(0.5));
 
-    // Character select header
-    const cHdr = this.add.text(SW / 2, 148, 'SELECT YOUR CHARACTER', {
-      fontSize: '16px', fontFamily: 'Arial Black', color: '#ffdd44',
-      stroke: '#000000', strokeThickness: 3,
-    }).setOrigin(0.5);
-    this.menuItems.push(cHdr);
+    // ── Currently selected character preview ─────────────────────────────────
+    const previewBox = push(this.add.rectangle(SW / 2, 255, 260, 200, 0x000000, 0.45)
+      .setStrokeStyle(2, 0x336633, 0.6));
+    push(this.add.text(SW / 2, 165, 'ACTIVE CHARACTER', {
+      fontSize: '13px', fontFamily: 'Arial Black', color: '#aaaaaa',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5));
 
-    // Character boxes built by _buildCharBoxes()
-    this._buildCharBoxes();
+    // Sprite preview — rebuilt on scene entry
+    this.previewSpr = push(this.add.image(SW / 2, 245, this.selectedChar).setScale(2.8));
+    this.previewNameTxt = push(this.add.text(SW / 2, 320, '', {
+      fontSize: '16px', fontFamily: 'Arial Black', color: '#ffffff',
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(0.5));
+    this.previewAbilityTxt = push(this.add.text(SW / 2, 340, '', {
+      fontSize: '11px', fontFamily: 'Arial Black', color: '#55ffaa',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5));
+    this._refreshPreview();
 
-    // Compact instructions
-    const ibox = this.add.rectangle(SW / 2, 388, 580, 68, 0x000000, 0.45).setStrokeStyle(1, 0x336633, 0.5);
-    this.menuItems.push(ibox);
+    // ── Instructions ──────────────────────────────────────────────────────────
+    push(this.add.rectangle(SW / 2, 394, 700, 54, 0x000000, 0.45).setStrokeStyle(1, 0x336633, 0.5));
     [
-      'WASD/Arrows — Move   |   Mouse/Pointer — Aim   |   SPACE/FIRE — Shoot',
-      '1/2/3 — Weapons   |   R — Reload   |   Q — Scope   |   E — Special Ability   |   U — Shop',
-    ].forEach((line, i) => {
-      const t = this.add.text(SW / 2, 374 + i * 26, line, {
-        fontSize: '13px', fontFamily: 'Arial', color: '#bbbbbb',
-        stroke: '#000000', strokeThickness: 2,
-      }).setOrigin(0.5);
-      this.menuItems.push(t);
-    });
+      'WASD — Move  |  Mouse — Aim  |  SPACE/FIRE — Shoot  |  1/2/3 — Weapons',
+      'R — Reload   |  Q — Scope    |  E — Special Ability  |  U — Shop',
+    ].forEach((line, i) => push(this.add.text(SW / 2, 382 + i * 22, line, {
+      fontSize: '12px', fontFamily: 'Arial', color: '#bbbbbb',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5)));
 
-    // Bank display
-    this.menuCoinText = this.add.text(SW / 2, 440, '', {
+    // ── Bank ──────────────────────────────────────────────────────────────────
+    this.menuCoinText = push(this.add.text(SW / 2, 448, '', {
       fontSize: '20px', fontFamily: 'Arial Black', color: '#ffd700',
       stroke: '#000000', strokeThickness: 4,
-    }).setOrigin(0.5);
-    this.menuItems.push(this.menuCoinText);
+    }).setOrigin(0.5));
     this._refreshMenuCoins();
 
-    // PLAY button
-    const playBtn = this.add.rectangle(SW / 2 - 135, 494, 228, 56, 0x228822)
-      .setStrokeStyle(3, 0x88ff88, 0.9).setInteractive().setDepth(1);
-    const playTxt = this.add.text(SW / 2 - 135, 494, '▶  PLAY', {
-      fontSize: '26px', fontFamily: 'Arial Black', color: '#ffffff',
+    // ── Three buttons: PLAY  CHARACTERS  SHOP ────────────────────────────────
+    const btnY = 506, btnH = 52;
+
+    const playBtn = push(this.add.rectangle(142, btnY, 200, btnH, 0x228822)
+      .setStrokeStyle(3, 0x88ff88, 0.9).setInteractive().setDepth(1));
+    push(this.add.text(142, btnY, '▶  PLAY', {
+      fontSize: '22px', fontFamily: 'Arial Black', color: '#ffffff',
       stroke: '#000000', strokeThickness: 5,
-    }).setOrigin(0.5).setDepth(2);
+    }).setOrigin(0.5).setDepth(2));
     playBtn.on('pointerover', () => playBtn.setFillStyle(0x33cc33));
     playBtn.on('pointerout',  () => playBtn.setFillStyle(0x228822));
     playBtn.on('pointerdown', () => this._go());
     this.input.keyboard.once('keydown-SPACE', () => this._go());
     this.input.keyboard.once('keydown-ENTER', () => this._go());
-    this.menuItems.push(playBtn, playTxt);
 
-    // SHOP button
-    const shopBtn = this.add.rectangle(SW / 2 + 135, 494, 228, 56, 0x886600)
-      .setStrokeStyle(3, 0xffcc00, 0.8).setInteractive().setDepth(1);
-    const shopTxt = this.add.text(SW / 2 + 135, 494, '🛒  SHOP', {
-      fontSize: '26px', fontFamily: 'Arial Black', color: '#ffdd44',
+    const charBtn = push(this.add.rectangle(400, btnY, 210, btnH, 0x1a2a6c)
+      .setStrokeStyle(3, 0x66aaff, 0.9).setInteractive().setDepth(1));
+    push(this.add.text(400, btnY, '🎮  CHARACTERS', {
+      fontSize: '19px', fontFamily: 'Arial Black', color: '#aaddff',
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(2));
+    charBtn.on('pointerover', () => charBtn.setFillStyle(0x2a3a9c));
+    charBtn.on('pointerout',  () => charBtn.setFillStyle(0x1a2a6c));
+    charBtn.on('pointerdown', () => this._openCharPanel());
+
+    const shopBtn = push(this.add.rectangle(658, btnY, 200, btnH, 0x886600)
+      .setStrokeStyle(3, 0xffcc00, 0.8).setInteractive().setDepth(1));
+    push(this.add.text(658, btnY, '🛒  SHOP', {
+      fontSize: '22px', fontFamily: 'Arial Black', color: '#ffdd44',
       stroke: '#000000', strokeThickness: 5,
-    }).setOrigin(0.5).setDepth(2);
+    }).setOrigin(0.5).setDepth(2));
     shopBtn.on('pointerover', () => shopBtn.setFillStyle(0xaa8800));
     shopBtn.on('pointerout',  () => shopBtn.setFillStyle(0x886600));
     shopBtn.on('pointerdown', () => this._openShop());
-    this.menuItems.push(shopBtn, shopTxt);
 
-    const hint = this.add.text(SW / 2, 545, 'Press SPACE to play  •  Tap a character to select', {
+    push(this.add.text(SW / 2, 558, 'Press SPACE or ENTER to play', {
       fontSize: '12px', fontFamily: 'Arial', color: '#555555',
-    }).setOrigin(0.5);
-    this.menuItems.push(hint);
+    }).setOrigin(0.5));
   }
 
-  // ── Character box builder (supports lock/unlock) ───────────────────────────
-  _buildCharBoxes() {
-    // Destroy any previously built char box elements
-    for (const el of this.charBoxItems) { try { el.destroy(); } catch {} }
-    this.charBoxItems   = [];
+  // ── Character panel (overlay) ──────────────────────────────────────────────
+  _buildCharPanel() {
+    for (const el of this.charItems) { try { el.destroy(); } catch {} }
+    this.charItems      = [];
     this.charBoxBorders = [];
-    this.charSprites    = [];
 
-    const BOX_CENTERS = [137, 312, 487, 662];
-    const BOX_W = 165, BOX_H = 150, BOX_Y = 246;
+    const add = el => { this.charItems.push(el); return el; };
+
+    const PW = 780, PH = 462;
+    const PX = SW / 2, PY = SH / 2 - 4;
+
+    // Dim overlay + panel background
+    add(this.add.rectangle(PX, SH / 2, SW, SH, 0x000000, 0.72).setDepth(9));
+    add(this.add.rectangle(PX, PY, PW, PH, 0x081408).setDepth(10)
+      .setStrokeStyle(2, 0x338833, 0.9));
+
+    // Header
+    add(this.add.text(PX - PW / 2 + 18, PY - PH / 2 + 24, '🎮  SELECT CHARACTER', {
+      fontSize: '20px', fontFamily: 'Arial Black', color: '#ffdd44',
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(0, 0.5).setDepth(11));
+
+    this.charPanelCoinTxt = add(this.add.text(PX + PW / 2 - 14, PY - PH / 2 + 24, '💰 0', {
+      fontSize: '18px', fontFamily: 'Arial Black', color: '#ffd700',
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(1, 0.5).setDepth(11));
+
+    const hdiv = this.add.graphics().setDepth(11);
+    hdiv.lineStyle(1, 0x336633, 0.7);
+    hdiv.lineBetween(PX - PW / 2 + 12, PY - PH / 2 + 42, PX + PW / 2 - 12, PY - PH / 2 + 42);
+    add(hdiv);
+
+    // Character boxes — 4 in a row inside the panel
+    // 4 × 162px + 3 × 14px gap = 690px; side padding = (780-690)/2 = 45
+    // Centers from left panel edge: 45+81=126 → absolute: PX-390+126=136
+    // Then +176 each: 136, 312, 488, 664
+    const BOX_CENTERS = [136, 312, 488, 664];
+    const BOX_W = 162, BOX_H = 330;
+    const BOX_Y = PY + 10;   // slightly below panel centre (header above)
+
     const unlockedKeys = getSavedUnlocked();
     const coins        = getSavedCoins();
-
-    const add = el => { this.charBoxItems.push(el); return el; };
 
     CHARACTERS.forEach((ch, i) => {
       const bx       = BOX_CENTERS[i];
@@ -148,69 +190,97 @@ export class MenuScene extends Phaser.Scene {
 
       // Box background
       const bg = add(this.add.rectangle(bx, BOX_Y, BOX_W, BOX_H, 0x000000, 0.45)
-        .setStrokeStyle(3, 0x444444, 0.7));
+        .setStrokeStyle(3, 0x444444, 0.7).setDepth(11));
 
       // Gold selection border
       const border = add(this.add.rectangle(bx, BOX_Y, BOX_W, BOX_H, 0x000000, 0)
-        .setStrokeStyle(4, 0xffd700, 1));
+        .setStrokeStyle(4, 0xffd700, 1).setDepth(12));
       this.charBoxBorders.push({ key: ch.key, border, bg });
 
       // Character sprite
-      const spr = add(this.add.image(bx, BOX_Y - 18, ch.key).setScale(2.0));
+      const spr = add(this.add.image(bx, BOX_Y - 65, ch.key)
+        .setScale(2.4).setDepth(12));
       if (!unlocked) spr.setTint(0x222222);
-      this.charSprites.push(spr);
 
-      // Character name
-      add(this.add.text(bx, BOX_Y + 46, ch.name, {
-        fontSize: '13px', fontFamily: 'Arial Black',
+      // Name + subtitle
+      add(this.add.text(bx, BOX_Y + 60, ch.name, {
+        fontSize: '14px', fontFamily: 'Arial Black',
         color: unlocked ? '#ffffff' : '#555555',
-        stroke: '#000000', strokeThickness: 3,
-      }).setOrigin(0.5));
+        stroke: '#000', strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(12));
 
       if (ch.subtitle) {
-        add(this.add.text(bx, BOX_Y + 61, ch.subtitle, {
-          fontSize: '11px', fontFamily: 'Arial',
+        add(this.add.text(bx, BOX_Y + 78, ch.subtitle, {
+          fontSize: '12px', fontFamily: 'Arial',
           color: unlocked ? '#aaaaaa' : '#444444',
-          stroke: '#000000', strokeThickness: 2,
-        }).setOrigin(0.5));
+          stroke: '#000', strokeThickness: 2,
+        }).setOrigin(0.5).setDepth(12));
       }
 
       if (unlocked) {
-        // Ability label
-        add(this.add.text(bx, BOX_Y + 76, `⚡ ${ch.ability}`, {
+        // Ability badge
+        add(this.add.rectangle(bx, BOX_Y + 106, BOX_W - 20, 24, 0x003322, 0.8)
+          .setStrokeStyle(1, 0x44ff88, 0.5).setDepth(12));
+        add(this.add.text(bx, BOX_Y + 106, `⚡ ${ch.ability}`, {
           fontSize: '10px', fontFamily: 'Arial Black', color: '#55ffaa',
-          stroke: '#000000', strokeThickness: 2,
-        }).setOrigin(0.5));
+          stroke: '#000', strokeThickness: 2,
+        }).setOrigin(0.5).setDepth(13));
 
-        // Click to select
+        // SELECT button
+        const selBg = add(this.add.rectangle(bx, BOX_Y + 138, BOX_W - 20, 30, 0x1a4c1a, 0.9)
+          .setStrokeStyle(2, 0x66ee66, 0.7).setInteractive().setDepth(12));
+        add(this.add.text(bx, BOX_Y + 138, 'SELECT', {
+          fontSize: '13px', fontFamily: 'Arial Black', color: '#88ff88',
+          stroke: '#000', strokeThickness: 2,
+        }).setOrigin(0.5).setDepth(13));
+
+        selBg.on('pointerover', () => selBg.setFillStyle(0x2a7c2a));
+        selBg.on('pointerout',  () => selBg.setFillStyle(0x1a4c1a));
+        selBg.on('pointerdown', () => {
+          this.selectedChar = ch.key;
+          saveCharacter(ch.key);
+          this._updateCharSelect();
+          this._refreshPreview();
+        });
+
         bg.setInteractive();
-        bg.on('pointerover', () => bg.setFillStyle(0x224422, 0.6));
+        bg.on('pointerover', () => bg.setFillStyle(0x112211, 0.6));
         bg.on('pointerout',  () => bg.setFillStyle(0x000000, 0.45));
         bg.on('pointerdown', () => {
           this.selectedChar = ch.key;
           saveCharacter(ch.key);
           this._updateCharSelect();
+          this._refreshPreview();
         });
       } else {
         // Lock overlay
-        add(this.add.rectangle(bx, BOX_Y - 18, BOX_W - 8, 94, 0x000000, 0.65));
-        add(this.add.text(bx, BOX_Y - 26, '🔒', { fontSize: '22px' }).setOrigin(0.5));
-        add(this.add.text(bx, BOX_Y + 2, `${ch.price} 💰`, {
-          fontSize: '12px', fontFamily: 'Arial Black',
+        add(this.add.rectangle(bx, BOX_Y - 40, BOX_W - 8, 148, 0x000000, 0.68).setDepth(13));
+        add(this.add.text(bx, BOX_Y - 58, '🔒', { fontSize: '26px' }).setOrigin(0.5).setDepth(14));
+        add(this.add.text(bx, BOX_Y - 22, `${ch.price} 💰`, {
+          fontSize: '13px', fontFamily: 'Arial Black',
           color: canAfford ? '#ffd700' : '#ff4444',
           stroke: '#000', strokeThickness: 2,
-        }).setOrigin(0.5));
+        }).setOrigin(0.5).setDepth(14));
 
         // BUY button
         const buyColor = canAfford ? 0x1a5c1a : 0x3a1111;
         const buyBrdr  = canAfford ? 0x88ee88 : 0x884444;
-        const buyBg = add(this.add.rectangle(bx, BOX_Y + 60, 108, 27, buyColor, 0.9)
-          .setStrokeStyle(1, buyBrdr, 0.8));
+        const buyBg = add(this.add.rectangle(bx, BOX_Y + 60, BOX_W - 20, 30, buyColor, 0.9)
+          .setStrokeStyle(2, buyBrdr, 0.8).setDepth(13));
         add(this.add.text(bx, BOX_Y + 60, canAfford ? '💰 BUY' : 'NEED COINS', {
-          fontSize: '11px', fontFamily: 'Arial Black',
+          fontSize: '12px', fontFamily: 'Arial Black',
           color: canAfford ? '#88ff88' : '#aa5555',
           stroke: '#000', strokeThickness: 2,
-        }).setOrigin(0.5));
+        }).setOrigin(0.5).setDepth(14));
+
+        // "Costs X coins" descriptor below
+        if (!canAfford) {
+          const need = ch.price - coins;
+          add(this.add.text(bx, BOX_Y + 82, `Need ${need} more coins`, {
+            fontSize: '10px', fontFamily: 'Arial', color: '#884444',
+            stroke: '#000', strokeThickness: 1,
+          }).setOrigin(0.5).setDepth(14));
+        }
 
         if (canAfford) {
           buyBg.setInteractive();
@@ -222,6 +292,17 @@ export class MenuScene extends Phaser.Scene {
     });
 
     this._updateCharSelect();
+
+    // ── BACK button ────────────────────────────────────────────────────────
+    const backBtn = add(this.add.rectangle(PX, PY + PH / 2 - 22, 210, 32, 0x553300, 0.9)
+      .setStrokeStyle(2, 0xffaa44, 0.7).setInteractive().setDepth(11));
+    add(this.add.text(PX, PY + PH / 2 - 22, '◀  BACK TO MENU', {
+      fontSize: '14px', fontFamily: 'Arial Black', color: '#ffcc88',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(12));
+    backBtn.on('pointerover', () => backBtn.setFillStyle(0x774400));
+    backBtn.on('pointerout',  () => backBtn.setFillStyle(0x553300));
+    backBtn.on('pointerdown', () => this._showMenu());
   }
 
   _buyCharacter(key, price) {
@@ -232,21 +313,34 @@ export class MenuScene extends Phaser.Scene {
     if (!unlocked.includes(key)) { unlocked.push(key); saveUnlocked(unlocked); }
     this.selectedChar = key;
     saveCharacter(key);
-    this._buildCharBoxes();
+    // Rebuild the char panel in place (keep it visible)
+    this._buildCharPanel();
+    for (const el of this.charItems) el.setVisible(true);
     this._refreshMenuCoins();
+    this._refreshPreview();
   }
 
   _updateCharSelect() {
-    for (const { key, border, bg } of this.charBoxBorders) {
+    for (const { key, border, bg } of (this.charBoxBorders || [])) {
       const unlocked = getSavedUnlocked().includes(key);
-      const sel = unlocked && key === this.selectedChar;
+      const sel      = unlocked && key === this.selectedChar;
       border.setStrokeStyle(4, sel ? 0xffd700 : 0x444444, sel ? 1 : 0);
-      if (unlocked) bg.setFillStyle(sel ? 0x334400 : 0x000000, sel ? 0.6 : 0.45);
+      if (unlocked) bg.setFillStyle(sel ? 0x1a3a1a : 0x000000, sel ? 0.65 : 0.45);
     }
+  }
+
+  _refreshPreview() {
+    if (!this.previewSpr) return;
+    const ch = CHARACTERS.find(c => c.key === this.selectedChar) || CHARACTERS[0];
+    this.previewSpr.setTexture(ch.key);
+    const label = ch.subtitle ? `${ch.name} ${ch.subtitle}` : ch.name;
+    this.previewNameTxt.setText(label);
+    this.previewAbilityTxt.setText(`⚡ ${ch.ability}`);
   }
 
   _refreshMenuCoins() {
     if (this.menuCoinText) this.menuCoinText.setText('💰 Bank: ' + getSavedCoins() + ' coins');
+    if (this.charPanelCoinTxt) this.charPanelCoinTxt.setText('💰 ' + getSavedCoins());
   }
 
   // ── Navigation ──────────────────────────────────────────────────────────────
@@ -256,27 +350,37 @@ export class MenuScene extends Phaser.Scene {
   }
 
   _showMenu() {
-    for (const el of this.menuItems)    el.setVisible(true);
-    for (const el of this.charBoxItems) el.setVisible(true);
-    for (const el of this.shopItems)    el.setVisible(false);
+    for (const el of this.menuItems) el.setVisible(true);
+    for (const el of this.charItems) el.setVisible(false);
+    for (const el of this.shopItems) el.setVisible(false);
     this._refreshMenuCoins();
+    this._refreshPreview();
+  }
+
+  _openCharPanel() {
+    // Rebuild to pick up latest coin totals / unlock state
+    this._buildCharPanel();
+    for (const el of this.menuItems) el.setVisible(false);
+    for (const el of this.charItems) el.setVisible(true);
+    for (const el of this.shopItems) el.setVisible(false);
+    if (this.charPanelCoinTxt) this.charPanelCoinTxt.setText('💰 ' + getSavedCoins());
   }
 
   _openShop() {
-    for (const el of this.menuItems)    el.setVisible(false);
-    for (const el of this.charBoxItems) el.setVisible(false);
-    for (const el of this.shopItems)    el.setVisible(true);
+    for (const el of this.menuItems) el.setVisible(false);
+    for (const el of this.charItems) el.setVisible(false);
+    for (const el of this.shopItems) el.setVisible(true);
     this._refreshShop();
   }
 
-  // ── Shop panel ──────────────────────────────────────────────────────────────
+  // ── Weapon shop panel ──────────────────────────────────────────────────────
   _buildShopPanel() {
     const PW = 620, PH = 490;
     const PX = SW / 2, PY = SH / 2;
 
-    const bg = this.add.rectangle(PX, PY, PW, PH, 0x111128).setDepth(10)
-      .setStrokeStyle(2, 0x5555cc, 0.9);
-    this.shopItems.push(bg);
+    this.shopItems.push(
+      this.add.rectangle(PX, PY, PW, PH, 0x111128).setDepth(10).setStrokeStyle(2, 0x5555cc, 0.9)
+    );
 
     const titleTxt = this.add.text(PX - PW / 2 + 18, PY - PH / 2 + 22, '🛒  WEAPON SHOP', {
       fontSize: '20px', fontFamily: 'Arial Black', color: '#ffdd44',
@@ -302,12 +406,10 @@ export class MenuScene extends Phaser.Scene {
 
     for (let wi = 0; wi < 3; wi++) {
       const secY = startY + wi * secH;
-
-      const wt = this.add.text(lx, secY + 10, WEAPON_NAMES[wi], {
+      this.shopItems.push(this.add.text(lx, secY + 10, WEAPON_NAMES[wi], {
         fontSize: '14px', fontFamily: 'Arial Black', color: WEAPON_COLORS[wi],
         stroke: '#000', strokeThickness: 2,
-      }).setOrigin(0, 0.5).setDepth(11);
-      this.shopItems.push(wt);
+      }).setOrigin(0, 0.5).setDepth(11));
 
       if (wi < 2) {
         const sd = this.add.graphics().setDepth(11);
@@ -324,19 +426,16 @@ export class MenuScene extends Phaser.Scene {
           fontSize: '12px', fontFamily: 'Arial Black', color: '#999999',
           stroke: '#000', strokeThickness: 2,
         }).setOrigin(0, 0.5).setDepth(11);
-        this.shopItems.push(lbl);
 
         const lvlTxt = this.add.text(PX - 50, rowY, 'Lv 0/3', {
           fontSize: '12px', fontFamily: 'Arial', color: '#888888',
           stroke: '#000', strokeThickness: 2,
         }).setOrigin(0.5).setDepth(11);
-        this.shopItems.push(lvlTxt);
 
         const costTxt = this.add.text(PX + 70, rowY, '', {
           fontSize: '13px', fontFamily: 'Arial Black', color: '#ffd700',
           stroke: '#000', strokeThickness: 2,
         }).setOrigin(0.5).setDepth(11);
-        this.shopItems.push(costTxt);
 
         const buyBtn = this.add.rectangle(PX + PW / 2 - 54, rowY, 88, 24, 0x1a5c1a, 0.9)
           .setStrokeStyle(1, 0x88ee88, 0.6).setInteractive().setDepth(11);
@@ -344,20 +443,17 @@ export class MenuScene extends Phaser.Scene {
           fontSize: '13px', fontFamily: 'Arial Black', color: '#88ff88',
           stroke: '#000', strokeThickness: 2,
         }).setOrigin(0.5).setDepth(12);
-        this.shopItems.push(buyBtn, buyTxt);
+
+        this.shopItems.push(lbl, lvlTxt, costTxt, buyBtn, buyTxt);
 
         buyBtn.on('pointerover', () => buyBtn.setFillStyle(0x2a8c2a));
         buyBtn.on('pointerout',  () => buyBtn.setFillStyle(0x1a5c1a));
-        buyBtn.on('pointerdown', () => {
-          this._buyUpgrade(wi, upg.key);
-          this._refreshShop();
-        });
+        buyBtn.on('pointerdown', () => { this._buyUpgrade(wi, upg.key); this._refreshShop(); });
 
         this.shopBuyBtns.push({ weaponIdx: wi, type: upg.key, buyBtn, buyTxt, costTxt, lvlTxt });
       }
     }
 
-    // Back button
     const backBtn = this.add.rectangle(PX, PY + PH / 2 - 24, 200, 34, 0x553300, 0.9)
       .setStrokeStyle(2, 0xffaa44, 0.7).setInteractive().setDepth(11);
     const backTxt = this.add.text(PX, PY + PH / 2 - 24, '◀  BACK TO MENU', {
@@ -386,14 +482,12 @@ export class MenuScene extends Phaser.Scene {
     const coins = getSavedCoins();
     const ups   = getSavedUpgrades().map(u => ({ damage: u[0], speed: u[1], ammo: u[2] }));
     if (this.shopCoinText) this.shopCoinText.setText('💰 ' + coins);
-
     for (const e of this.shopBuyBtns) {
       const level  = ups[e.weaponIdx][e.type] || 0;
       const maxed  = level >= 3;
       const upg    = UPGRADES.find(u => u.key === e.type);
       const cost   = maxed ? 0 : upg.costs[level];
       const canBuy = !maxed && coins >= cost;
-
       e.lvlTxt.setText(`Lv ${level}/3`).setColor(level >= 3 ? '#ffd700' : '#888888');
       e.costTxt.setText(maxed ? 'MAX' : `💰${cost}`).setColor(maxed ? '#666666' : (canBuy ? '#ffd700' : '#ff5555'));
       e.buyBtn.setFillStyle(maxed ? 0x333333 : (canBuy ? 0x1a5c1a : 0x4a1111), 0.9);
