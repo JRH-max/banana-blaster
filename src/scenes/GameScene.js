@@ -113,19 +113,29 @@ export class GameScene extends Phaser.Scene {
     this._waveCheck(delta);
   }
 
-  // ── behind-character camera ────────────────────────────────────────────────
+  // ── over-the-shoulder third-person camera ─────────────────────────────────
   _updateCamera() {
-    const s   = iso(this.player.wx, this.player.wy);
-    const a   = this.player.angle;
-    // Convert facing direction from world-space to isometric screen-space
-    const fsx = (Math.cos(a) - Math.sin(a)) * (TW / 2);
-    const fsy = (Math.cos(a) + Math.sin(a)) * (TH / 2);
+    const s = iso(this.player.wx, this.player.wy);
+    const a = this.player.angle;
+
+    // Facing direction in isometric screen space
+    const fsx  = (Math.cos(a) - Math.sin(a)) * (TW / 2);
+    const fsy  = (Math.cos(a) + Math.sin(a)) * (TH / 2);
     const flen = Math.hypot(fsx, fsy) || 1;
-    // Offset camera center ahead of player → player appears in lower portion of view
-    const LOOK = this.scoped ? 260 : 200;
-    const tX = s.x      + (fsx / flen) * LOOK;
-    const tY = s.y - 22 + (fsy / flen) * LOOK;
-    const LERP = this.scoped ? 0.04 : 0.07;
+    const fx   = fsx / flen;
+    const fy   = fsy / flen;
+
+    // Right-shoulder perpendicular (rotate facing 90° clockwise in screen space)
+    const rx = fy, ry = -fx;
+
+    // Camera sits forward of the player and offset to the right shoulder
+    const LOOK     = this.scoped ? 290 : 240;
+    const SHOULDER = this.scoped ? 30  : 70;
+
+    const tX = s.x      + fx * LOOK + rx * SHOULDER;
+    const tY = s.y - 22 + fy * LOOK + ry * SHOULDER;
+
+    const LERP = this.scoped ? 0.04 : 0.09;
     this._camX = Phaser.Math.Linear(this._camX, tX, LERP);
     this._camY = Phaser.Math.Linear(this._camY, tY, LERP);
     this.cameras.main.centerOn(this._camX, this._camY);
