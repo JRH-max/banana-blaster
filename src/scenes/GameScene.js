@@ -38,34 +38,40 @@ const BOT_WEAPONS = [
 
 // Custom slot-1 weapon per character
 const CHAR_SLOT1 = {
-  banana: {
-    name: 'Peel Launcher', type: 'projectile', fireRate: 700, damage: 55, speed: 8,
-    auto: false, splash: 1.5, reloadTime: 0, projKey: 'peel', projScale: 0.30,
-  },
-  sloth_pirate: {
-    // Single-shot flintlock pistol — slow reload, high punch (pirate musket)
-    name: 'Flintlock', type: 'hitscan', fireRate: 1800, damage: 110, speed: 50,
-    auto: false, ammo: 1, maxAmmo: 1, reloadTime: 1600,
-  },
-  rock_ninja: {
-    // Rapid-fire shuriken launcher — quick throws, medium damage (ninja speed)
-    name: 'Shuriken', type: 'projectile', fireRate: 185, damage: 30, speed: 19,
-    auto: true, ammo: 24, maxAmmo: 24, reloadTime: 1100, splash: 0,
-    projKey: 'shuriken', projScale: 0.85,
-  },
-  trash_can: {
-    // Junk cannon — lobs heavy garbage with big splash (trash theme)
-    name: 'Junk Cannon', type: 'projectile', fireRate: 1000, damage: 65, speed: 7,
-    auto: false, splash: 2.2, reloadTime: 0, projKey: 'pickup', projScale: 0.55, projTint: 0x886633,
-  },
+  banana:       { name: 'Peel Launcher',   type: 'projectile', fireRate: 700,  damage: 55,  speed: 8,  auto: false, splash: 1.5,  reloadTime: 0,    projKey: 'peel',      projScale: 0.30 },
+  sloth_pirate: { name: 'Flintlock',       type: 'hitscan',    fireRate: 1800, damage: 110, speed: 50, auto: false, ammo: 1,  maxAmmo: 1,  reloadTime: 1600 },
+  hot_dog:      { name: 'Mustard Gun',     type: 'projectile', fireRate: 550,  damage: 40,  speed: 11, auto: false, splash: 1.8,  reloadTime: 0,    projKey: 'peel',      projScale: 0.25, projTint: 0xffdd00 },
+  cactus:       { name: 'Thorn Shooter',   type: 'projectile', fireRate: 300,  damage: 22,  speed: 17, auto: true,  ammo: 20, maxAmmo: 20, reloadTime: 900,  projKey: 'shuriken',  projScale: 0.55, projTint: 0x44aa22 },
+  ghost:        { name: 'Spook Blaster',   type: 'hitscan',    fireRate: 800,  damage: 70,  speed: 35, auto: false, ammo: 6,  maxAmmo: 6,  reloadTime: 1800 },
+  astronaut:    { name: 'Space Pistol',    type: 'hitscan',    fireRate: 500,  damage: 55,  speed: 60, auto: false, ammo: 8,  maxAmmo: 8,  reloadTime: 1400 },
+  penguin:      { name: 'Snowball Cannon', type: 'projectile', fireRate: 900,  damage: 50,  speed: 9,  auto: false, splash: 1.6,  reloadTime: 0,    projKey: 'cannonball', projScale: 0.55, projTint: 0xaaddff },
+  rock_ninja:   { name: 'Shuriken',        type: 'projectile', fireRate: 185,  damage: 30,  speed: 19, auto: true,  ammo: 24, maxAmmo: 24, reloadTime: 1100, projKey: 'shuriken',  projScale: 0.85 },
+  viking:       { name: 'Axe Launcher',    type: 'projectile', fireRate: 1200, damage: 90,  speed: 12, auto: false, splash: 1.0,  reloadTime: 0,    projKey: 'shuriken',  projScale: 1.1,  projTint: 0xaaaaaa },
+  robot:        { name: 'Plasma Rifle',    type: 'hitscan',    fireRate: 100,  damage: 20,  speed: 40, auto: true,  ammo: 40, maxAmmo: 40, reloadTime: 1400 },
+  wizard:       { name: 'Magic Staff',     type: 'projectile', fireRate: 650,  damage: 60,  speed: 10, auto: false, splash: 2.0,  reloadTime: 0,    projKey: 'pickup',    projScale: 0.5,  projTint: 0xaa44ff },
+  shark:        { name: 'Jaw Launcher',    type: 'projectile', fireRate: 800,  damage: 75,  speed: 13, auto: false, splash: 1.4,  reloadTime: 0,    projKey: 'cannonball', projScale: 0.65, projTint: 0x4488cc },
+  trash_can:    { name: 'Junk Cannon',     type: 'projectile', fireRate: 1000, damage: 65,  speed: 7,  auto: false, splash: 2.2,  reloadTime: 0,    projKey: 'pickup',    projScale: 0.55, projTint: 0x886633 },
+  dragon:       { name: 'Inferno Blaster', type: 'projectile', fireRate: 180,  damage: 35,  speed: 16, auto: true,  ammo: 30, maxAmmo: 30, reloadTime: 1200, projKey: 'peel',      projScale: 0.30, projTint: 0xff4400 },
+  mystery:      { name: 'Void Cannon',     type: 'hitscan',    fireRate: 50,   damage: 999, speed: 99, auto: true,  ammo: 99, maxAmmo: 99, reloadTime: 500 },
 };
 
 // Gun sprite shown at bottom-center for each character's slot-1
 const CHAR_GUN_SPRITE = {
   banana:       'gun_peel',
   sloth_pirate: 'gun_sniper',
+  hot_dog:      'gun_peel',
+  cactus:       'gun_rifle',
+  ghost:        'gun_sniper',
+  astronaut:    'gun_sniper',
+  penguin:      'gun_peel',
   rock_ninja:   'gun_rifle',
+  viking:       'gun_peel',
+  robot:        'gun_rifle',
+  wizard:       'gun_peel',
+  shark:        'gun_peel',
   trash_can:    'gun_peel',
+  dragon:       'gun_rifle',
+  mystery:      'gun_sniper',
 };
 
 const BOT_STATS = {
@@ -122,7 +128,11 @@ export class GameScene extends Phaser.Scene {
 
     // Special ability
     const _charKey = getSavedChar();
-    const _cdMap   = { banana: 5000, sloth_pirate: 8000, rock_ninja: 6000, trash_can: 9000 };
+    const _cdMap   = {
+      banana: 5000, sloth_pirate: 8000, hot_dog: 6000, cactus: 5500, ghost: 7000,
+      astronaut: 7500, penguin: 5000, rock_ninja: 6000, viking: 6500, robot: 8000,
+      wizard: 9000, shark: 5500, trash_can: 9000, dragon: 7000, mystery: 12000,
+    };
     this.specialMaxCD = _cdMap[_charKey] || 5000;
     this.specialCD    = 0; // ready to use immediately
 
@@ -803,7 +813,13 @@ export class GameScene extends Phaser.Scene {
     this.registry.set('scopeMode', 0);
     this.registry.set('coins',     this.player.coins);
     this.registry.set('shopOpen',  false);
-    const _abilityNames = { banana: 'PEEL TRAP', sloth_pirate: 'CANNONBALL', rock_ninja: 'SHURIKEN STORM', trash_can: 'TRASH WAVE' };
+    const _abilityNames = {
+      banana: 'PEEL TRAP', sloth_pirate: 'CANNONBALL', hot_dog: 'MUSTARD BLAST',
+      cactus: 'SPIKE BURST', ghost: 'SOUL SCREAM', astronaut: 'GRAVITY BOMB',
+      penguin: 'ICE SLIDE', rock_ninja: 'SHURIKEN STORM', viking: 'BERSERKER',
+      robot: 'LASER BEAM', wizard: 'METEOR STORM', shark: 'FEEDING FRENZY',
+      trash_can: 'TRASH WAVE', dragon: 'FIRE BREATH', mystery: 'OBLITERATE',
+    };
     this.registry.set('specialName', _abilityNames[getSavedChar()] || 'SPECIAL');
     this.registry.set('weaponNames',  WEAPONS.map(w => w.name));
     this.registry.set('gunSprite0',   CHAR_GUN_SPRITE[getSavedChar()] || 'gun_peel');
@@ -816,8 +832,19 @@ export class GameScene extends Phaser.Scene {
     const char = getSavedChar();
     if      (char === 'banana')       this._specialPeelTrap();
     else if (char === 'sloth_pirate') this._specialCannon();
+    else if (char === 'hot_dog')      this._specialMustardBlast();
+    else if (char === 'cactus')       this._specialSpikeBurst();
+    else if (char === 'ghost')        this._specialSoulScream();
+    else if (char === 'astronaut')    this._specialGravityBomb();
+    else if (char === 'penguin')      this._specialIceSlide();
     else if (char === 'rock_ninja')   this._specialShurikenStorm();
+    else if (char === 'viking')       this._specialBerserker();
+    else if (char === 'robot')        this._specialLaserBeam();
+    else if (char === 'wizard')       this._specialMeteorStorm();
+    else if (char === 'shark')        this._specialFeedingFrenzy();
     else if (char === 'trash_can')    this._specialTrashWave();
+    else if (char === 'dragon')       this._specialFireBreath();
+    else if (char === 'mystery')      this._specialObliterate();
   }
 
   // Banana — drop 3 banana peels behind the player; bots that step on them
@@ -897,6 +924,209 @@ export class GameScene extends Phaser.Scene {
     }
     this.cameras.main.shake(250, 0.02);
     this.cameras.main.flash(180, 100, 180, 80, 0.35);
+  }
+
+  // Hot Dog — spray mustard in a wide cone, slowing + damaging bots
+  _specialMustardBlast() {
+    for (let i = -4; i <= 4; i++) {
+      const a = this.player.angle + i * 0.18;
+      this.bullets.push({
+        wx: this.player.wx + Math.cos(a) * 0.8,
+        wy: this.player.wy + Math.sin(a) * 0.8,
+        vx: Math.cos(a) * 9, vy: Math.sin(a) * 9,
+        damage: 45, faction: 'banana', splash: 0.8, life: 2.2,
+        sprite: this.add.image(0, 0, 'peel').setTint(0xffdd00).setScale(0.28).setDepth(5000),
+      });
+    }
+    // Slow all nearby bots
+    for (const bot of this.bots) {
+      if (!bot.alive) continue;
+      if (Math.hypot(bot.wx - this.player.wx, bot.wy - this.player.wy) < 5)
+        bot.stunTimer = (bot.stunTimer || 0) + 1200;
+    }
+    this.cameras.main.flash(120, 255, 220, 0, 0.3);
+  }
+
+  // Cactus — fire a burst of 12 spikes in a full ring
+  _specialSpikeBurst() {
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      this.bullets.push({
+        wx: this.player.wx + Math.cos(a) * 0.8,
+        wy: this.player.wy + Math.sin(a) * 0.8,
+        vx: Math.cos(a) * 14, vy: Math.sin(a) * 14,
+        damage: 55, faction: 'banana', splash: 0, life: 2.0,
+        sprite: this.add.image(0, 0, 'shuriken').setTint(0x44aa22).setScale(0.65).setDepth(5000),
+      });
+    }
+    this.cameras.main.flash(100, 100, 220, 80, 0.25);
+  }
+
+  // Ghost — soul scream: instant damage + stun to ALL bots on screen
+  _specialSoulScream() {
+    for (const bot of this.bots) {
+      if (!bot.alive) continue;
+      this._hitEntity(bot, 50, 'banana');
+      bot.stunTimer = 2000;
+    }
+    this.cameras.main.flash(200, 200, 200, 255, 0.4);
+    this.cameras.main.shake(150, 0.010);
+  }
+
+  // Astronaut — gravity bomb: suck all nearby bots toward player then explode
+  _specialGravityBomb() {
+    const { wx, wy } = this.player;
+    // Pull bots in
+    for (const bot of this.bots) {
+      if (!bot.alive) continue;
+      const dx = wx - bot.wx, dy = wy - bot.wy;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 8) {
+        bot.wx += (dx / dist) * Math.min(dist, 3.5);
+        bot.wy += (dy / dist) * Math.min(dist, 3.5);
+      }
+    }
+    // Then explode
+    for (const bot of this.bots) {
+      if (!bot.alive) continue;
+      const d = Math.hypot(bot.wx - wx, bot.wy - wy);
+      if (d < 4) this._hitEntity(bot, 100 - d * 12, 'banana');
+    }
+    this.cameras.main.flash(250, 80, 180, 255, 0.5);
+    this.cameras.main.shake(300, 0.018);
+  }
+
+  // Penguin — ice slide: player dashes forward through enemies, freezing them
+  _specialIceSlide() {
+    const a = this.player.angle;
+    const slideSteps = 6;
+    for (let s = 1; s <= slideSteps; s++) {
+      const tx = this.player.wx + Math.cos(a) * s * 1.1;
+      const ty = this.player.wy + Math.sin(a) * s * 1.1;
+      for (const bot of this.bots) {
+        if (!bot.alive) continue;
+        if (Math.hypot(bot.wx - tx, bot.wy - ty) < 1.2) {
+          this._hitEntity(bot, 65, 'banana');
+          bot.stunTimer = (bot.stunTimer || 0) + 1800;
+        }
+      }
+    }
+    // Teleport player forward
+    this.player.wx = Phaser.Math.Clamp(this.player.wx + Math.cos(a) * 4, 1, GRID - 1);
+    this.player.wy = Phaser.Math.Clamp(this.player.wy + Math.sin(a) * 4, 1, GRID - 1);
+    this.cameras.main.flash(150, 160, 230, 255, 0.35);
+  }
+
+  // Viking — berserker: temporary speed + damage boost (handled via flag)
+  _specialBerserker() {
+    this.berserkerTimer = 5000;
+    // Instant nearby melee damage
+    for (const bot of this.bots) {
+      if (!bot.alive) continue;
+      if (Math.hypot(bot.wx - this.player.wx, bot.wy - this.player.wy) < 2.5)
+        this._hitEntity(bot, 120, 'banana');
+    }
+    this.cameras.main.flash(150, 255, 60, 0, 0.4);
+    this.cameras.main.shake(200, 0.015);
+  }
+
+  // Robot — laser beam: continuous hitscan line that damages all bots in a line
+  _specialLaserBeam() {
+    const a  = this.player.angle;
+    const ox = this.player.wx, oy = this.player.wy;
+    let hit = 0;
+    for (const bot of this.bots) {
+      if (!bot.alive) continue;
+      // Project bot onto the laser line
+      const dx = bot.wx - ox, dy = bot.wy - oy;
+      const along = dx * Math.cos(a) + dy * Math.sin(a);
+      if (along < 0) continue;
+      const perp = Math.abs(-dx * Math.sin(a) + dy * Math.cos(a));
+      if (perp < 0.8) { this._hitEntity(bot, 160, 'banana'); hit++; }
+    }
+    this.cameras.main.flash(120, 0, 255, 200, 0.4);
+    this.cameras.main.shake(100, 0.008);
+  }
+
+  // Wizard — meteor storm: 8 meteors rain down at random positions near bots
+  _specialMeteorStorm() {
+    const targets = this.bots.filter(b => b.alive).slice(0, 8);
+    targets.forEach((bot, i) => {
+      this.time.delayedCall(i * 120, () => {
+        const jx = bot.wx + (Math.random() - 0.5) * 2;
+        const jy = bot.wy + (Math.random() - 0.5) * 2;
+        // damage all bots near this impact
+        for (const b2 of this.bots) {
+          if (!b2.alive) continue;
+          if (Math.hypot(b2.wx - jx, b2.wy - jy) < 2.0)
+            this._hitEntity(b2, 90, 'banana');
+        }
+        const ps = iso(jx, jy);
+        const flash = this.add.image(ps.x, ps.y - 16, 'explosion').setScale(1.4).setDepth(9200).setTint(0xaa44ff);
+        this.time.delayedCall(220, () => flash.destroy());
+        this.cameras.main.shake(80, 0.008);
+      });
+    });
+    this.cameras.main.flash(100, 180, 80, 255, 0.3);
+  }
+
+  // Shark — feeding frenzy: rapid short-range bites in a 180-degree arc ahead
+  _specialFeedingFrenzy() {
+    let bites = 0;
+    const interval = this.time.addEvent({
+      delay: 80, repeat: 6, callback: () => {
+        const a = this.player.angle + (Math.random() - 0.5) * Math.PI;
+        for (const bot of this.bots) {
+          if (!bot.alive) continue;
+          if (Math.hypot(bot.wx - this.player.wx, bot.wy - this.player.wy) < 3.5) {
+            const da = Math.abs(Phaser.Math.Angle.Wrap(Math.atan2(bot.wy - this.player.wy, bot.wx - this.player.wx) - a));
+            if (da < Math.PI * 0.6) { this._hitEntity(bot, 55, 'banana'); bites++; }
+          }
+        }
+      },
+    });
+    this.cameras.main.flash(100, 60, 140, 220, 0.3);
+  }
+
+  // Dragon — fire breath: wide cone of fire DoT lasting 2 seconds
+  _specialFireBreath() {
+    const a    = this.player.angle;
+    const coneW = 0.55;  // half-angle in radians
+    for (let step = 0; step < 5; step++) {
+      this.time.delayedCall(step * 90, () => {
+        for (const bot of this.bots) {
+          if (!bot.alive) continue;
+          const dx = bot.wx - this.player.wx, dy = bot.wy - this.player.wy;
+          const dist = Math.hypot(dx, dy);
+          if (dist > 6) continue;
+          const ang = Math.atan2(dy, dx);
+          if (Math.abs(Phaser.Math.Angle.Wrap(ang - a)) < coneW)
+            this._hitEntity(bot, 40, 'banana');
+        }
+        // Spawn visual fireball projectiles
+        const spread = (Math.random() - 0.5) * coneW;
+        const fa = a + spread;
+        this.bullets.push({
+          wx: this.player.wx + Math.cos(fa) * 0.9,
+          wy: this.player.wy + Math.sin(fa) * 0.9,
+          vx: Math.cos(fa) * 13, vy: Math.sin(fa) * 13,
+          damage: 0, faction: 'banana', splash: 0, life: 1.2,
+          sprite: this.add.image(0, 0, 'peel').setTint(0xff4400).setScale(0.35).setDepth(5000),
+        });
+      });
+    }
+    this.cameras.main.flash(200, 255, 80, 0, 0.45);
+    this.cameras.main.shake(250, 0.02);
+  }
+
+  // Mystery — OBLITERATE: 9999 damage to every bot on screen, full screen flash
+  _specialObliterate() {
+    for (const bot of this.bots) {
+      if (!bot.alive) continue;
+      this._hitEntity(bot, 9999, 'banana');
+    }
+    this.cameras.main.flash(500, 255, 0, 255, 0.9);
+    this.cameras.main.shake(400, 0.035);
   }
 
   // ── Ground hazards (peel traps etc.) ──────────────────────────────────────

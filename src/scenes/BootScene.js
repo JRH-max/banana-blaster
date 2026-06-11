@@ -25,6 +25,17 @@ export class BootScene extends Phaser.Scene {
     this._trashCan();
     this._shuriken();
     this._cannonball();
+    this._hotDog();
+    this._cactus();
+    this._ghost();
+    this._astronaut();
+    this._penguin();
+    this._viking();
+    this._robot();
+    this._wizard();
+    this._shark();
+    this._dragon();
+    this._mystery();
     this.scene.start('MenuScene');
   }
 
@@ -657,5 +668,329 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0x888888, 0.6); g.fillCircle(7, 7, 3);
     g.fillStyle(0xcccccc, 0.5); g.fillCircle(6, 6, 1.5);
     g.generateTexture('cannonball', 22, 22); g.destroy();
+  }
+
+  _hotDog() {
+    const g = this._g(), cx = 22;
+    // Bun body
+    g.fillStyle(0xd49a55,1); g.fillEllipse(cx,32,40,52);
+    g.fillStyle(0xeabb77,0.5); g.fillEllipse(cx-4,22,24,20);
+    // Sausage
+    g.fillStyle(0xcc4422,1); g.fillEllipse(cx,32,34,12);
+    g.fillStyle(0xaa2211,0.4); g.fillEllipse(cx-5,30,16,7);
+    // Mustard
+    g.fillStyle(0xffcc00,0.9); g.fillEllipse(cx,30,26,5);
+    // Eyes
+    g.fillStyle(0x000000,1); g.fillCircle(cx-7,16,2.5); g.fillCircle(cx+7,16,2.5);
+    g.fillStyle(0xffffff,0.6); g.fillCircle(cx-6,15,1); g.fillCircle(cx+8,15,1);
+    // Smile
+    g.lineStyle(2,0x884422,0.9); g.beginPath(); g.arc(cx,21,5,0.1,Math.PI-0.1,false); g.strokePath();
+    // Arms
+    g.fillStyle(0xcc8844,1); g.fillEllipse(cx-22,28,10,8); g.fillEllipse(cx+22,28,10,8);
+    // Legs
+    g.fillStyle(0xd49a55,1); g.fillEllipse(cx-7,54,9,12); g.fillEllipse(cx+7,54,9,12);
+    g.fillStyle(0x884422,1); g.fillEllipse(cx-7,59,12,5); g.fillEllipse(cx+7,59,12,5);
+    g.generateTexture('hot_dog',44,60); g.destroy();
+  }
+
+  _cactus() {
+    const g = this._g(), cx = 22;
+    // Hat
+    g.fillStyle(0x7a4a1a,1); g.fillRect(cx-17,3,34,6);
+    g.fillStyle(0x8b5a2b,1); g.fillRect(cx-11,0,22,10);
+    g.fillStyle(0xaa7733,0.35); g.fillRect(cx-9,1,9,8);
+    // Body
+    g.fillStyle(0x228822,1); g.fillRect(cx-10,13,20,36);
+    g.fillStyle(0x44cc44,0.35); g.fillRect(cx-8,15,8,28);
+    // Arms
+    g.fillStyle(0x228822,1);
+    g.fillRect(cx-22,23,13,7); g.fillRect(cx-22,17,7,13);
+    g.fillRect(cx+9,23,13,7);  g.fillRect(cx+16,17,7,13);
+    // Spikes
+    g.fillStyle(0x115511,1);
+    for (const [x,y] of [[cx-11,20],[cx+11,20],[cx-11,32],[cx+11,32],[cx-21,21],[cx+21,21]]) {
+      g.fillTriangle(x-3,y, x+3,y, x,y-5);
+    }
+    // Face
+    g.fillStyle(0x000000,1); g.fillCircle(cx-5,22,2); g.fillCircle(cx+5,22,2);
+    g.fillStyle(0xffffff,0.5); g.fillCircle(cx-4,21,0.9); g.fillCircle(cx+6,21,0.9);
+    g.fillStyle(0x44cc44,0.6); g.fillEllipse(cx,27,10,4);
+    // Feet
+    g.fillStyle(0x228822,1); g.fillRect(cx-8,49,7,12); g.fillRect(cx+1,49,7,12);
+    g.fillStyle(0x115511,1); g.fillEllipse(cx-4,59,11,5); g.fillEllipse(cx+4,59,11,5);
+    g.generateTexture('cactus',44,60); g.destroy();
+  }
+
+  _ghost() {
+    const g = this._g(), cx = 22;
+    // Glow aura
+    g.fillStyle(0x8888ff,0.15); g.fillEllipse(cx,26,42,50);
+    // Body
+    g.fillStyle(0xe8e8ff,1); g.fillEllipse(cx,20,34,36);
+    g.fillStyle(0xffffff,0.6); g.fillEllipse(cx-5,14,18,16);
+    // Wavy bottom (3 bumps)
+    g.fillStyle(0xe8e8ff,1);
+    g.fillRect(cx-17,32,34,14);
+    g.fillStyle(0x0d1f08,1); // erase bumps with bg colour
+    g.fillEllipse(cx-11,47,13,10); g.fillEllipse(cx,47,13,10); g.fillEllipse(cx+11,47,13,10);
+    // Eyes
+    g.fillStyle(0x2222aa,1); g.fillEllipse(cx-7,19,10,12); g.fillEllipse(cx+7,19,10,12);
+    g.fillStyle(0x000000,1); g.fillEllipse(cx-7,20,6,8);   g.fillEllipse(cx+7,20,6,8);
+    g.fillStyle(0xffffff,0.8); g.fillCircle(cx-5,18,2);    g.fillCircle(cx+9,18,2);
+    // Mouth
+    g.fillStyle(0x4444aa,0.6); g.fillEllipse(cx,28,10,5);
+    g.generateTexture('ghost',44,60); g.destroy();
+  }
+
+  _astronaut() {
+    const g = this._g(), cx = 22;
+    // Suit body
+    g.fillStyle(0xdddddd,1); g.fillRect(cx-12,24,24,28);
+    g.fillStyle(0xbbbbbb,0.4); g.fillRect(cx-10,26,10,22);
+    // Helmet
+    g.fillStyle(0xcccccc,1); g.fillCircle(cx,17,16);
+    g.fillStyle(0xbbccff,0.55); g.fillEllipse(cx+2,16,20,20); // visor
+    g.fillStyle(0x334466,0.7); g.fillEllipse(cx+2,16,16,16);
+    g.fillStyle(0x8899cc,0.5); g.fillEllipse(cx-1,13,8,7);    // visor glint
+    g.fillStyle(0xdddddd,1); g.strokeCircle && g.lineStyle(3,0xaaaaaa,1); g.strokeCircle(cx,17,16);
+    // Arms
+    g.fillStyle(0xdddddd,1); g.fillRect(cx-20,26,9,18); g.fillRect(cx+11,26,9,18);
+    g.fillStyle(0xbbbbbb,0.3); g.fillRect(cx-19,27,5,14); g.fillRect(cx+12,27,5,14);
+    // Gloves
+    g.fillStyle(0x888888,1); g.fillEllipse(cx-16,45,10,7); g.fillEllipse(cx+16,45,10,7);
+    // Legs
+    g.fillStyle(0xcccccc,1); g.fillRect(cx-10,52,9,9); g.fillRect(cx+1,52,9,9);
+    g.fillStyle(0x888888,1); g.fillEllipse(cx-5,59,12,6); g.fillEllipse(cx+5,59,12,6);
+    // Emblem
+    g.fillStyle(0xff4444,1); g.fillRect(cx-4,30,8,5);
+    g.fillStyle(0xffffff,1); g.fillRect(cx-4,35,8,3);
+    g.fillStyle(0x4444ff,1); g.fillRect(cx-4,38,8,4);
+    g.generateTexture('astronaut',44,60); g.destroy();
+  }
+
+  _penguin() {
+    const g = this._g(), cx = 22;
+    // Body
+    g.fillStyle(0x111122,1); g.fillEllipse(cx,32,34,46);
+    g.fillStyle(0x222244,0.4); g.fillEllipse(cx-6,24,14,20);
+    // White belly
+    g.fillStyle(0xeeeeff,1); g.fillEllipse(cx,34,20,32);
+    g.fillStyle(0xffffff,0.5); g.fillEllipse(cx-2,28,12,18);
+    // Head
+    g.fillStyle(0x111122,1); g.fillCircle(cx,13,13);
+    g.fillStyle(0x222244,0.35); g.fillEllipse(cx-4,9,10,10);
+    // Eyes
+    g.fillStyle(0xffffff,1); g.fillCircle(cx-5,11,4); g.fillCircle(cx+5,11,4);
+    g.fillStyle(0x000000,1); g.fillCircle(cx-4,11,2.5); g.fillCircle(cx+6,11,2.5);
+    g.fillStyle(0xffffff,0.9); g.fillCircle(cx-3,10,1); g.fillCircle(cx+7,10,1);
+    // Beak
+    g.fillStyle(0xff8800,1); g.fillTriangle(cx-3,16,cx+3,16,cx,20);
+    // Flippers
+    g.fillStyle(0x111122,1); g.fillEllipse(cx-19,34,10,22); g.fillEllipse(cx+19,34,10,22);
+    // Feet
+    g.fillStyle(0xff8800,1); g.fillEllipse(cx-6,57,14,6); g.fillEllipse(cx+6,57,14,6);
+    g.generateTexture('penguin',44,60); g.destroy();
+  }
+
+  _viking() {
+    const g = this._g(), cx = 22;
+    // Armour body
+    g.fillStyle(0x7a5533,1); g.fillRect(cx-12,24,24,28);
+    g.fillStyle(0x996644,0.5); g.fillRect(cx-10,26,10,22);
+    g.fillStyle(0x554422,0.6);
+    for (let y=28;y<50;y+=6) g.fillRect(cx-12,y,24,2); // armour lines
+    // Shoulder pads
+    g.fillStyle(0x888888,1); g.fillEllipse(cx-14,25,14,8); g.fillEllipse(cx+14,25,14,8);
+    g.fillStyle(0xaaaaaa,0.4); g.fillEllipse(cx-14,24,10,5); g.fillEllipse(cx+14,24,10,5);
+    // Head / skin
+    g.fillStyle(0xd4956a,1); g.fillEllipse(cx,16,26,26);
+    g.fillStyle(0xe8b07a,0.4); g.fillEllipse(cx-4,12,14,14);
+    // Helmet
+    g.fillStyle(0x777777,1); g.fillEllipse(cx,12,28,16);
+    g.fillStyle(0x999999,0.4); g.fillEllipse(cx-5,9,14,10);
+    g.fillStyle(0x555555,1); g.fillRect(cx-14,14,28,5); // brim
+    // Horns
+    g.fillStyle(0xcccccc,1);
+    g.fillTriangle(cx-14,14, cx-22,2, cx-8,10);
+    g.fillTriangle(cx+14,14, cx+22,2, cx+8,10);
+    g.fillStyle(0xaaaaaa,0.4); g.fillTriangle(cx-14,14,cx-20,5,cx-11,11);
+    // Eyes
+    g.fillStyle(0x1a1a1a,1); g.fillCircle(cx-5,17,2.5); g.fillCircle(cx+5,17,2.5);
+    g.fillStyle(0xffffff,0.6); g.fillCircle(cx-4,16,1); g.fillCircle(cx+6,16,1);
+    // Beard
+    g.fillStyle(0xffcc55,1); g.fillEllipse(cx,25,20,14);
+    g.fillStyle(0xffdd77,0.5); g.fillEllipse(cx-3,24,12,10);
+    g.fillStyle(0xffaa33,0.4); g.fillRect(cx-7,24,14,8);
+    // Legs
+    g.fillStyle(0x665533,1); g.fillRect(cx-9,52,8,9); g.fillRect(cx+1,52,8,9);
+    g.fillStyle(0x443322,1); g.fillEllipse(cx-5,59,11,5); g.fillEllipse(cx+5,59,11,5);
+    g.generateTexture('viking',44,60); g.destroy();
+  }
+
+  _robot() {
+    const g = this._g(), cx = 22;
+    // Body (torso)
+    g.fillStyle(0x778899,1); g.fillRect(cx-13,22,26,28);
+    g.fillStyle(0x99aabb,0.4); g.fillRect(cx-11,24,12,22);
+    // Panel lines
+    g.lineStyle(1,0x445566,0.8);
+    g.lineBetween(cx-13,30,cx+13,30);
+    g.lineBetween(cx-13,38,cx+13,38);
+    // Chest light
+    g.fillStyle(0x00ffcc,0.9); g.fillRect(cx-5,32,10,5);
+    g.fillStyle(0xaaffee,0.5); g.fillRect(cx-4,33,5,3);
+    // Head (square)
+    g.fillStyle(0x889aaa,1); g.fillRect(cx-13,4,26,20);
+    g.fillStyle(0xaabbcc,0.35); g.fillRect(cx-11,6,12,14);
+    // Antenna
+    g.fillStyle(0x556677,1); g.fillRect(cx-1,0,3,6);
+    g.fillStyle(0xff3333,0.9); g.fillCircle(cx,0,3);
+    // Eye strip
+    g.fillStyle(0x000011,1); g.fillRect(cx-10,11,20,7);
+    g.fillStyle(0xff4400,1); g.fillRect(cx-9,12,18,5); // LED strip
+    g.fillStyle(0xff8800,0.6); g.fillRect(cx-8,13,8,3);
+    g.fillStyle(0xffcc00,0.5); g.fillRect(cx+2,13,6,3);
+    // Ear bolts
+    g.fillStyle(0x556677,1); g.fillCircle(cx-13,14,3); g.fillCircle(cx+13,14,3);
+    g.fillStyle(0x778899,0.5); g.fillCircle(cx-13,14,1.5); g.fillCircle(cx+13,14,1.5);
+    // Arms
+    g.fillStyle(0x667788,1); g.fillRect(cx-21,23,9,20); g.fillRect(cx+12,23,9,20);
+    g.fillStyle(0x889aaa,0.3); g.fillRect(cx-20,24,5,16); g.fillRect(cx+13,24,5,16);
+    // Hands
+    g.fillStyle(0x556677,1); g.fillRect(cx-21,43,9,7); g.fillRect(cx+12,43,9,7);
+    // Legs
+    g.fillStyle(0x667788,1); g.fillRect(cx-10,50,9,11); g.fillRect(cx+1,50,9,11);
+    g.fillStyle(0x445566,1); g.fillRect(cx-11,58,11,5); g.fillRect(cx,58,11,5);
+    g.generateTexture('robot',44,60); g.destroy();
+  }
+
+  _wizard() {
+    const g = this._g(), cx = 22;
+    // Robe
+    g.fillStyle(0x4422aa,1);
+    g.fillTriangle(cx-14,58, cx+14,58, cx+10,22); // right side
+    g.fillTriangle(cx-14,58, cx-10,22, cx+10,22); // body
+    g.fillStyle(0x6644cc,0.45); g.fillTriangle(cx-8,56,cx-5,24,cx+4,24);
+    // Stars on robe
+    g.fillStyle(0xffee44,0.85);
+    for (const [sx,sy] of [[cx-5,32],[cx+5,44],[cx-3,50],[cx+6,36]]) {
+      g.fillCircle(sx,sy,2.5);
+      g.fillTriangle(sx,sy-5, sx-2,sy+2, sx+2,sy+2);
+    }
+    // Belt
+    g.fillStyle(0xaa8833,1); g.fillRect(cx-12,38,24,5);
+    g.fillStyle(0xffcc44,0.8); g.fillRect(cx-3,39,6,4);
+    // Skin
+    g.fillStyle(0xf0d090,1); g.fillEllipse(cx,18,22,24);
+    g.fillStyle(0xfde0a8,0.4); g.fillEllipse(cx-3,14,12,14);
+    // White beard
+    g.fillStyle(0xffffff,1); g.fillEllipse(cx,28,18,16);
+    g.fillStyle(0xeeeeee,0.5); g.fillEllipse(cx-2,26,10,10);
+    // Eyes
+    g.fillStyle(0x2222aa,1); g.fillCircle(cx-5,15,2.5); g.fillCircle(cx+5,15,2.5);
+    g.fillStyle(0xffffff,0.7); g.fillCircle(cx-4,14,1); g.fillCircle(cx+6,14,1);
+    // Hat
+    g.fillStyle(0x331188,1);
+    g.fillTriangle(cx,0, cx-12,22, cx+12,22);
+    g.fillStyle(0x4422aa,0.5); g.fillTriangle(cx-1,2,cx-8,20,cx+3,20);
+    g.fillStyle(0x330099,1); g.fillRect(cx-14,20,28,6);
+    // Hat star
+    g.fillStyle(0xffee44,1); g.fillCircle(cx,7,3);
+    g.generateTexture('wizard',44,60); g.destroy();
+  }
+
+  _shark() {
+    const g = this._g(), cx = 22;
+    // Body
+    g.fillStyle(0x4477aa,1); g.fillEllipse(cx,32,28,46);
+    g.fillStyle(0x6699cc,0.4); g.fillEllipse(cx-4,22,14,22);
+    // White belly
+    g.fillStyle(0xeeeeff,1); g.fillEllipse(cx+2,34,16,36);
+    g.fillStyle(0xffffff,0.5); g.fillEllipse(cx+1,28,10,22);
+    // Dorsal fin
+    g.fillStyle(0x336699,1); g.fillTriangle(cx-3,6, cx+5,6, cx+1,24);
+    g.fillStyle(0x4488bb,0.4); g.fillTriangle(cx-2,8,cx+4,8,cx+1,22);
+    // Side fins
+    g.fillStyle(0x336699,1); g.fillTriangle(cx-14,34,cx-8,28,cx-8,42);
+    g.fillStyle(0x336699,1); g.fillTriangle(cx+14,34,cx+8,28,cx+8,42);
+    // Head / snout
+    g.fillStyle(0x4477aa,1); g.fillEllipse(cx,14,26,22);
+    g.fillStyle(0x6699cc,0.3); g.fillEllipse(cx-4,10,14,14);
+    // Eyes
+    g.fillStyle(0x000000,1); g.fillCircle(cx-7,12,3.5); g.fillCircle(cx+7,12,3.5);
+    g.fillStyle(0xffffff,1); g.fillCircle(cx-6,11,2); g.fillCircle(cx+8,11,2);
+    g.fillStyle(0x000000,1); g.fillCircle(cx-6,11,1.2); g.fillCircle(cx+8,11,1.2);
+    // Teeth
+    g.fillStyle(0xffffff,1);
+    for (let t=-3;t<=3;t+=2) g.fillTriangle(cx+t-1,21, cx+t+1,21, cx+t,26);
+    // Tail
+    g.fillStyle(0x336699,1); g.fillTriangle(cx-8,55,cx+8,55,cx-6,58); g.fillTriangle(cx-8,55,cx+8,55,cx+6,58);
+    g.generateTexture('shark',44,60); g.destroy();
+  }
+
+  _dragon() {
+    const g = this._g(), cx = 22;
+    // Wings (behind body)
+    g.fillStyle(0xcc2200,0.7); g.fillTriangle(cx-6,18, cx-22,4, cx-16,28);
+    g.fillStyle(0xcc2200,0.7); g.fillTriangle(cx+6,18, cx+22,4, cx+16,28);
+    g.fillStyle(0xff4422,0.3); g.fillTriangle(cx-7,20,cx-20,8,cx-15,26);
+    g.fillStyle(0xff4422,0.3); g.fillTriangle(cx+7,20,cx+20,8,cx+15,26);
+    // Body
+    g.fillStyle(0xcc2200,1); g.fillEllipse(cx,34,28,42);
+    g.fillStyle(0xff4422,0.45); g.fillEllipse(cx-4,26,14,22);
+    // Belly scales
+    g.fillStyle(0xff8844,0.8); g.fillEllipse(cx+2,34,16,30);
+    g.fillStyle(0xffaa66,0.4); g.fillEllipse(cx+1,28,10,18);
+    // Scale lines
+    g.lineStyle(1,0xaa1100,0.5);
+    for (let sy=22;sy<48;sy+=6) g.strokeEllipse(cx,sy,20,5);
+    // Head
+    g.fillStyle(0xcc2200,1); g.fillEllipse(cx,14,26,22);
+    g.fillStyle(0xff4422,0.4); g.fillEllipse(cx-4,10,14,14);
+    // Horns
+    g.fillStyle(0x884400,1); g.fillTriangle(cx-7,5,cx-4,5,cx-5,0); g.fillTriangle(cx+7,5,cx+4,5,cx+5,0);
+    // Eyes
+    g.fillStyle(0xffcc00,1); g.fillCircle(cx-6,13,3.5); g.fillCircle(cx+6,13,3.5);
+    g.fillStyle(0x000000,1); g.fillEllipse(cx-6,13,2,4); g.fillEllipse(cx+6,13,2,4);
+    g.fillStyle(0xffee88,0.5); g.fillCircle(cx-5,12,1); g.fillCircle(cx+7,12,1);
+    // Nostrils
+    g.fillStyle(0x880000,1); g.fillCircle(cx-4,18,1.5); g.fillCircle(cx+4,18,1.5);
+    // Fire breath
+    g.fillStyle(0xffcc00,0.85); g.fillEllipse(cx,23,12,6);
+    g.fillStyle(0xff6600,0.7); g.fillEllipse(cx,25,8,5);
+    g.fillStyle(0xff4400,0.5); g.fillTriangle(cx-3,28,cx+3,28,cx,36);
+    // Legs
+    g.fillStyle(0xcc2200,1); g.fillRect(cx-10,52,8,9); g.fillRect(cx+2,52,8,9);
+    g.fillStyle(0x884400,1); g.fillEllipse(cx-6,59,13,5); g.fillEllipse(cx+6,59,13,5);
+    g.generateTexture('dragon',44,60); g.destroy();
+  }
+
+  _mystery() {
+    const g = this._g(), cx = 22;
+    // Dark aura
+    g.fillStyle(0x220033,0.6); g.fillEllipse(cx,30,44,58);
+    g.fillStyle(0x440055,0.4); g.fillEllipse(cx,28,36,50);
+    // Body void
+    g.fillStyle(0x080010,1); g.fillEllipse(cx,32,30,44);
+    g.fillStyle(0x150025,0.7); g.fillEllipse(cx-4,24,16,22);
+    // Head
+    g.fillStyle(0x080010,1); g.fillCircle(cx,14,14);
+    g.fillStyle(0x150025,0.5); g.fillEllipse(cx-3,11,12,12);
+    // Glowing eyes
+    g.fillStyle(0xee00ff,1); g.fillEllipse(cx-6,13,9,7); g.fillEllipse(cx+6,13,9,7);
+    g.fillStyle(0xff44ff,0.8); g.fillEllipse(cx-6,13,7,5); g.fillEllipse(cx+6,13,7,5);
+    g.fillStyle(0xffffff,0.9); g.fillEllipse(cx-6,13,4,3); g.fillEllipse(cx+6,13,4,3);
+    // Eye glow halos
+    g.fillStyle(0xcc00ee,0.2); g.fillCircle(cx-6,13,8); g.fillCircle(cx+6,13,8);
+    // Question marks floating
+    g.fillStyle(0xcc44ff,0.6);
+    g.fillCircle(cx-12,8,3); g.fillCircle(cx+12,8,3); g.fillCircle(cx,4,2.5);
+    g.fillStyle(0x880099,0.5);
+    g.fillRect(cx-13,4,3,3); g.fillRect(cx+11,4,3,3);
+    // Dark cloak edges
+    g.fillStyle(0x0d0018,1);
+    g.fillTriangle(cx-15,42,cx-9,58,cx-3,42);
+    g.fillTriangle(cx+15,42,cx+9,58,cx+3,42);
+    g.generateTexture('mystery',44,60); g.destroy();
   }
 }
