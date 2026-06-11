@@ -80,23 +80,23 @@ export class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5));
 
     // ── Currently selected character preview ─────────────────────────────────
-    const previewBox = push(this.add.rectangle(SW / 2, 255, 260, 200, 0x000000, 0.45)
+    push(this.add.rectangle(SW / 2, 248, 220, 130, 0x000000, 0.45)
       .setStrokeStyle(2, 0x336633, 0.6));
-    push(this.add.text(SW / 2, 165, 'ACTIVE CHARACTER', {
-      fontSize: '13px', fontFamily: 'Arial Black', color: '#aaaaaa',
+    push(this.add.text(SW / 2, 188, 'ACTIVE CHARACTER', {
+      fontSize: '12px', fontFamily: 'Arial Black', color: '#aaaaaa',
       stroke: '#000', strokeThickness: 2,
     }).setOrigin(0.5));
 
-    // Sprite preview — rebuilt on scene entry
-    this.previewSpr = push(this.add.image(SW / 2, 245, this.selectedChar).setScale(2.8));
-    this.previewNameTxt = push(this.add.text(SW / 2, 320, '', {
-      fontSize: '16px', fontFamily: 'Arial Black', color: '#ffffff',
+    // Sprite preview — small icon so it doesn't dominate the screen
+    this.previewSpr = push(this.add.image(SW / 2 - 60, 248, this.selectedChar).setScale(1.5));
+    this.previewNameTxt = push(this.add.text(SW / 2 + 10, 234, '', {
+      fontSize: '14px', fontFamily: 'Arial Black', color: '#ffffff',
       stroke: '#000', strokeThickness: 3,
-    }).setOrigin(0.5));
-    this.previewAbilityTxt = push(this.add.text(SW / 2, 340, '', {
-      fontSize: '11px', fontFamily: 'Arial Black', color: '#55ffaa',
+    }).setOrigin(0, 0.5));
+    this.previewAbilityTxt = push(this.add.text(SW / 2 + 10, 255, '', {
+      fontSize: '10px', fontFamily: 'Arial Black', color: '#55ffaa',
       stroke: '#000', strokeThickness: 2,
-    }).setOrigin(0.5));
+    }).setOrigin(0, 0.5));
     this._refreshPreview();
 
     // ── Instructions ──────────────────────────────────────────────────────────
