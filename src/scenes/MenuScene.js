@@ -576,6 +576,33 @@ export class MenuScene extends Phaser.Scene {
       stroke: '#000', strokeThickness: 2,
     }).setOrigin(0.5).setDepth(21));
 
+    // Odds display above TNT
+    const BOOM_ODDS = [
+      { label: '???',    color: '#ff00ff', pct: '5%'  },
+      { label: 'MYTHIC', color: '#ff8800', pct: '15%' },
+      { label: 'EPIC',   color: '#aa44ff', pct: '30%' },
+      { label: 'RARE',   color: '#4488ff', pct: '40%' },
+      { label: 'COINS',  color: '#ffd700', pct: '10%' },
+    ];
+    const oddsY = 122;
+    const colW  = 110;
+    const totalW = BOOM_ODDS.length * colW;
+    const oddsStartX = PX - totalW / 2 + colW / 2;
+    BOOM_ODDS.forEach((o, i) => {
+      const ox = oddsStartX + i * colW;
+      const colorHex = parseInt(o.color.slice(1), 16);
+      addB(this.add.rectangle(ox, oddsY, colW - 6, 38, 0x000000, 0.5)
+        .setStrokeStyle(1, colorHex, 0.6).setDepth(21));
+      addB(this.add.text(ox, oddsY - 8, o.label, {
+        fontSize: '11px', fontFamily: 'Arial Black', color: o.color,
+        stroke: '#000', strokeThickness: 2,
+      }).setOrigin(0.5).setDepth(22));
+      addB(this.add.text(ox, oddsY + 9, o.pct, {
+        fontSize: '13px', fontFamily: 'Arial Black', color: '#ffffff',
+        stroke: '#000', strokeThickness: 2,
+      }).setOrigin(0.5).setDepth(22));
+    });
+
     // Big TNT block
     this.boomTntSpr = addB(this.add.image(PX, PY - 20, 'tnt')
       .setScale(5).setDepth(22).setInteractive({ useHandCursor: true }));
