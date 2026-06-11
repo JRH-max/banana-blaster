@@ -56,12 +56,10 @@ export class MenuScene extends Phaser.Scene {
     this.menuItems    = [];
     this.shopItems    = [];
     this.charItems    = [];
-    this.boxItems     = [];
 
     this._buildMenu();
     this._buildShopPanel();
     this._buildCharPanel();
-    this._buildBoxPanel();
     this._showMenu();
   }
 
@@ -118,15 +116,13 @@ export class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5));
     this._refreshMenuCoins();
 
-    // ── Four buttons: PLAY  CHARACTERS  BOXES  SHOP ──────────────────────────
-    const btnY = 506, btnH = 52, btnW = 172, btnGap = 10;
-    const btn1 = SW / 2 - btnW * 1.5 - btnGap * 1.5;  // 400 - 258 - 15 = 127
-    const [bx1, bx2, bx3, bx4] = [0,1,2,3].map(i => btn1 + i * (btnW + btnGap));
+    // ── Three buttons: PLAY  CHARACTERS  SHOP ────────────────────────────────
+    const btnY = 506, btnH = 52;
 
-    const playBtn = push(this.add.rectangle(bx1, btnY, btnW, btnH, 0x228822)
+    const playBtn = push(this.add.rectangle(142, btnY, 200, btnH, 0x228822)
       .setStrokeStyle(3, 0x88ff88, 0.9).setInteractive().setDepth(1));
-    push(this.add.text(bx1, btnY, '▶  PLAY', {
-      fontSize: '20px', fontFamily: 'Arial Black', color: '#ffffff',
+    push(this.add.text(142, btnY, '▶  PLAY', {
+      fontSize: '22px', fontFamily: 'Arial Black', color: '#ffffff',
       stroke: '#000000', strokeThickness: 5,
     }).setOrigin(0.5).setDepth(2));
     playBtn.on('pointerover', () => playBtn.setFillStyle(0x33cc33));
@@ -135,30 +131,20 @@ export class MenuScene extends Phaser.Scene {
     this.input.keyboard.once('keydown-SPACE', () => this._go());
     this.input.keyboard.once('keydown-ENTER', () => this._go());
 
-    const charBtn = push(this.add.rectangle(bx2, btnY, btnW, btnH, 0x1a2a6c)
+    const charBtn = push(this.add.rectangle(400, btnY, 210, btnH, 0x1a2a6c)
       .setStrokeStyle(3, 0x66aaff, 0.9).setInteractive().setDepth(1));
-    push(this.add.text(bx2, btnY, '🎮 CHARS', {
-      fontSize: '18px', fontFamily: 'Arial Black', color: '#aaddff',
+    push(this.add.text(400, btnY, '🎮  CHARACTERS', {
+      fontSize: '19px', fontFamily: 'Arial Black', color: '#aaddff',
       stroke: '#000000', strokeThickness: 4,
     }).setOrigin(0.5).setDepth(2));
     charBtn.on('pointerover', () => charBtn.setFillStyle(0x2a3a9c));
     charBtn.on('pointerout',  () => charBtn.setFillStyle(0x1a2a6c));
     charBtn.on('pointerdown', () => this._openCharPanel());
 
-    const boxBtn = push(this.add.rectangle(bx3, btnY, btnW, btnH, 0x4a1a6c)
-      .setStrokeStyle(3, 0xcc66ff, 0.9).setInteractive().setDepth(1));
-    push(this.add.text(bx3, btnY, '📦 BOXES', {
-      fontSize: '18px', fontFamily: 'Arial Black', color: '#dd99ff',
-      stroke: '#000000', strokeThickness: 4,
-    }).setOrigin(0.5).setDepth(2));
-    boxBtn.on('pointerover', () => boxBtn.setFillStyle(0x6a2a9c));
-    boxBtn.on('pointerout',  () => boxBtn.setFillStyle(0x4a1a6c));
-    boxBtn.on('pointerdown', () => this._openBoxPanel());
-
-    const shopBtn = push(this.add.rectangle(bx4, btnY, btnW, btnH, 0x886600)
+    const shopBtn = push(this.add.rectangle(658, btnY, 200, btnH, 0x886600)
       .setStrokeStyle(3, 0xffcc00, 0.8).setInteractive().setDepth(1));
-    push(this.add.text(bx4, btnY, '🛒  SHOP', {
-      fontSize: '20px', fontFamily: 'Arial Black', color: '#ffdd44',
+    push(this.add.text(658, btnY, '🛒  SHOP', {
+      fontSize: '22px', fontFamily: 'Arial Black', color: '#ffdd44',
       stroke: '#000000', strokeThickness: 5,
     }).setOrigin(0.5).setDepth(2));
     shopBtn.on('pointerover', () => shopBtn.setFillStyle(0xaa8800));
@@ -464,7 +450,6 @@ export class MenuScene extends Phaser.Scene {
     for (const el of this.charItems) el.setVisible(false);
     for (const el of (this.charTabContentItems || [])) el.setVisible(false);
     for (const el of this.shopItems) el.setVisible(false);
-    for (const el of (this.boxItems || [])) el.setVisible(false);
     this._refreshMenuCoins();
     this._refreshPreview();
   }
@@ -479,121 +464,221 @@ export class MenuScene extends Phaser.Scene {
   }
 
   _openShop() {
+    this.shopTab = this.shopTab || 'WEAPONS';
+    this._buildShopPanel();
     for (const el of this.menuItems) el.setVisible(false);
+    for (const el of (this.charTabContentItems || [])) el.setVisible(false);
     for (const el of this.charItems) el.setVisible(false);
     for (const el of this.shopItems) el.setVisible(true);
-    this._refreshShop();
   }
 
-  // ── Mystery Box panel ─────────────────────────────────────────────────────
-  _buildBoxPanel() {
-    for (const el of (this.boxItems || [])) { try { el.destroy(); } catch {} }
-    this.boxItems = [];
-    const add = el => { this.boxItems.push(el); return el; };
+  // ── Shop panel (WEAPONS | BOXES tabs) ────────────────────────────────────
+  _buildShopPanel() {
+    this.shopItems    = [];
+    this.shopTabItems = [];
+    this.shopBuyBtns  = [];
+    if (!this.shopTab) this.shopTab = 'WEAPONS';
 
-    const BOX_COST = 500;
-    const PW = 500, PH = 390, PX = SW / 2, PY = SH / 2;
+    const add = el => { this.shopItems.push(el); return el; };
 
-    add(this.add.rectangle(PX, SH / 2, SW, SH, 0x000000, 0.78).setDepth(9));
-    add(this.add.rectangle(PX, PY, PW, PH, 0x08080e).setDepth(10)
-      .setStrokeStyle(2, 0xcc66ff, 0.85));
+    const PW = 640, PH = 510, PX = SW / 2, PY = SH / 2;
 
-    // Title
-    add(this.add.text(PX, PY - PH / 2 + 28, '📦  MYSTERY BOX', {
-      fontSize: '22px', fontFamily: 'Arial Black', color: '#dd99ff',
+    // Panel frame
+    add(this.add.rectangle(PX, PY, PW, PH, 0x111128).setDepth(10).setStrokeStyle(2, 0x5555cc, 0.9));
+
+    // Header
+    add(this.add.text(PX - PW / 2 + 18, PY - PH / 2 + 24, '🛒  SHOP', {
+      fontSize: '20px', fontFamily: 'Arial Black', color: '#ffdd44',
       stroke: '#000', strokeThickness: 3,
-    }).setOrigin(0.5).setDepth(11));
+    }).setOrigin(0, 0.5).setDepth(11));
 
-    add(this.add.text(PX, PY - PH / 2 + 56, `${BOX_COST} 💰 per box`, {
-      fontSize: '14px', fontFamily: 'Arial', color: '#aaaaaa',
-      stroke: '#000', strokeThickness: 2,
-    }).setOrigin(0.5).setDepth(11));
+    this.shopCoinText = add(this.add.text(PX + PW / 2 - 16, PY - PH / 2 + 24, '💰 0', {
+      fontSize: '18px', fontFamily: 'Arial Black', color: '#ffd700',
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(1, 0.5).setDepth(11));
 
-    // Divider
-    const dv = this.add.graphics().setDepth(11);
-    dv.lineStyle(1, 0x664488, 0.6);
-    dv.lineBetween(PX - PW / 2 + 20, PY - PH / 2 + 70, PX + PW / 2 - 20, PY - PH / 2 + 70);
-    add(dv);
-
-    // Odds table
-    const ODDS = [
-      { label: '???',    color: '#ff00ff', pct: '1%',  note: 'insanely rare' },
-      { label: 'MYTHIC', color: '#ff8800', pct: '5%',  note: 'extremely rare' },
-      { label: 'EPIC',   color: '#aa44ff', pct: '10%', note: 'very rare' },
-      { label: 'RARE',   color: '#4488ff', pct: '20%', note: 'uncommon' },
-      { label: 'COINS',  color: '#ffd700', pct: '64%', note: '50–150 coins' },
+    // ── Tabs: WEAPONS | BOXES ──────────────────────────────────────────────
+    const SHOP_TABS = [
+      { id: 'WEAPONS', label: '⚙️  WEAPONS', activeColor: 0x1a2a50, inactiveColor: 0x0a1020, border: 0x5566cc },
+      { id: 'BOXES',   label: '📦  BOXES',   activeColor: 0x2a1050, inactiveColor: 0x0a0820, border: 0x9955cc },
     ];
+    const tabY = PY - PH / 2 + 54, tabW = 180, tabH = 28;
+    const tabStartX = PX - (SHOP_TABS.length * tabW + (SHOP_TABS.length - 1) * 8) / 2 + tabW / 2;
 
-    add(this.add.text(PX - 160, PY - 105, 'RARITY', {
-      fontSize: '11px', fontFamily: 'Arial Black', color: '#666666', stroke: '#000', strokeThickness: 1,
-    }).setOrigin(0, 0.5).setDepth(11));
-    add(this.add.text(PX + 60, PY - 105, 'CHANCE', {
-      fontSize: '11px', fontFamily: 'Arial Black', color: '#666666', stroke: '#000', strokeThickness: 1,
-    }).setOrigin(0, 0.5).setDepth(11));
-    add(this.add.text(PX + 140, PY - 105, 'REWARD', {
-      fontSize: '11px', fontFamily: 'Arial Black', color: '#666666', stroke: '#000', strokeThickness: 1,
-    }).setOrigin(0, 0.5).setDepth(11));
-
-    ODDS.forEach((o, i) => {
-      const oy = PY - 75 + i * 30;
-      add(this.add.text(PX - 160, oy, o.label, {
-        fontSize: '14px', fontFamily: 'Arial Black', color: o.color,
-        stroke: '#000', strokeThickness: 2,
-      }).setOrigin(0, 0.5).setDepth(11));
-      add(this.add.text(PX + 60, oy, o.pct, {
-        fontSize: '14px', fontFamily: 'Arial Black', color: '#ffffff',
-        stroke: '#000', strokeThickness: 2,
-      }).setOrigin(0, 0.5).setDepth(11));
-      add(this.add.text(PX + 140, oy, o.note, {
-        fontSize: '12px', fontFamily: 'Arial', color: '#888888',
-        stroke: '#000', strokeThickness: 1,
-      }).setOrigin(0, 0.5).setDepth(11));
+    this.shopTabBtns = {};
+    SHOP_TABS.forEach((t, i) => {
+      const tx = tabStartX + i * (tabW + 8);
+      const isActive = t.id === this.shopTab;
+      const bg = add(this.add.rectangle(tx, tabY, tabW, tabH,
+        isActive ? t.activeColor : t.inactiveColor, 0.95)
+        .setStrokeStyle(2, t.border, isActive ? 1 : 0.35).setInteractive().setDepth(11));
+      const txt = add(this.add.text(tx, tabY, t.label, {
+        fontSize: '13px', fontFamily: 'Arial Black',
+        color: isActive ? '#ffffff' : '#555577', stroke: '#000', strokeThickness: 2,
+      }).setOrigin(0.5).setDepth(12));
+      this.shopTabBtns[t.id] = { bg, txt, t };
+      bg.on('pointerdown', () => this._switchShopTab(t.id));
+      bg.on('pointerover',  () => { if (t.id !== this.shopTab) bg.setFillStyle(t.activeColor, 0.6); });
+      bg.on('pointerout',   () => { if (t.id !== this.shopTab) bg.setFillStyle(t.inactiveColor, 0.95); });
     });
 
-    // Coin balance
-    const coins = getSavedCoins();
-    this.boxCoinTxt = add(this.add.text(PX, PY + 86, `💰 ${coins} coins`, {
-      fontSize: '16px', fontFamily: 'Arial Black', color: '#ffd700',
-      stroke: '#000', strokeThickness: 3,
-    }).setOrigin(0.5).setDepth(11));
-
-    // Open button
-    const canAfford = coins >= BOX_COST;
-    const openBg = add(this.add.rectangle(PX, PY + 122, 240, 38,
-      canAfford ? 0x5a1a7c : 0x221133, 0.95)
-      .setStrokeStyle(2, canAfford ? 0xcc66ff : 0x443355, 0.9).setDepth(11));
-    const openTxt = add(this.add.text(PX, PY + 122,
-      canAfford ? `📦  OPEN BOX  (${BOX_COST} 💰)` : `NEED ${BOX_COST} 💰`, {
-        fontSize: '14px', fontFamily: 'Arial Black',
-        color: canAfford ? '#dd99ff' : '#554466',
-        stroke: '#000', strokeThickness: 2,
-      }).setOrigin(0.5).setDepth(12));
-    if (canAfford) {
-      openBg.setInteractive();
-      openBg.on('pointerover', () => openBg.setFillStyle(0x7a2aac));
-      openBg.on('pointerout',  () => openBg.setFillStyle(0x5a1a7c));
-      openBg.on('pointerdown', () => this._rollBox());
-    }
+    const tabDiv = this.add.graphics().setDepth(11);
+    tabDiv.lineStyle(1, 0x334488, 0.6);
+    tabDiv.lineBetween(PX - PW / 2 + 12, PY - PH / 2 + 72, PX + PW / 2 - 12, PY - PH / 2 + 72);
+    add(tabDiv);
 
     // Back button
-    const backBtn = add(this.add.rectangle(PX, PY + PH / 2 - 24, 180, 30, 0x553300, 0.9)
+    const backBtn = add(this.add.rectangle(PX, PY + PH / 2 - 24, 200, 34, 0x553300, 0.9)
       .setStrokeStyle(2, 0xffaa44, 0.7).setInteractive().setDepth(11));
     add(this.add.text(PX, PY + PH / 2 - 24, '◀  BACK TO MENU', {
-      fontSize: '13px', fontFamily: 'Arial Black', color: '#ffcc88',
+      fontSize: '14px', fontFamily: 'Arial Black', color: '#ffcc88',
       stroke: '#000', strokeThickness: 2,
     }).setOrigin(0.5).setDepth(12));
     backBtn.on('pointerover', () => backBtn.setFillStyle(0x774400));
     backBtn.on('pointerout',  () => backBtn.setFillStyle(0x553300));
     backBtn.on('pointerdown', () => this._showMenu());
+
+    this._buildShopTabContent();
   }
 
-  _openBoxPanel() {
-    this._buildBoxPanel();
-    for (const el of this.menuItems) el.setVisible(false);
-    for (const el of this.charItems) el.setVisible(false);
-    for (const el of (this.charTabContentItems || [])) el.setVisible(false);
-    for (const el of this.shopItems) el.setVisible(false);
-    for (const el of this.boxItems) el.setVisible(true);
+  _switchShopTab(tabId) {
+    this.shopTab = tabId;
+    const SHOP_TABS = [
+      { id: 'WEAPONS', activeColor: 0x1a2a50, inactiveColor: 0x0a1020, border: 0x5566cc },
+      { id: 'BOXES',   activeColor: 0x2a1050, inactiveColor: 0x0a0820, border: 0x9955cc },
+    ];
+    SHOP_TABS.forEach(t => {
+      const entry = this.shopTabBtns?.[t.id];
+      if (!entry) return;
+      const isActive = t.id === tabId;
+      entry.bg.setFillStyle(isActive ? t.activeColor : t.inactiveColor, 0.95);
+      entry.bg.setStrokeStyle(2, t.border, isActive ? 1 : 0.35);
+      entry.txt.setColor(isActive ? '#ffffff' : '#555577');
+    });
+    this._buildShopTabContent();
+    if (this.shopCoinText) this.shopCoinText.setText('💰 ' + getSavedCoins());
+  }
+
+  _buildShopTabContent() {
+    for (const el of (this.shopTabItems || [])) { try { el.destroy(); } catch {} }
+    this.shopTabItems = [];
+    this.shopBuyBtns  = [];
+    const addT = el => { this.shopTabItems.push(el); this.shopItems.push(el); return el; };
+
+    const PW = 640, PH = 510, PX = SW / 2, PY = SH / 2;
+    const contentTop = PY - PH / 2 + 80;  // below tabs
+
+    if (this.shopTab === 'WEAPONS') {
+      // ── Weapon upgrades ──────────────────────────────────────────────────
+      const lx    = PX - PW / 2 + 20;
+      const secH  = 124;
+      for (let wi = 0; wi < 3; wi++) {
+        const secY = contentTop + wi * secH;
+        addT(this.add.text(lx, secY + 8, WEAPON_NAMES[wi], {
+          fontSize: '14px', fontFamily: 'Arial Black', color: WEAPON_COLORS[wi],
+          stroke: '#000', strokeThickness: 2,
+        }).setOrigin(0, 0.5).setDepth(11));
+
+        if (wi < 2) {
+          const sd = this.add.graphics().setDepth(11);
+          sd.lineStyle(1, 0x333355, 0.7);
+          sd.lineBetween(lx, secY + secH - 2, PX + PW / 2 - 20, secY + secH - 2);
+          addT(sd);
+        }
+
+        for (let ui = 0; ui < 3; ui++) {
+          const upg  = UPGRADES[ui];
+          const rowY = secY + 30 + ui * 28;
+
+          addT(this.add.text(lx + 8, rowY, upg.label, {
+            fontSize: '12px', fontFamily: 'Arial Black', color: '#999999',
+            stroke: '#000', strokeThickness: 2,
+          }).setOrigin(0, 0.5).setDepth(11));
+
+          const lvlTxt = addT(this.add.text(PX - 50, rowY, 'Lv 0/3', {
+            fontSize: '12px', fontFamily: 'Arial', color: '#888888',
+            stroke: '#000', strokeThickness: 2,
+          }).setOrigin(0.5).setDepth(11));
+
+          const costTxt = addT(this.add.text(PX + 70, rowY, '', {
+            fontSize: '13px', fontFamily: 'Arial Black', color: '#ffd700',
+            stroke: '#000', strokeThickness: 2,
+          }).setOrigin(0.5).setDepth(11));
+
+          const buyBtn = addT(this.add.rectangle(PX + PW / 2 - 54, rowY, 88, 24, 0x1a5c1a, 0.9)
+            .setStrokeStyle(1, 0x88ee88, 0.6).setInteractive().setDepth(11));
+          const buyTxt = addT(this.add.text(PX + PW / 2 - 54, rowY, 'BUY', {
+            fontSize: '13px', fontFamily: 'Arial Black', color: '#88ff88',
+            stroke: '#000', strokeThickness: 2,
+          }).setOrigin(0.5).setDepth(12));
+
+          buyBtn.on('pointerover', () => buyBtn.setFillStyle(0x2a8c2a));
+          buyBtn.on('pointerout',  () => buyBtn.setFillStyle(0x1a5c1a));
+          buyBtn.on('pointerdown', () => { this._buyUpgrade(wi, upg.key); this._refreshShop(); });
+
+          this.shopBuyBtns.push({ weaponIdx: wi, type: upg.key, buyBtn, buyTxt, costTxt, lvlTxt });
+        }
+      }
+      this._refreshShop();
+
+    } else {
+      // ── Mystery Boxes ─────────────────────────────────────────────────────
+      const BOX_COST = 500;
+      const cx = PX;
+
+      addT(this.add.text(cx, contentTop + 18, '📦  MYSTERY BOX', {
+        fontSize: '20px', fontFamily: 'Arial Black', color: '#dd99ff',
+        stroke: '#000', strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(11));
+
+      addT(this.add.text(cx, contentTop + 44, `${BOX_COST} 💰 per box — contains a random character or coins`, {
+        fontSize: '12px', fontFamily: 'Arial', color: '#888888',
+        stroke: '#000', strokeThickness: 1,
+      }).setOrigin(0.5).setDepth(11));
+
+      // Odds table
+      const ODDS = [
+        { label: '???',        color: '#ff00ff', pct: '1%',  note: 'Mystery character' },
+        { label: 'MYTHIC',     color: '#ff8800', pct: '5%',  note: 'Mythic character' },
+        { label: 'EPIC',       color: '#aa44ff', pct: '10%', note: 'Epic character' },
+        { label: 'RARE',       color: '#4488ff', pct: '20%', note: 'Rare character' },
+        { label: '1000 COINS', color: '#ffd700', pct: '24%', note: 'Coin reward' },
+        { label: '500 COINS',  color: '#ccaa00', pct: '40%', note: 'Coin reward' },
+      ];
+
+      const tableTop = contentTop + 68;
+      const colRarity = cx - 220, colPct = cx + 60, colNote = cx + 130;
+
+      addT(this.add.text(colRarity, tableTop, 'REWARD',  { fontSize: '10px', fontFamily: 'Arial Black', color: '#555566', stroke: '#000', strokeThickness: 1 }).setOrigin(0, 0.5).setDepth(11));
+      addT(this.add.text(colPct,    tableTop, 'CHANCE',  { fontSize: '10px', fontFamily: 'Arial Black', color: '#555566', stroke: '#000', strokeThickness: 1 }).setOrigin(0, 0.5).setDepth(11));
+      addT(this.add.text(colNote,   tableTop, 'TYPE',    { fontSize: '10px', fontFamily: 'Arial Black', color: '#555566', stroke: '#000', strokeThickness: 1 }).setOrigin(0, 0.5).setDepth(11));
+
+      ODDS.forEach((o, i) => {
+        const oy = tableTop + 22 + i * 26;
+        addT(this.add.text(colRarity, oy, o.label, { fontSize: '13px', fontFamily: 'Arial Black', color: o.color, stroke: '#000', strokeThickness: 2 }).setOrigin(0, 0.5).setDepth(11));
+        addT(this.add.text(colPct,    oy, o.pct,   { fontSize: '13px', fontFamily: 'Arial Black', color: '#ffffff', stroke: '#000', strokeThickness: 2 }).setOrigin(0, 0.5).setDepth(11));
+        addT(this.add.text(colNote,   oy, o.note,  { fontSize: '11px', fontFamily: 'Arial', color: '#777777', stroke: '#000', strokeThickness: 1 }).setOrigin(0, 0.5).setDepth(11));
+      });
+
+      // Open button
+      const coins = getSavedCoins();
+      const canAfford = coins >= BOX_COST;
+      const openBg = addT(this.add.rectangle(cx, tableTop + 22 + ODDS.length * 26 + 30, 250, 40,
+        canAfford ? 0x5a1a7c : 0x221133, 0.95)
+        .setStrokeStyle(2, canAfford ? 0xcc66ff : 0x443355, 0.9).setDepth(11));
+      addT(this.add.text(cx, tableTop + 22 + ODDS.length * 26 + 30,
+        canAfford ? `📦  OPEN BOX  (${BOX_COST} 💰)` : `NEED ${BOX_COST} 💰`, {
+          fontSize: '14px', fontFamily: 'Arial Black',
+          color: canAfford ? '#dd99ff' : '#554466', stroke: '#000', strokeThickness: 2,
+        }).setOrigin(0.5).setDepth(12));
+      if (canAfford) {
+        openBg.setInteractive();
+        openBg.on('pointerover', () => openBg.setFillStyle(0x7a2aac));
+        openBg.on('pointerout',  () => openBg.setFillStyle(0x5a1a7c));
+        openBg.on('pointerdown', () => this._rollBox());
+      }
+    }
+    if (this.shopCoinText) this.shopCoinText.setText('💰 ' + getSavedCoins());
   }
 
   _rollBox() {
@@ -602,24 +687,25 @@ export class MenuScene extends Phaser.Scene {
     if (coins < BOX_COST) return;
     saveCoins(coins - BOX_COST);
 
+    // Roll: 1% ???, 5% MYTHIC, 10% EPIC, 20% RARE, 24% = 1000 coins, 40% = 500 coins
     const roll = Math.random() * 100;
     let rarity;
     if      (roll < 1)  rarity = '???';
     else if (roll < 6)  rarity = 'MYTHIC';
     else if (roll < 16) rarity = 'EPIC';
     else if (roll < 36) rarity = 'RARE';
-    else                rarity = 'COINS';
+    else if (roll < 60) rarity = 'COINS_1000';
+    else                rarity = 'COINS_500';
 
     let reward;
-    if (rarity === 'COINS') {
-      const bonus = 50 + Math.floor(Math.random() * 101);
-      saveCoins(getSavedCoins() + bonus);
-      reward = { type: 'coins', amount: bonus };
+    if (rarity === 'COINS_500' || rarity === 'COINS_1000') {
+      const amount = rarity === 'COINS_1000' ? 1000 : 500;
+      saveCoins(getSavedCoins() + amount);
+      reward = { type: 'coins', amount, rarity: 'COINS' };
     } else {
       const unlocked  = getSavedUnlocked();
       const available = CHARACTERS.filter(c => c.rarity === rarity && !unlocked.includes(c.key));
       if (available.length === 0) {
-        // Already own them all — give coins as consolation
         const bonus = { '???': 3000, 'MYTHIC': 1500, 'EPIC': 800, 'RARE': 300 }[rarity] || 300;
         saveCoins(getSavedCoins() + bonus);
         reward = { type: 'coins', amount: bonus, alreadyOwned: true, rarity };
@@ -637,43 +723,37 @@ export class MenuScene extends Phaser.Scene {
   _showBoxResult(reward, rarity) {
     const RARITY_COLORS = {
       '???': '#ff00ff', 'MYTHIC': '#ff8800', 'EPIC': '#aa44ff',
-      'RARE': '#4488ff', 'COINS': '#ffd700',
+      'RARE': '#4488ff', 'COINS_1000': '#ffd700', 'COINS_500': '#ccaa00', 'COINS': '#ffd700',
     };
     const colorStr = RARITY_COLORS[rarity] || '#ffffff';
     const colorHex = parseInt(colorStr.slice(1), 16);
 
-    // Spinning reveal — cycles through rarity labels before settling
     const PX = SW / 2, PY = SH / 2;
-    const spinLabels = ['???', 'MYTHIC', 'EPIC', 'RARE', 'COINS'];
+    const spinLabels = ['???', 'MYTHIC', 'EPIC', 'RARE', '1000 💰', '500 💰'];
+    const spinColors = ['#ff00ff', '#ff8800', '#aa44ff', '#4488ff', '#ffd700', '#ccaa00'];
     let spinCount = 0;
-    const totalSpins = 16;
+    const totalSpins = 18;
 
     const dimBg  = this.add.rectangle(PX, PY, SW, SH, 0x000000, 0.65).setDepth(30);
-    const spinBox = this.add.rectangle(PX, PY, 360, 100, 0x050510).setDepth(31)
-      .setStrokeStyle(2, 0x888888, 0.6);
+    const spinBox = this.add.rectangle(PX, PY, 380, 110, 0x050510).setDepth(31).setStrokeStyle(2, 0x888888, 0.6);
     const spinTxt = this.add.text(PX, PY, '...', {
-      fontSize: '32px', fontFamily: 'Arial Black', color: '#ffffff',
-      stroke: '#000', strokeThickness: 4,
+      fontSize: '34px', fontFamily: 'Arial Black', color: '#ffffff', stroke: '#000', strokeThickness: 4,
     }).setOrigin(0.5).setDepth(32);
 
     const spinTimer = this.time.addEvent({
-      delay: 60,
-      repeat: totalSpins - 1,
+      delay: 55, repeat: totalSpins - 1,
       callback: () => {
         spinCount++;
-        const label = spinLabels[spinCount % spinLabels.length];
-        const c = RARITY_COLORS[label] || '#ffffff';
-        spinTxt.setText(label).setColor(c);
-        // Slow down near the end
-        if (spinCount > totalSpins - 4) spinTimer.delay = 140;
+        const idx = spinCount % spinLabels.length;
+        spinTxt.setText(spinLabels[idx]).setColor(spinColors[idx]);
+        if (spinCount > totalSpins - 5) spinTimer.delay = 130;
         if (spinCount === totalSpins - 1) {
-          // Last frame — show the actual result
-          spinTxt.setText(rarity).setColor(colorStr);
+          const finalLabel = rarity.startsWith('COINS') ? (rarity === 'COINS_1000' ? '1000 💰' : '500 💰') : rarity;
+          spinTxt.setText(finalLabel).setColor(colorStr);
           spinBox.setStrokeStyle(3, colorHex, 1);
         }
         if (spinCount >= totalSpins) {
-          // Spin done — destroy spinner, show full result card
-          this.time.delayedCall(350, () => {
+          this.time.delayedCall(380, () => {
             dimBg.destroy(); spinBox.destroy(); spinTxt.destroy();
             this._showBoxCard(reward, rarity, colorStr, colorHex);
           });
@@ -684,32 +764,29 @@ export class MenuScene extends Phaser.Scene {
 
   _showBoxCard(reward, rarity, colorStr, colorHex) {
     const resultItems = [];
-    const addR = el => { resultItems.push(el); this.boxItems.push(el); return el; };
+    const addR = el => { resultItems.push(el); this.shopItems.push(el); return el; };
     const PX = SW / 2, PY = SH / 2;
 
     addR(this.add.rectangle(PX, PY, SW, SH, 0x000000, 0.72).setDepth(30));
-    addR(this.add.rectangle(PX, PY, 380, 300, 0x06060e).setDepth(31)
-      .setStrokeStyle(3, colorHex, 1));
+    addR(this.add.rectangle(PX, PY, 380, 300, 0x06060e).setDepth(31).setStrokeStyle(3, colorHex, 1));
 
     // Rarity banner
     addR(this.add.rectangle(PX, PY - 118, 380, 36, colorHex, 0.2).setDepth(31));
-    addR(this.add.text(PX, PY - 118, rarity, {
-      fontSize: '22px', fontFamily: 'Arial Black', color: colorStr,
-      stroke: '#000000', strokeThickness: 4,
+    const displayRarity = rarity.startsWith('COINS') ? (rarity === 'COINS_1000' ? '1000 COINS' : '500 COINS') : rarity;
+    addR(this.add.text(PX, PY - 118, displayRarity, {
+      fontSize: '22px', fontFamily: 'Arial Black', color: colorStr, stroke: '#000000', strokeThickness: 4,
     }).setOrigin(0.5).setDepth(32));
 
     if (reward.type === 'character') {
-      addR(this.add.image(PX, PY - 40, reward.char.key).setScale(2.4).setDepth(32));
+      addR(this.add.image(PX, PY - 38, reward.char.key).setScale(2.4).setDepth(32));
       addR(this.add.text(PX, PY + 58, reward.char.name + (reward.char.subtitle ? ' ' + reward.char.subtitle : ''), {
-        fontSize: '18px', fontFamily: 'Arial Black', color: '#ffffff',
-        stroke: '#000', strokeThickness: 3,
+        fontSize: '18px', fontFamily: 'Arial Black', color: '#ffffff', stroke: '#000', strokeThickness: 3,
       }).setOrigin(0.5).setDepth(32));
       addR(this.add.text(PX, PY + 82, '✨  CHARACTER UNLOCKED!', {
-        fontSize: '12px', fontFamily: 'Arial Black', color: '#55ff88',
-        stroke: '#000', strokeThickness: 2,
+        fontSize: '12px', fontFamily: 'Arial Black', color: '#55ff88', stroke: '#000', strokeThickness: 2,
       }).setOrigin(0.5).setDepth(32));
     } else {
-      addR(this.add.text(PX, PY - 30, '💰', { fontSize: '52px' }).setOrigin(0.5).setDepth(32));
+      addR(this.add.text(PX, PY - 28, '💰', { fontSize: '54px' }).setOrigin(0.5).setDepth(32));
       const msg = reward.alreadyOwned
         ? `Already own all ${reward.rarity}s!\n+${reward.amount} coins consolation`
         : `+${reward.amount} coins`;
@@ -719,133 +796,33 @@ export class MenuScene extends Phaser.Scene {
       }).setOrigin(0.5).setDepth(32));
     }
 
-    // Open another button
-    const againBg = addR(this.add.rectangle(PX - 72, PY + 118, 130, 32, 0x5a1a7c, 0.9)
+    // Buttons
+    const againBg = addR(this.add.rectangle(PX - 76, PY + 118, 136, 32, 0x5a1a7c, 0.9)
       .setStrokeStyle(2, 0xcc66ff, 0.8).setInteractive().setDepth(32));
-    addR(this.add.text(PX - 72, PY + 118, '📦 OPEN AGAIN', {
-      fontSize: '11px', fontFamily: 'Arial Black', color: '#dd99ff',
-      stroke: '#000', strokeThickness: 2,
+    addR(this.add.text(PX - 76, PY + 118, '📦 OPEN AGAIN', {
+      fontSize: '11px', fontFamily: 'Arial Black', color: '#dd99ff', stroke: '#000', strokeThickness: 2,
     }).setOrigin(0.5).setDepth(33));
     againBg.on('pointerover', () => againBg.setFillStyle(0x7a2aac));
     againBg.on('pointerout',  () => againBg.setFillStyle(0x5a1a7c));
     againBg.on('pointerdown', () => {
       for (const el of resultItems) { try { el.destroy(); } catch {} }
-      this.boxItems = this.boxItems.filter(e => !resultItems.includes(e));
-      this._buildBoxPanel();
-      for (const el of this.menuItems) el.setVisible(false);
-      for (const el of this.boxItems) el.setVisible(true);
+      this.shopItems = this.shopItems.filter(e => !resultItems.includes(e));
+      this._switchShopTab('BOXES');
       this._rollBox();
     });
 
-    // Back to boxes button
-    const backBg = addR(this.add.rectangle(PX + 72, PY + 118, 130, 32, 0x553300, 0.9)
+    const backBg = addR(this.add.rectangle(PX + 76, PY + 118, 136, 32, 0x553300, 0.9)
       .setStrokeStyle(2, 0xffaa44, 0.7).setInteractive().setDepth(32));
-    addR(this.add.text(PX + 72, PY + 118, '◀ BACK', {
-      fontSize: '11px', fontFamily: 'Arial Black', color: '#ffcc88',
-      stroke: '#000', strokeThickness: 2,
+    addR(this.add.text(PX + 76, PY + 118, '◀ BACK TO SHOP', {
+      fontSize: '10px', fontFamily: 'Arial Black', color: '#ffcc88', stroke: '#000', strokeThickness: 2,
     }).setOrigin(0.5).setDepth(33));
     backBg.on('pointerover', () => backBg.setFillStyle(0x774400));
     backBg.on('pointerout',  () => backBg.setFillStyle(0x553300));
     backBg.on('pointerdown', () => {
       for (const el of resultItems) { try { el.destroy(); } catch {} }
-      this.boxItems = this.boxItems.filter(e => !resultItems.includes(e));
-      this._buildBoxPanel();
-      for (const el of this.menuItems) el.setVisible(false);
-      for (const el of this.boxItems) el.setVisible(true);
+      this.shopItems = this.shopItems.filter(e => !resultItems.includes(e));
+      this._switchShopTab('BOXES');
     });
-  }
-
-  // ── Weapon shop panel ──────────────────────────────────────────────────────
-  _buildShopPanel() {
-    const PW = 620, PH = 490;
-    const PX = SW / 2, PY = SH / 2;
-
-    this.shopItems.push(
-      this.add.rectangle(PX, PY, PW, PH, 0x111128).setDepth(10).setStrokeStyle(2, 0x5555cc, 0.9)
-    );
-
-    const titleTxt = this.add.text(PX - PW / 2 + 18, PY - PH / 2 + 22, '🛒  WEAPON SHOP', {
-      fontSize: '20px', fontFamily: 'Arial Black', color: '#ffdd44',
-      stroke: '#000', strokeThickness: 3,
-    }).setOrigin(0, 0.5).setDepth(11);
-    this.shopItems.push(titleTxt);
-
-    this.shopCoinText = this.add.text(PX + PW / 2 - 16, PY - PH / 2 + 22, '💰 0', {
-      fontSize: '19px', fontFamily: 'Arial Black', color: '#ffd700',
-      stroke: '#000', strokeThickness: 3,
-    }).setOrigin(1, 0.5).setDepth(11);
-    this.shopItems.push(this.shopCoinText);
-
-    const hdiv = this.add.graphics().setDepth(11);
-    hdiv.lineStyle(1, 0x5555aa, 0.7);
-    hdiv.lineBetween(PX - PW / 2 + 12, PY - PH / 2 + 38, PX + PW / 2 - 12, PY - PH / 2 + 38);
-    this.shopItems.push(hdiv);
-
-    this.shopBuyBtns = [];
-    const startY = PY - PH / 2 + 56;
-    const secH   = 132;
-    const lx     = PX - PW / 2 + 20;
-
-    for (let wi = 0; wi < 3; wi++) {
-      const secY = startY + wi * secH;
-      this.shopItems.push(this.add.text(lx, secY + 10, WEAPON_NAMES[wi], {
-        fontSize: '14px', fontFamily: 'Arial Black', color: WEAPON_COLORS[wi],
-        stroke: '#000', strokeThickness: 2,
-      }).setOrigin(0, 0.5).setDepth(11));
-
-      if (wi < 2) {
-        const sd = this.add.graphics().setDepth(11);
-        sd.lineStyle(1, 0x333355, 0.7);
-        sd.lineBetween(lx, secY + secH - 2, PX + PW / 2 - 20, secY + secH - 2);
-        this.shopItems.push(sd);
-      }
-
-      for (let ui = 0; ui < 3; ui++) {
-        const upg  = UPGRADES[ui];
-        const rowY = secY + 34 + ui * 30;
-
-        const lbl = this.add.text(lx + 8, rowY, upg.label, {
-          fontSize: '12px', fontFamily: 'Arial Black', color: '#999999',
-          stroke: '#000', strokeThickness: 2,
-        }).setOrigin(0, 0.5).setDepth(11);
-
-        const lvlTxt = this.add.text(PX - 50, rowY, 'Lv 0/3', {
-          fontSize: '12px', fontFamily: 'Arial', color: '#888888',
-          stroke: '#000', strokeThickness: 2,
-        }).setOrigin(0.5).setDepth(11);
-
-        const costTxt = this.add.text(PX + 70, rowY, '', {
-          fontSize: '13px', fontFamily: 'Arial Black', color: '#ffd700',
-          stroke: '#000', strokeThickness: 2,
-        }).setOrigin(0.5).setDepth(11);
-
-        const buyBtn = this.add.rectangle(PX + PW / 2 - 54, rowY, 88, 24, 0x1a5c1a, 0.9)
-          .setStrokeStyle(1, 0x88ee88, 0.6).setInteractive().setDepth(11);
-        const buyTxt = this.add.text(PX + PW / 2 - 54, rowY, 'BUY', {
-          fontSize: '13px', fontFamily: 'Arial Black', color: '#88ff88',
-          stroke: '#000', strokeThickness: 2,
-        }).setOrigin(0.5).setDepth(12);
-
-        this.shopItems.push(lbl, lvlTxt, costTxt, buyBtn, buyTxt);
-
-        buyBtn.on('pointerover', () => buyBtn.setFillStyle(0x2a8c2a));
-        buyBtn.on('pointerout',  () => buyBtn.setFillStyle(0x1a5c1a));
-        buyBtn.on('pointerdown', () => { this._buyUpgrade(wi, upg.key); this._refreshShop(); });
-
-        this.shopBuyBtns.push({ weaponIdx: wi, type: upg.key, buyBtn, buyTxt, costTxt, lvlTxt });
-      }
-    }
-
-    const backBtn = this.add.rectangle(PX, PY + PH / 2 - 24, 200, 34, 0x553300, 0.9)
-      .setStrokeStyle(2, 0xffaa44, 0.7).setInteractive().setDepth(11);
-    const backTxt = this.add.text(PX, PY + PH / 2 - 24, '◀  BACK TO MENU', {
-      fontSize: '14px', fontFamily: 'Arial Black', color: '#ffcc88',
-      stroke: '#000', strokeThickness: 2,
-    }).setOrigin(0.5).setDepth(12);
-    backBtn.on('pointerover', () => backBtn.setFillStyle(0x774400));
-    backBtn.on('pointerout',  () => backBtn.setFillStyle(0x553300));
-    backBtn.on('pointerdown', () => this._showMenu());
-    this.shopItems.push(backBtn, backTxt);
   }
 
   _buyUpgrade(weaponIdx, type) {
