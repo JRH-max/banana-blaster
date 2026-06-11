@@ -29,17 +29,32 @@ const CHARACTERS = [
   { key: 'ghost',        name: 'Ghost',     subtitle: '',          price: 1000, ability: 'SOUL SCREAM',    rarity: 'RARE',    rarityColor: '#4488ff', gun: 'Spook Blaster',    gunIcon: '👻' },
   { key: 'astronaut',    name: 'Astronaut', subtitle: '',          price: 1000, ability: 'GRAVITY BOMB',   rarity: 'RARE',    rarityColor: '#4488ff', gun: 'Space Pistol',     gunIcon: '🚀' },
   { key: 'penguin',      name: 'Penguin',   subtitle: '',          price: 1000, ability: 'ICE SLIDE',      rarity: 'RARE',    rarityColor: '#4488ff', gun: 'Snowball Cannon',  gunIcon: '🐧' },
+  { key: 'taco',         name: 'Taco',      subtitle: '',          price: 1000, ability: 'SALSA SPLASH',   rarity: 'RARE',    rarityColor: '#4488ff', gun: 'Salsa Shooter',    gunIcon: '🌮' },
+  { key: 'snowman',      name: 'Snowman',   subtitle: '',          price: 1000, ability: 'BLIZZARD',       rarity: 'RARE',    rarityColor: '#4488ff', gun: 'Frost Cannon',     gunIcon: '⛄' },
+  { key: 'mushroom',     name: 'Mushroom',  subtitle: '',          price: 1000, ability: 'SPORE BURST',    rarity: 'RARE',    rarityColor: '#4488ff', gun: 'Spore Gun',        gunIcon: '🍄' },
+  { key: 'pineapple',    name: 'Pineapple', subtitle: '',          price: 1000, ability: 'JUICE BLAST',    rarity: 'RARE',    rarityColor: '#4488ff', gun: 'Juice Blaster',    gunIcon: '🍍' },
+  { key: 'storm_cloud',  name: 'Storm Cloud', subtitle: '',        price: 1000, ability: 'THUNDERCLAP',    rarity: 'RARE',    rarityColor: '#4488ff', gun: 'Thunder Bolt',     gunIcon: '⛈️' },
+  { key: 'mummy',        name: 'Mummy',     subtitle: '',          price: 1000, ability: 'BANDAGE TRAP',   rarity: 'RARE',    rarityColor: '#4488ff', gun: 'Wrap Gun',         gunIcon: '🧟' },
   // EPIC
   { key: 'rock_ninja',   name: 'Rock',      subtitle: 'Ninja',     price: 2000, ability: 'SHURIKEN STORM', rarity: 'EPIC',    rarityColor: '#aa44ff', gun: 'Shuriken',         gunIcon: '⚡' },
   { key: 'viking',       name: 'Viking',    subtitle: '',          price: 2000, ability: 'BERSERKER',      rarity: 'EPIC',    rarityColor: '#aa44ff', gun: 'Axe Launcher',     gunIcon: '🪓' },
   { key: 'robot',        name: 'Robot',     subtitle: '',          price: 2000, ability: 'LASER BEAM',     rarity: 'EPIC',    rarityColor: '#aa44ff', gun: 'Plasma Rifle',     gunIcon: '🤖' },
   { key: 'wizard',       name: 'Wizard',    subtitle: '',          price: 2000, ability: 'METEOR STORM',   rarity: 'EPIC',    rarityColor: '#aa44ff', gun: 'Magic Staff',      gunIcon: '🧙' },
   { key: 'shark',        name: 'Shark',     subtitle: '',          price: 2000, ability: 'FEEDING FRENZY', rarity: 'EPIC',    rarityColor: '#aa44ff', gun: 'Jaw Launcher',     gunIcon: '🦈' },
+  { key: 'samurai',      name: 'Samurai',   subtitle: '',          price: 2000, ability: 'BLADE RUSH',     rarity: 'EPIC',    rarityColor: '#aa44ff', gun: 'Katana Launcher',  gunIcon: '⚔️' },
+  { key: 'werewolf',     name: 'Werewolf',  subtitle: '',          price: 2000, ability: 'HOWL',           rarity: 'EPIC',    rarityColor: '#aa44ff', gun: 'Claw Cannon',      gunIcon: '🐺' },
+  { key: 'knight',       name: 'Knight',    subtitle: '',          price: 2000, ability: 'SHIELD CHARGE',  rarity: 'EPIC',    rarityColor: '#aa44ff', gun: 'Lance Launcher',   gunIcon: '🛡️' },
+  { key: 'alien',        name: 'Alien',     subtitle: '',          price: 2000, ability: 'ABDUCTION',      rarity: 'EPIC',    rarityColor: '#aa44ff', gun: 'Plasma Pistol',    gunIcon: '👽' },
+  { key: 'zombie',       name: 'Zombie',    subtitle: '',          price: 2000, ability: 'UNDEAD SURGE',   rarity: 'EPIC',    rarityColor: '#aa44ff', gun: 'Bone Launcher',    gunIcon: '🧟' },
   // MYTHIC
   { key: 'trash_can',    name: 'Trash Can', subtitle: '',          price: 5000, ability: 'TRASH WAVE',     rarity: 'MYTHIC',  rarityColor: '#ff8800', gun: 'Junk Cannon',      gunIcon: '🗑️' },
   { key: 'dragon',       name: 'Dragon',    subtitle: '',          price: 5000, ability: 'FIRE BREATH',    rarity: 'MYTHIC',  rarityColor: '#ff8800', gun: 'Inferno Blaster',  gunIcon: '🐲' },
+  { key: 'phoenix',      name: 'Phoenix',   subtitle: '',          price: 5000, ability: 'REBIRTH',        rarity: 'MYTHIC',  rarityColor: '#ff8800', gun: 'Flame Wing',       gunIcon: '🔥' },
+  { key: 'kraken',       name: 'Kraken',    subtitle: '',          price: 5000, ability: 'TENTACLE SLAM',  rarity: 'MYTHIC',  rarityColor: '#ff8800', gun: 'Ink Blaster',      gunIcon: '🐙' },
+  { key: 'demon',        name: 'Demon',     subtitle: '',          price: 5000, ability: 'HELLFIRE',       rarity: 'MYTHIC',  rarityColor: '#ff8800', gun: 'Soul Cannon',      gunIcon: '😈' },
   // ???
   { key: 'mystery',      name: '???',       subtitle: '',          price: 10000,ability: 'OBLITERATE',     rarity: '???',     rarityColor: '#ff00ff', gun: 'Void Cannon',      gunIcon: '❓' },
+  { key: 'glitch',       name: 'GLITCH',    subtitle: '',          price: 10000,ability: 'REALITY WARP',   rarity: '???',     rarityColor: '#ff00ff', gun: 'Glitch Cannon',    gunIcon: '💀' },
 ];
 
 const WEAPON_NAMES  = ['Peel Launcher', 'Automatic Rifle', 'Sniper'];

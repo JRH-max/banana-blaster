@@ -57,8 +57,26 @@ const CHAR_SLOT1 = {
   // MYTHIC
   trash_can:    { name: 'Junk Cannon',     type: 'projectile', fireRate: 950,  damage: 140, speed: 7,  auto: false, splash: 2.2,  reloadTime: 0,    projKey: 'pickup',     projScale: 0.55, projTint: 0x886633 },
   dragon:       { name: 'Inferno Blaster', type: 'projectile', fireRate: 160,  damage: 55,  speed: 16, auto: true,  ammo: 30, maxAmmo: 30, reloadTime: 1200, projKey: 'peel',       projScale: 0.30, projTint: 0xff4400 },
+  // NEW RARE
+  taco:        { name: 'Salsa Shooter',    type: 'projectile', fireRate: 600,  damage: 72,  speed: 10, auto: false, splash: 1.7,  reloadTime: 0,    projKey: 'peel',      projScale: 0.28, projTint: 0xff4400 },
+  snowman:     { name: 'Frost Cannon',     type: 'projectile', fireRate: 880,  damage: 68,  speed: 8,  auto: false, splash: 1.5,  reloadTime: 0,    projKey: 'cannonball', projScale: 0.50, projTint: 0xaaddff },
+  mushroom:    { name: 'Spore Gun',        type: 'projectile', fireRate: 240,  damage: 32,  speed: 15, auto: true,  ammo: 22, maxAmmo: 22, reloadTime: 950, projKey: 'pickup',    projScale: 0.35, projTint: 0x88cc44 },
+  pineapple:   { name: 'Juice Blaster',   type: 'projectile', fireRate: 700,  damage: 75,  speed: 11, auto: false, splash: 2.0,  reloadTime: 0,    projKey: 'peel',      projScale: 0.30, projTint: 0xffee00 },
+  storm_cloud: { name: 'Thunder Bolt',    type: 'hitscan',    fireRate: 450,  damage: 78,  speed: 99, auto: false, ammo: 8,  maxAmmo: 8,  reloadTime: 1300 },
+  mummy:       { name: 'Wrap Gun',        type: 'projectile', fireRate: 820,  damage: 65,  speed: 10, auto: false, splash: 1.2,  reloadTime: 0,    projKey: 'peel',      projScale: 0.25, projTint: 0xddcc88 },
+  // NEW EPIC
+  samurai:     { name: 'Katana Launcher', type: 'projectile', fireRate: 900,  damage: 108, speed: 22, auto: false, splash: 0,    reloadTime: 0,    projKey: 'shuriken',  projScale: 1.0,  projTint: 0xccccff },
+  werewolf:    { name: 'Claw Cannon',     type: 'hitscan',    fireRate: 280,  damage: 42,  speed: 35, auto: true,  ammo: 15, maxAmmo: 15, reloadTime: 800 },
+  knight:      { name: 'Lance Launcher',  type: 'projectile', fireRate: 1100, damage: 115, speed: 16, auto: false, splash: 0.8,  reloadTime: 0,    projKey: 'shuriken',  projScale: 1.2,  projTint: 0x8888cc },
+  alien:       { name: 'Plasma Pistol',   type: 'hitscan',    fireRate: 420,  damage: 95,  speed: 55, auto: false, ammo: 10, maxAmmo: 10, reloadTime: 1200 },
+  zombie:      { name: 'Bone Launcher',   type: 'projectile', fireRate: 750,  damage: 100, speed: 13, auto: false, splash: 1.0,  reloadTime: 0,    projKey: 'pickup',    projScale: 0.45, projTint: 0xccddaa },
+  // NEW MYTHIC
+  phoenix:     { name: 'Flame Wing',      type: 'projectile', fireRate: 200,  damage: 50,  speed: 18, auto: true,  ammo: 28, maxAmmo: 28, reloadTime: 1100, projKey: 'peel',      projScale: 0.28, projTint: 0xff6600 },
+  kraken:      { name: 'Ink Blaster',     type: 'projectile', fireRate: 650,  damage: 155, speed: 9,  auto: false, splash: 2.5,  reloadTime: 0,    projKey: 'cannonball', projScale: 0.70, projTint: 0x224466 },
+  demon:       { name: 'Soul Cannon',     type: 'hitscan',    fireRate: 400,  damage: 145, speed: 60, auto: false, ammo: 6,  maxAmmo: 6,  reloadTime: 1500 },
   // ???
   mystery:      { name: 'Void Cannon',     type: 'hitscan',    fireRate: 50,   damage: 999, speed: 99, auto: true,  ammo: 99, maxAmmo: 99, reloadTime: 500 },
+  glitch:      { name: 'Glitch Cannon',   type: 'hitscan',    fireRate: 40,   damage: 888, speed: 99, auto: true,  ammo: 99, maxAmmo: 99, reloadTime: 300 },
 };
 
 // Gun sprite shown at bottom-center for each character's slot-1
@@ -78,6 +96,10 @@ const CHAR_GUN_SPRITE = {
   trash_can:    'gun_peel',
   dragon:       'gun_rifle',
   mystery:      'gun_sniper',
+  taco: 'gun_peel', snowman: 'gun_peel', mushroom: 'gun_rifle', pineapple: 'gun_peel',
+  storm_cloud: 'gun_sniper', mummy: 'gun_peel', samurai: 'gun_peel', werewolf: 'gun_rifle',
+  knight: 'gun_peel', alien: 'gun_sniper', zombie: 'gun_peel', phoenix: 'gun_rifle',
+  kraken: 'gun_peel', demon: 'gun_sniper', glitch: 'gun_sniper',
 };
 
 const BOT_STATS = {
@@ -138,9 +160,13 @@ export class GameScene extends Phaser.Scene {
       banana: 5000, sloth_pirate: 8000, hot_dog: 6000, cactus: 5500, ghost: 7000,
       astronaut: 7500, penguin: 5000, rock_ninja: 6000, viking: 6500, robot: 8000,
       wizard: 9000, shark: 5500, trash_can: 9000, dragon: 7000, mystery: 12000,
+      taco: 5500, snowman: 6000, mushroom: 5000, pineapple: 5500, storm_cloud: 6500, mummy: 7000,
+      samurai: 6000, werewolf: 5500, knight: 7000, alien: 7500, zombie: 6000,
+      phoenix: 10000, kraken: 8000, demon: 8500, glitch: 14000,
     };
     this.specialMaxCD = _cdMap[_charKey] || 5000;
     this.specialCD    = 0; // ready to use immediately
+    this.phoenixInvincible = 0;
 
     // Camera — manual behind-character follow (no startFollow)
     this.cameras.main.setBounds(
@@ -200,6 +226,7 @@ export class GameScene extends Phaser.Scene {
     this._updateCamera();
     this._waveCheck(delta);
     if (this.specialCD > 0) this.specialCD = Math.max(0, this.specialCD - delta);
+    if (this.phoenixInvincible > 0) this.phoenixInvincible = Math.max(0, this.phoenixInvincible - delta);
   }
 
   // ── over-the-shoulder third-person camera ─────────────────────────────────
@@ -825,6 +852,10 @@ export class GameScene extends Phaser.Scene {
       penguin: 'ICE SLIDE', rock_ninja: 'SHURIKEN STORM', viking: 'BERSERKER',
       robot: 'LASER BEAM', wizard: 'METEOR STORM', shark: 'FEEDING FRENZY',
       trash_can: 'TRASH WAVE', dragon: 'FIRE BREATH', mystery: 'OBLITERATE',
+      taco: 'SALSA SPLASH', snowman: 'BLIZZARD', mushroom: 'SPORE BURST', pineapple: 'JUICE BLAST',
+      storm_cloud: 'THUNDERCLAP', mummy: 'BANDAGE TRAP', samurai: 'BLADE RUSH', werewolf: 'HOWL',
+      knight: 'SHIELD CHARGE', alien: 'ABDUCTION', zombie: 'UNDEAD SURGE',
+      phoenix: 'REBIRTH', kraken: 'TENTACLE SLAM', demon: 'HELLFIRE', glitch: 'REALITY WARP',
     };
     this.registry.set('specialName', _abilityNames[getSavedChar()] || 'SPECIAL');
     this.registry.set('weaponNames',  WEAPONS.map(w => w.name));
@@ -851,6 +882,21 @@ export class GameScene extends Phaser.Scene {
     else if (char === 'trash_can')    this._specialTrashWave();
     else if (char === 'dragon')       this._specialFireBreath();
     else if (char === 'mystery')      this._specialObliterate();
+    else if (char === 'taco')         this._specialSalsaSplash();
+    else if (char === 'snowman')      this._specialBlizzard();
+    else if (char === 'mushroom')     this._specialSporeBurst();
+    else if (char === 'pineapple')    this._specialJuiceBlast();
+    else if (char === 'storm_cloud')  this._specialThunderclap();
+    else if (char === 'mummy')        this._specialBandageTrap();
+    else if (char === 'samurai')      this._specialBladeRush();
+    else if (char === 'werewolf')     this._specialHowl();
+    else if (char === 'knight')       this._specialShieldCharge();
+    else if (char === 'alien')        this._specialAbduction();
+    else if (char === 'zombie')       this._specialUndeadSurge();
+    else if (char === 'phoenix')      this._specialRebirth();
+    else if (char === 'kraken')       this._specialTentacleSlam();
+    else if (char === 'demon')        this._specialHellfire();
+    else if (char === 'glitch')       this._specialRealityWarp();
   }
 
   // Banana — drop 3 banana peels behind the player; bots that step on them
@@ -1153,6 +1199,157 @@ export class GameScene extends Phaser.Scene {
 
     this.cameras.main.flash(600, 255, 0, 255, 0.92);
     this.cameras.main.shake(500, 0.04);
+  }
+
+  _specialSalsaSplash() {
+    const a = this.player.angle;
+    for (let i = -2; i <= 2; i++) {
+      const fa = a + i * 0.22;
+      this.bullets.push({ wx: this.player.wx + Math.cos(fa)*0.8, wy: this.player.wy + Math.sin(fa)*0.8,
+        vx: Math.cos(fa)*11, vy: Math.sin(fa)*11, damage: 80, faction: 'banana', splash: 1.5, life: 2.2,
+        sprite: this.add.image(0,0,'peel').setTint(0xff4400).setScale(0.35).setDepth(5000) });
+    }
+    for (const bot of this.bots) { if (!bot.alive) continue; if (Math.hypot(bot.wx-this.player.wx,bot.wy-this.player.wy)<4) bot.stunTimer=(bot.stunTimer||0)+800; }
+    this.cameras.main.flash(120,255,80,0,0.3);
+  }
+
+  _specialBlizzard() {
+    for (const bot of this.bots) {
+      if (!bot.alive) continue;
+      const d = Math.hypot(bot.wx-this.player.wx, bot.wy-this.player.wy);
+      if (d < 6) { this._hitEntity(bot, 55, 'banana'); bot.stunTimer = (bot.stunTimer||0)+2500; }
+    }
+    this.cameras.main.flash(200,180,220,255,0.4); this.cameras.main.shake(150,0.008);
+  }
+
+  _specialSporeBurst() {
+    for (let i = 0; i < 10; i++) {
+      const a = (i/10)*Math.PI*2;
+      this.bullets.push({ wx: this.player.wx+Math.cos(a)*0.8, wy: this.player.wy+Math.sin(a)*0.8,
+        vx: Math.cos(a)*10, vy: Math.sin(a)*10, damage: 45, faction: 'banana', splash: 0.6, life: 2.0,
+        sprite: this.add.image(0,0,'pickup').setTint(0x88cc44).setScale(0.35).setDepth(5000) });
+    }
+    this.cameras.main.flash(100,100,200,80,0.2);
+  }
+
+  _specialJuiceBlast() {
+    const a = this.player.angle;
+    for (let i = -1; i <= 1; i++) {
+      const fa = a + i * 0.3;
+      this.bullets.push({ wx: this.player.wx+Math.cos(fa)*0.8, wy: this.player.wy+Math.sin(fa)*0.8,
+        vx: Math.cos(fa)*12, vy: Math.sin(fa)*12, damage: 110, faction: 'banana', splash: 2.2, life: 2.0,
+        sprite: this.add.image(0,0,'peel').setTint(0xffee00).setScale(0.4).setDepth(5000) });
+    }
+    this.cameras.main.flash(120,255,230,0,0.35); this.cameras.main.shake(150,0.01);
+  }
+
+  _specialThunderclap() {
+    const targets = this.bots.filter(b=>b.alive).sort(()=>Math.random()-0.5).slice(0,6);
+    targets.forEach((bot,i) => {
+      this.time.delayedCall(i*100, () => {
+        if (!bot.alive) return;
+        this._hitEntity(bot, 95, 'banana'); bot.stunTimer=(bot.stunTimer||0)+600;
+        const ps=iso(bot.wx,bot.wy); const flash=this.add.image(ps.x,ps.y-20,'muzzle_flash').setScale(1.2).setDepth(9200).setTint(0xaaaaff);
+        this.time.delayedCall(150,()=>flash.destroy());
+      });
+    });
+    this.cameras.main.flash(80,150,150,255,0.35);
+  }
+
+  _specialBandageTrap() {
+    for (let i = 0; i < 3; i++) {
+      const a = this.player.angle + Math.PI + (i-1)*0.7;
+      const px = this.player.wx+Math.cos(a)*2.0, py = this.player.wy+Math.sin(a)*2.0;
+      if (px<1||px>GRID-1||py<1||py>GRID-1) continue;
+      const ps = iso(px,py);
+      this.hazards.push({ type:'peel', wx:px, wy:py, damage:50, stun:2200, life:11,
+        sprite: this.add.image(ps.x,ps.y-6,'peel').setScale(0.65).setDepth(isoDepth(px,py)+5).setTint(0xddcc88), bob:Math.random()*Math.PI*2 });
+    }
+    this.cameras.main.flash(80,220,200,160,0.25);
+  }
+
+  _specialBladeRush() {
+    const a = this.player.angle;
+    for (let s=1; s<=7; s++) {
+      const tx=this.player.wx+Math.cos(a)*s*0.9, ty=this.player.wy+Math.sin(a)*s*0.9;
+      for (const bot of this.bots) { if (!bot.alive) continue; if (Math.hypot(bot.wx-tx,bot.wy-ty)<1.0) this._hitEntity(bot,130,'banana'); }
+    }
+    this.player.wx=Phaser.Math.Clamp(this.player.wx+Math.cos(a)*5,1,GRID-1);
+    this.player.wy=Phaser.Math.Clamp(this.player.wy+Math.sin(a)*5,1,GRID-1);
+    this.cameras.main.flash(100,220,220,255,0.3); this.cameras.main.shake(120,0.01);
+  }
+
+  _specialHowl() {
+    for (const bot of this.bots) { if (!bot.alive) continue; bot.stunTimer=(bot.stunTimer||0)+1800; }
+    this.berserkerTimer=(this.berserkerTimer||0)+4000;
+    this.cameras.main.flash(150,180,80,20,0.35); this.cameras.main.shake(200,0.012);
+  }
+
+  _specialShieldCharge() {
+    const a = this.player.angle;
+    for (let s=1; s<=6; s++) {
+      const tx=this.player.wx+Math.cos(a)*s, ty=this.player.wy+Math.sin(a)*s;
+      for (const bot of this.bots) { if (!bot.alive) continue; if (Math.hypot(bot.wx-tx,bot.wy-ty)<1.2) { this._hitEntity(bot,100,'banana'); bot.stunTimer=1000; } }
+    }
+    this.player.wx=Phaser.Math.Clamp(this.player.wx+Math.cos(a)*4,1,GRID-1);
+    this.player.wy=Phaser.Math.Clamp(this.player.wy+Math.sin(a)*4,1,GRID-1);
+    this.player.hp=Math.min(this.player.maxHp, this.player.hp+30);
+    this.cameras.main.flash(120,200,200,255,0.3); this.cameras.main.shake(150,0.012);
+  }
+
+  _specialAbduction() {
+    const {wx,wy}=this.player;
+    const closest=this.bots.filter(b=>b.alive).sort((a,b)=>Math.hypot(a.wx-wx,a.wy-wy)-Math.hypot(b.wx-wx,b.wy-wy))[0];
+    if (closest) {
+      this._hitEntity(closest,250,'banana');
+      for (const bot of this.bots) { if (!bot.alive||bot===closest) continue; if (Math.hypot(bot.wx-closest.wx,bot.wy-closest.wy)<3) this._hitEntity(bot,80,'banana'); }
+    }
+    this.cameras.main.flash(200,0,200,255,0.5); this.cameras.main.shake(200,0.015);
+  }
+
+  _specialUndeadSurge() {
+    for (let i=0;i<12;i++) {
+      const a=(i/12)*Math.PI*2;
+      this.bullets.push({ wx:this.player.wx+Math.cos(a)*0.8, wy:this.player.wy+Math.sin(a)*0.8,
+        vx:Math.cos(a)*11, vy:Math.sin(a)*11, damage:85, faction:'banana', splash:0.7, life:2.2,
+        sprite:this.add.image(0,0,'pickup').setTint(0xaacc88).setScale(0.45).setDepth(5000) });
+    }
+    this.cameras.main.flash(120,100,180,80,0.3); this.cameras.main.shake(150,0.01);
+  }
+
+  _specialRebirth() {
+    this.player.hp=this.player.maxHp; this.player.lives=3;
+    this.phoenixInvincible=3000;
+    this._syncAll();
+    this.cameras.main.flash(400,255,150,0,0.8); this.cameras.main.shake(300,0.02);
+  }
+
+  _specialTentacleSlam() {
+    for (let i=0;i<5;i++) {
+      const a=(i/5)*Math.PI*2;
+      const tx=this.player.wx+Math.cos(a)*3, ty=this.player.wy+Math.sin(a)*3;
+      this.time.delayedCall(i*130,()=>{
+        for (const bot of this.bots) { if (!bot.alive) continue; if (Math.hypot(bot.wx-tx,bot.wy-ty)<2.2) this._hitEntity(bot,160,'banana'); }
+        const ps=iso(tx,ty); const fx=this.add.image(ps.x,ps.y-10,'explosion').setScale(1.3).setDepth(9200).setTint(0x224466);
+        this.time.delayedCall(200,()=>fx.destroy()); this.cameras.main.shake(80,0.01);
+      });
+    }
+    this.cameras.main.flash(150,20,60,120,0.4);
+  }
+
+  _specialHellfire() {
+    const targets=this.bots.filter(b=>b.alive);
+    targets.forEach((bot,i)=>{ this.time.delayedCall(i*80,()=>{ if (!bot.alive) return; this._hitEntity(bot,140,'banana'); const ps=iso(bot.wx,bot.wy); const fx=this.add.image(ps.x,ps.y-16,'explosion').setScale(1.2).setDepth(9200).setTint(0xcc2200); this.time.delayedCall(180,()=>fx.destroy()); }); });
+    this.cameras.main.flash(300,255,30,0,0.6); this.cameras.main.shake(350,0.025);
+  }
+
+  _specialRealityWarp() {
+    for (const bot of this.bots) {
+      if (!bot.alive) continue;
+      this._hitEntity(bot,500,'banana');
+      bot.wx=1+Math.random()*(GRID-2); bot.wy=1+Math.random()*(GRID-2);
+    }
+    this.cameras.main.flash(700,180,0,255,0.95); this.cameras.main.shake(500,0.04);
   }
 
   // ── Ground hazards (peel traps etc.) ──────────────────────────────────────

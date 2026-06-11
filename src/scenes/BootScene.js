@@ -37,6 +37,21 @@ export class BootScene extends Phaser.Scene {
     this._dragon();
     this._mystery();
     this._tnt();
+    this._taco();
+    this._snowman();
+    this._mushroom();
+    this._pineapple();
+    this._stormCloud();
+    this._mummy();
+    this._samurai();
+    this._werewolf();
+    this._knight();
+    this._alien();
+    this._zombie();
+    this._phoenix();
+    this._kraken();
+    this._demon();
+    this._glitch();
     this.scene.start('MenuScene');
   }
 
@@ -993,6 +1008,604 @@ export class BootScene extends Phaser.Scene {
     g.fillTriangle(cx-15,42,cx-9,58,cx-3,42);
     g.fillTriangle(cx+15,42,cx+9,58,cx+3,42);
     g.generateTexture('mystery',44,60); g.destroy();
+  }
+
+  // ── Taco ──────────────────────────────────────────────────────────────────
+  _taco() {
+    const g = this._g(), cx = 22;
+    // Shell
+    g.fillStyle(0xddaa44, 1); g.fillEllipse(cx, 38, 40, 28);
+    g.fillStyle(0xeebb66, 0.6); g.fillEllipse(cx - 4, 34, 20, 14);
+    // Shell fold / taco shape
+    g.fillStyle(0xcc9933, 1); g.fillRect(cx - 18, 30, 36, 8);
+    g.fillStyle(0xddaa44, 0.7); g.fillRect(cx - 16, 30, 14, 6);
+    // Filling - lettuce
+    g.fillStyle(0x44bb44, 1); g.fillEllipse(cx, 28, 34, 10);
+    g.fillStyle(0x66dd66, 0.5); g.fillEllipse(cx - 4, 26, 16, 7);
+    // Filling - tomato
+    g.fillStyle(0xee3322, 1); g.fillCircle(cx - 6, 27, 4); g.fillCircle(cx + 6, 27, 4);
+    g.fillStyle(0xff5544, 0.5); g.fillCircle(cx - 5, 26, 2); g.fillCircle(cx + 7, 26, 2);
+    // Salsa drips
+    g.fillStyle(0xff3300, 0.8); g.fillEllipse(cx, 24, 28, 8);
+    g.fillStyle(0xff5533, 0.5); g.fillEllipse(cx - 3, 23, 14, 5);
+    // Face on shell
+    g.fillStyle(0x000000, 1); g.fillCircle(cx - 5, 36, 2); g.fillCircle(cx + 5, 36, 2);
+    g.fillStyle(0xffffff, 0.6); g.fillCircle(cx - 4, 35, 1); g.fillCircle(cx + 6, 35, 1);
+    g.lineStyle(2, 0x8b4513, 0.8);
+    g.beginPath(); g.arc(cx, 39, 5, 0.1, Math.PI - 0.1, false); g.strokePath();
+    // Body/arms
+    g.fillStyle(0xddaa44, 1); g.fillEllipse(cx - 16, 30, 8, 6); g.fillEllipse(cx + 16, 30, 8, 6);
+    // Legs
+    g.fillStyle(0xcc9933, 1); g.fillEllipse(cx - 6, 52, 9, 12); g.fillEllipse(cx + 6, 52, 9, 12);
+    g.fillStyle(0x8b4513, 1); g.fillEllipse(cx - 6, 57, 12, 5); g.fillEllipse(cx + 6, 57, 12, 5);
+    g.generateTexture('taco', 44, 60); g.destroy();
+  }
+
+  // ── Snowman ────────────────────────────────────────────────────────────────
+  _snowman() {
+    const g = this._g(), cx = 22;
+    // Bottom ball
+    g.fillStyle(0xe8f0ff, 1); g.fillCircle(cx, 44, 16);
+    g.fillStyle(0xffffff, 0.6); g.fillCircle(cx - 4, 40, 9);
+    g.fillStyle(0xbbccee, 0.4); g.fillCircle(cx + 5, 48, 8);
+    // Middle ball
+    g.fillStyle(0xeef4ff, 1); g.fillCircle(cx, 26, 12);
+    g.fillStyle(0xffffff, 0.5); g.fillCircle(cx - 3, 22, 7);
+    // Scarf
+    g.fillStyle(0xcc2222, 1); g.fillRect(cx - 12, 32, 24, 6);
+    g.fillStyle(0xff4444, 0.5); g.fillRect(cx - 10, 33, 10, 3);
+    // Head
+    g.fillStyle(0xeef4ff, 1); g.fillCircle(cx, 13, 11);
+    g.fillStyle(0xffffff, 0.5); g.fillCircle(cx - 3, 10, 6);
+    // Hat
+    g.fillStyle(0x1a1a1a, 1); g.fillRect(cx - 12, 1, 24, 5); g.fillRect(cx - 8, -6, 16, 9);
+    g.fillStyle(0x333333, 0.4); g.fillRect(cx - 6, -5, 8, 7);
+    // Eyes
+    g.fillStyle(0x222244, 1); g.fillCircle(cx - 4, 11, 2); g.fillCircle(cx + 4, 11, 2);
+    g.fillStyle(0xffffff, 0.6); g.fillCircle(cx - 3, 10, 0.8); g.fillCircle(cx + 5, 10, 0.8);
+    // Carrot nose
+    g.fillStyle(0xff8800, 1); g.fillTriangle(cx - 1, 14, cx + 1, 14, cx + 5, 16);
+    // Mouth (dots)
+    g.fillStyle(0x333355, 1);
+    for (let i = -2; i <= 2; i++) g.fillCircle(cx + i * 2.5, 18, 1.2);
+    // Arms
+    g.fillStyle(0x7a4a1a, 1); g.fillRect(cx - 22, 22, 10, 3); g.fillRect(cx + 12, 22, 10, 3);
+    // Buttons on body
+    g.fillStyle(0x333355, 1);
+    g.fillCircle(cx, 20, 2); g.fillCircle(cx, 26, 2); g.fillCircle(cx, 32, 2);
+    g.generateTexture('snowman', 44, 60); g.destroy();
+  }
+
+  // ── Mushroom ───────────────────────────────────────────────────────────────
+  _mushroom() {
+    const g = this._g(), cx = 22;
+    // Cap
+    g.fillStyle(0xcc3311, 1); g.fillEllipse(cx, 20, 40, 30);
+    g.fillStyle(0xee4422, 0.6); g.fillEllipse(cx - 5, 14, 20, 16);
+    // White spots
+    g.fillStyle(0xffffff, 1);
+    g.fillCircle(cx - 8, 14, 5); g.fillCircle(cx + 8, 14, 4); g.fillCircle(cx, 10, 3.5);
+    g.fillStyle(0xeeeeee, 0.5);
+    g.fillCircle(cx - 7, 13, 2.5); g.fillCircle(cx + 9, 15, 2); g.fillCircle(cx + 1, 9, 2);
+    // Stem
+    g.fillStyle(0xeeddcc, 1); g.fillRect(cx - 9, 30, 18, 22);
+    g.fillStyle(0xffffff, 0.4); g.fillRect(cx - 7, 31, 7, 18);
+    g.fillStyle(0xbbaa99, 0.4); g.fillRect(cx + 3, 31, 5, 18);
+    // Gills (cap underside)
+    g.fillStyle(0xffccaa, 0.7); g.fillEllipse(cx, 32, 38, 10);
+    g.fillStyle(0xeebb99, 0.5); g.fillEllipse(cx - 3, 31, 18, 6);
+    // Face
+    g.fillStyle(0x000000, 1); g.fillCircle(cx - 4, 36, 2.5); g.fillCircle(cx + 4, 36, 2.5);
+    g.fillStyle(0xffffff, 0.7); g.fillCircle(cx - 3, 35, 1); g.fillCircle(cx + 5, 35, 1);
+    g.lineStyle(2, 0x774422, 0.9);
+    g.beginPath(); g.arc(cx, 40, 5, 0.1, Math.PI - 0.1, false); g.strokePath();
+    // Arms
+    g.fillStyle(0xeeddcc, 1); g.fillEllipse(cx - 18, 34, 10, 8); g.fillEllipse(cx + 18, 34, 10, 8);
+    // Feet
+    g.fillStyle(0xddccbb, 1); g.fillEllipse(cx - 5, 54, 10, 13); g.fillEllipse(cx + 5, 54, 10, 13);
+    g.fillStyle(0x774422, 1); g.fillEllipse(cx - 5, 59, 13, 5); g.fillEllipse(cx + 5, 59, 13, 5);
+    g.generateTexture('mushroom', 44, 60); g.destroy();
+  }
+
+  // ── Pineapple ──────────────────────────────────────────────────────────────
+  _pineapple() {
+    const g = this._g(), cx = 22;
+    // Body
+    g.fillStyle(0xddaa22, 1); g.fillEllipse(cx, 35, 30, 42);
+    g.fillStyle(0xeebb44, 0.5); g.fillEllipse(cx - 4, 28, 16, 22);
+    g.fillStyle(0xbb8811, 0.4); g.fillEllipse(cx + 5, 38, 12, 18);
+    // Diamond scale pattern
+    g.lineStyle(1, 0xaa7700, 0.7);
+    for (let y = 18; y < 54; y += 7) {
+      for (let x = cx - 12; x < cx + 14; x += 7) {
+        const ox = (Math.floor((y - 18) / 7) % 2) * 3.5;
+        g.strokeRect(x + ox - 3, y - 3, 6, 6);
+      }
+    }
+    // Crown leaves
+    g.fillStyle(0x228822, 1);
+    g.fillTriangle(cx, 0, cx - 8, 14, cx + 2, 16);
+    g.fillTriangle(cx - 5, 2, cx - 14, 14, cx - 2, 16);
+    g.fillTriangle(cx + 5, 2, cx + 14, 14, cx + 4, 16);
+    g.fillStyle(0x44aa44, 0.5);
+    g.fillTriangle(cx, 1, cx - 5, 13, cx + 3, 13);
+    // Face
+    g.fillStyle(0x000000, 1); g.fillCircle(cx - 5, 32, 2.5); g.fillCircle(cx + 5, 32, 2.5);
+    g.fillStyle(0xffffff, 0.7); g.fillCircle(cx - 4, 31, 1); g.fillCircle(cx + 6, 31, 1);
+    g.fillStyle(0xff9900, 1); g.fillEllipse(cx, 37, 8, 5);
+    g.lineStyle(2, 0x885500, 0.9);
+    g.beginPath(); g.arc(cx, 41, 5, 0.1, Math.PI - 0.1, false); g.strokePath();
+    // Arms
+    g.fillStyle(0xddaa22, 1); g.fillEllipse(cx - 19, 36, 10, 7); g.fillEllipse(cx + 19, 36, 10, 7);
+    // Feet
+    g.fillStyle(0xccaa22, 1); g.fillEllipse(cx - 5, 54, 9, 11); g.fillEllipse(cx + 5, 54, 9, 11);
+    g.fillStyle(0xaa7700, 1); g.fillEllipse(cx - 5, 59, 13, 5); g.fillEllipse(cx + 5, 59, 13, 5);
+    g.generateTexture('pineapple', 44, 60); g.destroy();
+  }
+
+  // ── Storm Cloud ────────────────────────────────────────────────────────────
+  _stormCloud() {
+    const g = this._g(), cx = 22;
+    // Cloud puffs
+    g.fillStyle(0x667788, 1); g.fillCircle(cx, 22, 16);
+    g.fillStyle(0x778899, 1); g.fillCircle(cx - 10, 26, 12); g.fillCircle(cx + 10, 26, 12);
+    g.fillStyle(0x889aaa, 0.7); g.fillCircle(cx - 5, 18, 10); g.fillCircle(cx + 5, 18, 10);
+    g.fillStyle(0x99aabb, 0.5); g.fillCircle(cx, 15, 8);
+    // Dark underside
+    g.fillStyle(0x334455, 0.8); g.fillEllipse(cx, 34, 38, 14);
+    g.fillStyle(0x445566, 0.5); g.fillEllipse(cx - 5, 33, 18, 9);
+    // Lightning bolts
+    g.fillStyle(0xffee00, 1);
+    g.fillTriangle(cx - 6, 34, cx - 2, 34, cx - 8, 46);
+    g.fillTriangle(cx - 8, 46, cx - 4, 46, cx - 10, 58);
+    g.fillStyle(0xffffaa, 0.7);
+    g.fillTriangle(cx - 5, 34, cx - 2, 34, cx - 7, 46);
+    // Second bolt
+    g.fillStyle(0xffee00, 1);
+    g.fillTriangle(cx + 4, 34, cx + 8, 34, cx + 2, 46);
+    g.fillTriangle(cx + 2, 46, cx + 6, 46, cx, 56);
+    // Eyes (glowing electric)
+    g.fillStyle(0xffee00, 0.3); g.fillCircle(cx - 5, 22, 7); g.fillCircle(cx + 5, 22, 7);
+    g.fillStyle(0xffee00, 1); g.fillCircle(cx - 5, 22, 4); g.fillCircle(cx + 5, 22, 4);
+    g.fillStyle(0xffffff, 0.9); g.fillCircle(cx - 4, 21, 2); g.fillCircle(cx + 6, 21, 2);
+    // Mouth
+    g.fillStyle(0x334455, 1); g.fillEllipse(cx, 28, 12, 5);
+    g.fillStyle(0xaaddff, 0.5); g.fillEllipse(cx, 27, 8, 3);
+    g.generateTexture('storm_cloud', 44, 60); g.destroy();
+  }
+
+  // ── Mummy ──────────────────────────────────────────────────────────────────
+  _mummy() {
+    const g = this._g(), cx = 22;
+    // Body bandages
+    g.fillStyle(0xeeddcc, 1); g.fillEllipse(cx, 34, 28, 36);
+    // Bandage wrapping lines
+    g.lineStyle(3, 0xddccbb, 1);
+    for (let y = 20; y < 52; y += 6) {
+      g.lineBetween(cx - 13, y, cx + 13, y + 2);
+    }
+    g.lineStyle(2, 0xccbbaa, 0.7);
+    g.lineBetween(cx - 12, 23, cx + 12, 25);
+    g.lineBetween(cx - 12, 35, cx + 12, 37);
+    g.lineBetween(cx - 12, 47, cx + 12, 49);
+    // Head
+    g.fillStyle(0xeeddcc, 1); g.fillCircle(cx, 14, 13);
+    g.fillStyle(0xddccbb, 0.8); g.fillCircle(cx - 3, 10, 7);
+    // Head bandages
+    g.lineStyle(3, 0xddccbb, 1);
+    for (let y = 6; y < 24; y += 5) g.lineBetween(cx - 12, y, cx + 12, y + 1);
+    // Eyes (glowing through bandages)
+    g.fillStyle(0x00cc00, 0.3); g.fillCircle(cx - 5, 12, 6); g.fillCircle(cx + 5, 12, 6);
+    g.fillStyle(0x00ff00, 1); g.fillCircle(cx - 5, 12, 3.5); g.fillCircle(cx + 5, 12, 3.5);
+    g.fillStyle(0x88ff88, 0.7); g.fillCircle(cx - 4, 11, 1.5); g.fillCircle(cx + 6, 11, 1.5);
+    // Arms (wrapped)
+    g.fillStyle(0xeeddcc, 1); g.fillRect(cx - 20, 22, 8, 20); g.fillRect(cx + 12, 22, 8, 20);
+    g.lineStyle(2, 0xddccbb, 0.8);
+    for (let y = 24; y < 42; y += 5) {
+      g.lineBetween(cx - 20, y, cx - 12, y + 1);
+      g.lineBetween(cx + 12, y, cx + 20, y + 1);
+    }
+    // Loose bandage end
+    g.fillStyle(0xeeddcc, 0.9); g.fillRect(cx + 12, 40, 10, 3);
+    // Legs
+    g.fillStyle(0xeeddcc, 1); g.fillRect(cx - 10, 50, 9, 11); g.fillRect(cx + 1, 50, 9, 11);
+    g.lineStyle(2, 0xddccbb, 0.8);
+    g.lineBetween(cx - 10, 53, cx - 1, 54); g.lineBetween(cx + 1, 53, cx + 10, 54);
+    g.fillStyle(0xccbbaa, 1); g.fillEllipse(cx - 5, 59, 12, 5); g.fillEllipse(cx + 5, 59, 12, 5);
+    g.generateTexture('mummy', 44, 60); g.destroy();
+  }
+
+  // ── Samurai ────────────────────────────────────────────────────────────────
+  _samurai() {
+    const g = this._g(), cx = 22;
+    // Hakama (wide pants)
+    g.fillStyle(0x1a2244, 1); g.fillRect(cx - 13, 30, 26, 24);
+    g.fillStyle(0x2233aa, 0.3); g.fillRect(cx - 11, 32, 11, 18);
+    g.lineStyle(1, 0x112233, 0.7); g.lineBetween(cx, 30, cx, 54);
+    // Armour plates
+    g.fillStyle(0x882211, 1); g.fillRect(cx - 13, 18, 26, 14);
+    g.fillStyle(0xaa3322, 0.5); g.fillRect(cx - 11, 20, 11, 10);
+    // Horizontal armour slat lines
+    g.lineStyle(2, 0x661100, 0.8);
+    g.lineBetween(cx - 13, 22, cx + 13, 22); g.lineBetween(cx - 13, 26, cx + 13, 26);
+    // Shoulder guards
+    g.fillStyle(0x882211, 1); g.fillEllipse(cx - 16, 20, 12, 8); g.fillEllipse(cx + 16, 20, 12, 8);
+    g.fillStyle(0xaa3322, 0.4); g.fillEllipse(cx - 16, 19, 8, 5); g.fillEllipse(cx + 16, 19, 8, 5);
+    // Head (skin)
+    g.fillStyle(0xf0c880, 1); g.fillEllipse(cx, 12, 20, 22);
+    g.fillStyle(0xf8d898, 0.5); g.fillEllipse(cx - 3, 8, 10, 12);
+    // Kabuto helmet
+    g.fillStyle(0x882211, 1); g.fillEllipse(cx, 5, 26, 16);
+    g.fillStyle(0xaa3322, 0.5); g.fillEllipse(cx - 4, 2, 14, 10);
+    g.fillStyle(0x882211, 1); g.fillRect(cx - 13, 7, 26, 6); // brim
+    g.fillStyle(0x660000, 1); g.fillRect(cx - 11, 12, 22, 3); // cheek guard
+    // Crest
+    g.fillStyle(0xddaa00, 1); g.fillTriangle(cx - 2, -4, cx + 2, -4, cx, 5);
+    // Eyes
+    g.fillStyle(0x000000, 1); g.fillCircle(cx - 4, 12, 2); g.fillCircle(cx + 4, 12, 2);
+    g.fillStyle(0xffffff, 0.6); g.fillCircle(cx - 3, 11, 1); g.fillCircle(cx + 5, 11, 1);
+    // Arms (gauntlets)
+    g.fillStyle(0x882211, 1); g.fillRect(cx - 21, 20, 9, 18); g.fillRect(cx + 12, 20, 9, 18);
+    g.lineStyle(2, 0x661100, 0.8);
+    g.lineBetween(cx - 21, 24, cx - 12, 24); g.lineBetween(cx - 21, 30, cx - 12, 30);
+    g.lineBetween(cx + 12, 24, cx + 21, 24); g.lineBetween(cx + 12, 30, cx + 21, 30);
+    // Feet/boots
+    g.fillStyle(0x1a2244, 1); g.fillRect(cx - 10, 53, 9, 8); g.fillRect(cx + 1, 53, 9, 8);
+    g.fillStyle(0x000011, 1); g.fillEllipse(cx - 5, 59, 12, 5); g.fillEllipse(cx + 5, 59, 12, 5);
+    g.generateTexture('samurai', 44, 60); g.destroy();
+  }
+
+  // ── Werewolf ───────────────────────────────────────────────────────────────
+  _werewolf() {
+    const g = this._g(), cx = 22;
+    // Legs (furry)
+    g.fillStyle(0x5a3a1a, 1); g.fillRect(cx - 10, 34, 9, 20); g.fillRect(cx + 1, 34, 9, 20);
+    g.fillStyle(0x7a5a2a, 0.5); g.fillRect(cx - 9, 35, 4, 14); g.fillRect(cx + 2, 35, 4, 14);
+    g.fillStyle(0x2a1a00, 1); g.fillEllipse(cx - 5, 56, 13, 6); g.fillEllipse(cx + 5, 56, 13, 6);
+    // Claws on feet
+    g.fillStyle(0x1a1a00, 1);
+    for (let i = -1; i <= 1; i++) { g.fillTriangle(cx - 5 + i * 4, 55, cx - 4 + i * 4, 55, cx - 4.5 + i * 4, 59); }
+    // Body
+    g.fillStyle(0x5a3a1a, 1); g.fillEllipse(cx, 22, 28, 30);
+    g.fillStyle(0x7a5a2a, 0.55); g.fillEllipse(cx - 4, 16, 16, 18);
+    g.fillStyle(0x3a2008, 0.5); g.fillEllipse(cx + 6, 26, 12, 14);
+    // Torn shirt (rags)
+    g.fillStyle(0x3a2244, 0.7); g.fillRect(cx - 11, 12, 22, 20);
+    g.fillStyle(0x2a1133, 0.5); g.fillRect(cx - 9, 14, 9, 14);
+    // Ragged tears
+    g.fillStyle(0x5a3a1a, 0.9);
+    g.fillTriangle(cx - 11, 30, cx - 5, 30, cx - 8, 36);
+    g.fillTriangle(cx + 5, 30, cx + 11, 30, cx + 8, 36);
+    // Arms (muscular, clawed)
+    g.fillStyle(0x5a3a1a, 1); g.fillRect(cx - 19, 12, 9, 22); g.fillRect(cx + 10, 12, 9, 22);
+    g.fillStyle(0x7a5a2a, 0.4); g.fillRect(cx - 18, 13, 4, 16); g.fillRect(cx + 11, 13, 4, 16);
+    // Claws on hands
+    g.fillStyle(0x1a1a00, 1);
+    for (let i = 0; i < 3; i++) {
+      g.fillTriangle(cx - 19 + i * 3, 33, cx - 17 + i * 3, 33, cx - 18 + i * 3, 38);
+      g.fillTriangle(cx + 10 + i * 3, 33, cx + 12 + i * 3, 33, cx + 11 + i * 3, 38);
+    }
+    // Head
+    g.fillStyle(0x5a3a1a, 1); g.fillCircle(cx, 8, 14);
+    g.fillStyle(0x7a5a2a, 0.6); g.fillCircle(cx - 4, 4, 8);
+    // Muzzle
+    g.fillStyle(0x4a2a0a, 1); g.fillEllipse(cx, 12, 14, 10);
+    g.fillStyle(0x1a0a00, 1); g.fillEllipse(cx, 10, 9, 6);
+    // Fangs
+    g.fillStyle(0xffffff, 1); g.fillTriangle(cx - 4, 14, cx - 2, 14, cx - 3, 18); g.fillTriangle(cx + 2, 14, cx + 4, 14, cx + 3, 18);
+    // Eyes (yellow)
+    g.fillStyle(0xffee00, 0.3); g.fillCircle(cx - 5, 6, 6); g.fillCircle(cx + 5, 6, 6);
+    g.fillStyle(0xffdd00, 1); g.fillCircle(cx - 5, 6, 4); g.fillCircle(cx + 5, 6, 4);
+    g.fillStyle(0x000000, 1); g.fillEllipse(cx - 5, 6, 2, 5); g.fillEllipse(cx + 5, 6, 2, 5);
+    g.fillStyle(0xffffff, 0.7); g.fillCircle(cx - 4, 5, 1.2); g.fillCircle(cx + 6, 5, 1.2);
+    // Ears
+    g.fillStyle(0x4a2a0a, 1); g.fillTriangle(cx - 8, -2, cx - 14, -2, cx - 11, 6); g.fillTriangle(cx + 8, -2, cx + 14, -2, cx + 11, 6);
+    g.fillStyle(0x7a4a2a, 0.6); g.fillTriangle(cx - 9, -1, cx - 13, -1, cx - 11, 5); g.fillTriangle(cx + 9, -1, cx + 13, -1, cx + 11, 5);
+    g.generateTexture('werewolf', 44, 60); g.destroy();
+  }
+
+  // ── Knight ─────────────────────────────────────────────────────────────────
+  _knight() {
+    const g = this._g(), cx = 22;
+    // Greaves (leg armour)
+    g.fillStyle(0x778899, 1); g.fillRect(cx - 10, 36, 9, 18); g.fillRect(cx + 1, 36, 9, 18);
+    g.fillStyle(0x99aabb, 0.45); g.fillRect(cx - 9, 37, 4, 12); g.fillRect(cx + 2, 37, 4, 12);
+    g.lineStyle(2, 0x556677, 0.8);
+    g.lineBetween(cx - 10, 42, cx - 1, 42); g.lineBetween(cx + 1, 42, cx + 10, 42);
+    g.lineBetween(cx - 10, 48, cx - 1, 48); g.lineBetween(cx + 1, 48, cx + 10, 48);
+    g.fillStyle(0x445566, 1); g.fillEllipse(cx - 5, 57, 12, 5); g.fillEllipse(cx + 5, 57, 12, 5);
+    // Chest plate
+    g.fillStyle(0x778899, 1); g.fillRect(cx - 13, 18, 26, 20);
+    g.fillStyle(0x99aabb, 0.5); g.fillRect(cx - 11, 20, 11, 14);
+    g.fillStyle(0x556677, 0.5); g.fillRect(cx + 2, 20, 9, 14);
+    g.lineStyle(2, 0x556677, 0.9);
+    g.lineBetween(cx, 18, cx, 38); g.lineBetween(cx - 13, 28, cx + 13, 28);
+    // Heraldic cross on chest
+    g.fillStyle(0xddaa00, 0.9); g.fillRect(cx - 2, 19, 4, 18); g.fillRect(cx - 10, 26, 20, 4);
+    // Pauldrons
+    g.fillStyle(0x667788, 1); g.fillEllipse(cx - 16, 20, 14, 10); g.fillEllipse(cx + 16, 20, 14, 10);
+    g.fillStyle(0x889aaa, 0.4); g.fillEllipse(cx - 16, 18, 9, 6); g.fillEllipse(cx + 16, 18, 9, 6);
+    // Gauntlets
+    g.fillStyle(0x667788, 1); g.fillRect(cx - 21, 20, 9, 20); g.fillRect(cx + 12, 20, 9, 20);
+    g.lineStyle(2, 0x556677, 0.8);
+    g.lineBetween(cx - 21, 26, cx - 12, 26); g.lineBetween(cx - 21, 32, cx - 12, 32);
+    g.lineBetween(cx + 12, 26, cx + 21, 26); g.lineBetween(cx + 12, 32, cx + 21, 32);
+    // Helmet (great helm)
+    g.fillStyle(0x778899, 1); g.fillRect(cx - 13, 3, 26, 18);
+    g.fillStyle(0x99aabb, 0.4); g.fillRect(cx - 11, 5, 11, 12);
+    g.fillStyle(0x556677, 1); g.fillRect(cx - 13, 3, 26, 3); // brim
+    // Visor slit
+    g.fillStyle(0x000000, 1); g.fillRect(cx - 10, 10, 20, 4);
+    g.fillStyle(0x00aaff, 0.2); g.fillRect(cx - 9, 11, 18, 2); // eye glow through visor
+    // Plume
+    g.fillStyle(0xff4444, 1); g.fillRect(cx - 2, -4, 4, 9);
+    g.fillStyle(0xff6666, 0.6); g.fillRect(cx - 1, -3, 2, 7);
+    g.generateTexture('knight', 44, 60); g.destroy();
+  }
+
+  // ── Alien ──────────────────────────────────────────────────────────────────
+  _alien() {
+    const g = this._g(), cx = 22;
+    // Spacesuit body
+    g.fillStyle(0x228844, 1); g.fillEllipse(cx, 34, 28, 36);
+    g.fillStyle(0x44aa66, 0.5); g.fillEllipse(cx - 4, 26, 16, 20);
+    g.fillStyle(0x115522, 0.5); g.fillEllipse(cx + 5, 38, 12, 16);
+    // Belt/trim
+    g.fillStyle(0x66cc88, 0.7); g.fillRect(cx - 13, 38, 26, 5);
+    g.fillStyle(0x88eebb, 0.4); g.fillRect(cx - 11, 39, 11, 3);
+    // Suit details
+    g.fillStyle(0x004422, 0.8); g.fillRect(cx - 6, 26, 12, 12);
+    g.fillStyle(0x00ff88, 0.6); g.fillRect(cx - 4, 28, 8, 8);
+    g.fillStyle(0xaaffdd, 0.5); g.fillRect(cx - 3, 29, 4, 5);
+    // Arms
+    g.fillStyle(0x228844, 1); g.fillRect(cx - 20, 22, 8, 20); g.fillRect(cx + 12, 22, 8, 20);
+    g.fillStyle(0x44aa66, 0.3); g.fillRect(cx - 19, 23, 4, 14); g.fillRect(cx + 13, 23, 4, 14);
+    // 3-fingered hands
+    g.fillStyle(0x33aa55, 1);
+    for (let i = 0; i < 3; i++) {
+      g.fillEllipse(cx - 20 + i * 3, 42, 5, 8);
+      g.fillEllipse(cx + 12 + i * 3, 42, 5, 8);
+    }
+    // Head (classic big alien cranium)
+    g.fillStyle(0x228844, 1); g.fillEllipse(cx, 12, 30, 28);
+    g.fillStyle(0x44aa66, 0.4); g.fillEllipse(cx - 5, 7, 16, 16);
+    // Giant almond eyes
+    g.fillStyle(0x000000, 1); g.fillEllipse(cx - 7, 12, 14, 9); g.fillEllipse(cx + 7, 12, 14, 9);
+    g.fillStyle(0x00ffcc, 0.3); g.fillEllipse(cx - 7, 12, 11, 7); g.fillEllipse(cx + 7, 12, 11, 7);
+    g.fillStyle(0x00ffcc, 1); g.fillEllipse(cx - 7, 12, 6, 5); g.fillEllipse(cx + 7, 12, 6, 5);
+    g.fillStyle(0xffffff, 0.8); g.fillCircle(cx - 5, 10, 2); g.fillCircle(cx + 9, 10, 2);
+    // Tiny nose slits
+    g.fillStyle(0x004422, 1); g.fillEllipse(cx - 2, 18, 3, 4); g.fillEllipse(cx + 2, 18, 3, 4);
+    // Thin mouth
+    g.lineStyle(2, 0x004422, 0.9); g.lineBetween(cx - 6, 22, cx + 6, 22);
+    // Legs
+    g.fillStyle(0x228844, 1); g.fillRect(cx - 9, 50, 8, 10); g.fillRect(cx + 1, 50, 8, 10);
+    g.fillStyle(0x115522, 1); g.fillEllipse(cx - 5, 58, 12, 5); g.fillEllipse(cx + 5, 58, 12, 5);
+    g.generateTexture('alien', 44, 60); g.destroy();
+  }
+
+  // ── Zombie ─────────────────────────────────────────────────────────────────
+  _zombie() {
+    const g = this._g(), cx = 22;
+    // Torn trousers
+    g.fillStyle(0x334422, 1); g.fillRect(cx - 10, 34, 9, 20); g.fillRect(cx + 1, 34, 9, 20);
+    g.fillStyle(0x445533, 0.4); g.fillRect(cx - 9, 36, 4, 14); g.fillRect(cx + 2, 36, 4, 14);
+    g.fillStyle(0x112200, 0.6);
+    g.fillTriangle(cx - 10, 50, cx - 5, 50, cx - 7, 55);
+    g.fillTriangle(cx + 4, 50, cx + 10, 50, cx + 7, 55);
+    g.fillStyle(0x1a2200, 1); g.fillEllipse(cx - 5, 58, 13, 5); g.fillEllipse(cx + 5, 58, 13, 5);
+    // Body (rotten flesh)
+    g.fillStyle(0x7a9955, 1); g.fillEllipse(cx, 22, 28, 30);
+    g.fillStyle(0x99bb66, 0.5); g.fillEllipse(cx - 4, 16, 14, 18);
+    g.fillStyle(0x556633, 0.5); g.fillEllipse(cx + 5, 26, 12, 14);
+    // Torn shirt
+    g.fillStyle(0x3a4422, 0.7); g.fillRect(cx - 12, 12, 24, 20);
+    g.fillStyle(0x2a3311, 0.5); g.fillRect(cx - 10, 14, 9, 14);
+    // Wounds/rot marks
+    g.fillStyle(0x442211, 0.8); g.fillCircle(cx + 4, 18, 3); g.fillCircle(cx - 5, 26, 2.5);
+    // Arms (outstretched)
+    g.fillStyle(0x7a9955, 1); g.fillRect(cx - 21, 14, 10, 20); g.fillRect(cx + 11, 14, 10, 20);
+    g.fillStyle(0x99bb66, 0.4); g.fillRect(cx - 20, 15, 5, 14); g.fillRect(cx + 12, 15, 5, 14);
+    // Bony fingers
+    g.fillStyle(0xbbcc99, 1);
+    for (let i = 0; i < 4; i++) {
+      g.fillRect(cx - 22 + i * 2.5, 33, 2, 7);
+      g.fillRect(cx + 11 + i * 2.5, 33, 2, 7);
+    }
+    // Head
+    g.fillStyle(0x7a9955, 1); g.fillCircle(cx, 9, 12);
+    g.fillStyle(0x99bb66, 0.5); g.fillCircle(cx - 3, 6, 7);
+    // Rot mark on head
+    g.fillStyle(0x442211, 0.7); g.fillCircle(cx + 5, 6, 3);
+    // Eyes (dead white with pupils)
+    g.fillStyle(0xccddaa, 1); g.fillCircle(cx - 5, 8, 4); g.fillCircle(cx + 5, 8, 4);
+    g.fillStyle(0x556633, 0.6); g.fillCircle(cx - 5, 8, 2.5); g.fillCircle(cx + 5, 8, 2.5);
+    g.fillStyle(0x000000, 1); g.fillCircle(cx - 4, 8, 1.5); g.fillCircle(cx + 6, 8, 1.5);
+    // Stitched mouth
+    g.fillStyle(0x112200, 1); g.fillRect(cx - 6, 14, 12, 4);
+    g.lineStyle(1.5, 0xaabb88, 0.8);
+    for (let i = -2; i <= 2; i++) g.lineBetween(cx + i * 2.5, 14, cx + i * 2.5, 18);
+    g.generateTexture('zombie', 44, 60); g.destroy();
+  }
+
+  // ── Phoenix ────────────────────────────────────────────────────────────────
+  _phoenix() {
+    const g = this._g(), cx = 22;
+    // Tail feathers (flame-like)
+    g.fillStyle(0xff4400, 0.8); g.fillTriangle(cx - 10, 50, cx, 32, cx - 5, 58);
+    g.fillStyle(0xff6600, 0.8); g.fillTriangle(cx, 50, cx + 5, 32, cx + 2, 60);
+    g.fillStyle(0xff8800, 0.7); g.fillTriangle(cx + 10, 50, cx + 2, 32, cx + 8, 58);
+    g.fillStyle(0xffcc00, 0.5); g.fillTriangle(cx - 5, 48, cx + 1, 32, cx - 2, 56);
+    // Wings (expanded)
+    g.fillStyle(0xff5500, 0.9); g.fillTriangle(cx - 5, 22, cx - 22, 6, cx - 18, 34);
+    g.fillStyle(0xff5500, 0.9); g.fillTriangle(cx + 5, 22, cx + 22, 6, cx + 18, 34);
+    g.fillStyle(0xff8800, 0.6); g.fillTriangle(cx - 6, 24, cx - 20, 10, cx - 17, 32);
+    g.fillStyle(0xff8800, 0.6); g.fillTriangle(cx + 6, 24, cx + 20, 10, cx + 17, 32);
+    // Feather tips glow
+    g.fillStyle(0xffee00, 0.5); g.fillTriangle(cx - 22, 6, cx - 16, 10, cx - 18, 2);
+    g.fillStyle(0xffee00, 0.5); g.fillTriangle(cx + 22, 6, cx + 16, 10, cx + 18, 2);
+    // Body
+    g.fillStyle(0xdd4400, 1); g.fillEllipse(cx, 28, 22, 28);
+    g.fillStyle(0xff7722, 0.6); g.fillEllipse(cx - 4, 22, 12, 16);
+    g.fillStyle(0xaa2200, 0.4); g.fillEllipse(cx + 4, 32, 10, 12);
+    // Golden underbelly
+    g.fillStyle(0xffcc44, 0.85); g.fillEllipse(cx + 2, 28, 12, 20);
+    g.fillStyle(0xffee88, 0.5); g.fillEllipse(cx + 1, 24, 8, 12);
+    // Head
+    g.fillStyle(0xdd4400, 1); g.fillCircle(cx, 12, 11);
+    g.fillStyle(0xff7722, 0.5); g.fillCircle(cx - 3, 9, 7);
+    // Beak
+    g.fillStyle(0xffcc00, 1); g.fillTriangle(cx - 1, 14, cx + 1, 14, cx + 8, 16);
+    g.fillStyle(0xddaa00, 0.5); g.fillTriangle(cx, 15, cx + 1, 15, cx + 6, 17);
+    // Crest (flame crown)
+    g.fillStyle(0xffcc00, 1); g.fillTriangle(cx - 2, 2, cx + 2, 2, cx, -4);
+    g.fillStyle(0xff8800, 1); g.fillTriangle(cx - 5, 4, cx - 1, 4, cx - 3, -2);
+    g.fillStyle(0xff8800, 1); g.fillTriangle(cx + 5, 4, cx + 1, 4, cx + 3, -2);
+    // Eyes
+    g.fillStyle(0xffee00, 0.3); g.fillCircle(cx - 3, 11, 5); g.fillCircle(cx + 5, 11, 5);
+    g.fillStyle(0xffcc00, 1); g.fillCircle(cx - 3, 11, 3.5); g.fillCircle(cx + 5, 11, 3.5);
+    g.fillStyle(0x000000, 1); g.fillCircle(cx - 2, 11, 2); g.fillCircle(cx + 6, 11, 2);
+    g.fillStyle(0xffffff, 0.9); g.fillCircle(cx - 1, 10, 1); g.fillCircle(cx + 7, 10, 1);
+    g.generateTexture('phoenix', 44, 60); g.destroy();
+  }
+
+  // ── Kraken ─────────────────────────────────────────────────────────────────
+  _kraken() {
+    const g = this._g(), cx = 22;
+    // Tentacles (background ones)
+    g.fillStyle(0x113344, 0.7); g.fillEllipse(cx - 16, 52, 9, 22); g.fillEllipse(cx + 16, 52, 9, 22);
+    g.fillStyle(0x224455, 0.6); g.fillEllipse(cx - 8, 54, 8, 14); g.fillEllipse(cx + 8, 54, 8, 14);
+    // Main body
+    g.fillStyle(0x224466, 1); g.fillEllipse(cx, 28, 34, 40);
+    g.fillStyle(0x336688, 0.5); g.fillEllipse(cx - 5, 20, 18, 22);
+    g.fillStyle(0x112233, 0.5); g.fillEllipse(cx + 7, 32, 14, 18);
+    // Suction cup markings on body
+    g.fillStyle(0x446688, 0.6);
+    for (let i = 0; i < 5; i++) {
+      const sx = cx - 10 + i * 5, sy = 30 + (i % 2) * 6;
+      g.fillCircle(sx, sy, 2.5);
+    }
+    // Mantle (head)
+    g.fillStyle(0x2a5577, 1); g.fillEllipse(cx, 14, 28, 24);
+    g.fillStyle(0x336688, 0.5); g.fillEllipse(cx - 4, 9, 16, 14);
+    // Eyes (huge ominous)
+    g.fillStyle(0xffcc00, 0.3); g.fillCircle(cx - 7, 13, 8); g.fillCircle(cx + 7, 13, 8);
+    g.fillStyle(0xddaa00, 1); g.fillCircle(cx - 7, 13, 5.5); g.fillCircle(cx + 7, 13, 5.5);
+    g.fillStyle(0x000000, 1); g.fillEllipse(cx - 7, 13, 3, 7); g.fillEllipse(cx + 7, 13, 3, 7);
+    g.fillStyle(0xffffff, 0.8); g.fillCircle(cx - 5, 11, 1.5); g.fillCircle(cx + 9, 11, 1.5);
+    // Mouth beak
+    g.fillStyle(0x1a2a33, 1); g.fillTriangle(cx - 3, 18, cx + 3, 18, cx, 23);
+    g.fillStyle(0x334455, 0.5); g.fillTriangle(cx - 2, 19, cx + 2, 19, cx, 22);
+    // Front tentacles (arms)
+    g.fillStyle(0x224466, 1); g.fillEllipse(cx - 19, 32, 10, 26); g.fillEllipse(cx + 19, 32, 10, 26);
+    g.fillStyle(0x336688, 0.4); g.fillEllipse(cx - 18, 28, 7, 16); g.fillEllipse(cx + 18, 28, 7, 16);
+    // Sucker dots on tentacles
+    g.fillStyle(0x446688, 0.7);
+    for (let i = 0; i < 4; i++) {
+      g.fillCircle(cx - 19, 24 + i * 6, 2); g.fillCircle(cx + 19, 24 + i * 6, 2);
+    }
+    g.generateTexture('kraken', 44, 60); g.destroy();
+  }
+
+  // ── Demon ──────────────────────────────────────────────────────────────────
+  _demon() {
+    const g = this._g(), cx = 22;
+    // Tail
+    g.fillStyle(0x880011, 1); g.fillEllipse(cx + 14, 50, 8, 18);
+    g.fillStyle(0xaa1122, 0.4); g.fillEllipse(cx + 13, 46, 5, 12);
+    g.fillStyle(0x660000, 1); g.fillTriangle(cx + 10, 56, cx + 18, 56, cx + 14, 62);
+    // Legs
+    g.fillStyle(0x880011, 1); g.fillRect(cx - 10, 34, 9, 22); g.fillRect(cx + 1, 34, 9, 22);
+    g.fillStyle(0xaa1122, 0.4); g.fillRect(cx - 9, 36, 4, 14); g.fillRect(cx + 2, 36, 4, 14);
+    // Cloven hooves
+    g.fillStyle(0x1a0000, 1); g.fillEllipse(cx - 6, 58, 8, 5); g.fillEllipse(cx - 3, 58, 8, 5);
+    g.fillStyle(0x1a0000, 1); g.fillEllipse(cx + 2, 58, 8, 5); g.fillEllipse(cx + 5, 58, 8, 5);
+    // Wings
+    g.fillStyle(0x660000, 0.85); g.fillTriangle(cx - 5, 20, cx - 22, 4, cx - 18, 32);
+    g.fillStyle(0x660000, 0.85); g.fillTriangle(cx + 5, 20, cx + 22, 4, cx + 18, 32);
+    g.fillStyle(0x880011, 0.5); g.fillTriangle(cx - 6, 22, cx - 20, 8, cx - 16, 30);
+    g.fillStyle(0x880011, 0.5); g.fillTriangle(cx + 6, 22, cx + 20, 8, cx + 16, 30);
+    // Wing bones
+    g.lineStyle(2, 0x440000, 0.9); g.lineBetween(cx - 5, 20, cx - 22, 4); g.lineBetween(cx + 5, 20, cx + 22, 4);
+    // Body
+    g.fillStyle(0xaa1122, 1); g.fillEllipse(cx, 24, 26, 30);
+    g.fillStyle(0xcc2233, 0.5); g.fillEllipse(cx - 4, 18, 14, 18);
+    g.fillStyle(0x770011, 0.5); g.fillEllipse(cx + 5, 28, 12, 14);
+    // Glowing rune on chest
+    g.fillStyle(0xff2200, 0.3); g.fillCircle(cx, 24, 8);
+    g.fillStyle(0xff4400, 0.7); g.fillCircle(cx, 24, 5);
+    g.lineStyle(2, 0xff6600, 0.8);
+    g.lineBetween(cx - 4, 22, cx + 4, 22); g.lineBetween(cx, 19, cx, 25);
+    g.lineBetween(cx - 3, 24, cx + 3, 28);
+    // Arms
+    g.fillStyle(0xaa1122, 1); g.fillRect(cx - 19, 16, 9, 20); g.fillRect(cx + 10, 16, 9, 20);
+    g.fillStyle(0xcc2233, 0.4); g.fillRect(cx - 18, 17, 4, 14); g.fillRect(cx + 11, 17, 4, 14);
+    // Clawed hands
+    g.fillStyle(0x880011, 1);
+    for (let i = 0; i < 3; i++) {
+      g.fillTriangle(cx - 20 + i * 3, 35, cx - 18 + i * 3, 35, cx - 19 + i * 3, 40);
+      g.fillTriangle(cx + 10 + i * 3, 35, cx + 12 + i * 3, 35, cx + 11 + i * 3, 40);
+    }
+    // Head
+    g.fillStyle(0xaa1122, 1); g.fillCircle(cx, 10, 13);
+    g.fillStyle(0xcc2233, 0.5); g.fillCircle(cx - 3, 6, 8);
+    // Horns
+    g.fillStyle(0x440000, 1); g.fillTriangle(cx - 6, 2, cx - 10, 2, cx - 8, -6); g.fillTriangle(cx + 6, 2, cx + 10, 2, cx + 8, -6);
+    g.fillStyle(0x660000, 0.5); g.fillTriangle(cx - 7, 3, cx - 9, 3, cx - 8, -4); g.fillTriangle(cx + 7, 3, cx + 9, 3, cx + 8, -4);
+    // Eyes (hellfire)
+    g.fillStyle(0xff4400, 0.4); g.fillCircle(cx - 5, 9, 6); g.fillCircle(cx + 5, 9, 6);
+    g.fillStyle(0xff6600, 1); g.fillCircle(cx - 5, 9, 4); g.fillCircle(cx + 5, 9, 4);
+    g.fillStyle(0xffcc00, 0.8); g.fillCircle(cx - 4, 8, 2); g.fillCircle(cx + 6, 8, 2);
+    g.fillStyle(0x000000, 1); g.fillCircle(cx - 4, 9, 1.8); g.fillCircle(cx + 6, 9, 1.8);
+    // Sinister grin
+    g.fillStyle(0x1a0000, 1); g.fillRect(cx - 7, 15, 14, 5);
+    g.fillStyle(0xffffff, 1);
+    for (let i = 0; i < 5; i++) g.fillTriangle(cx - 6 + i * 3, 15, cx - 4 + i * 3, 15, cx - 5 + i * 3, 19);
+    g.fillStyle(0xff2200, 0.5); g.fillRect(cx - 6, 15, 12, 2);
+    g.generateTexture('demon', 44, 60); g.destroy();
+  }
+
+  // ── Glitch ─────────────────────────────────────────────────────────────────
+  _glitch() {
+    const g = this._g(), cx = 22;
+    // Corrupted base body — static-y rectangles
+    const glitchCols = [0xff00ff, 0x00ffff, 0xffff00, 0xff0066, 0x00ff88, 0x0066ff];
+    for (let i = 0; i < 30; i++) {
+      const gx = Math.random() * 44;
+      const gy = Math.random() * 60;
+      const gw = 4 + Math.random() * 18;
+      const gh = 2 + Math.random() * 6;
+      g.fillStyle(glitchCols[i % glitchCols.length], 0.6 + Math.random() * 0.4);
+      g.fillRect(gx, gy, gw, gh);
+    }
+    // Dark void base shape
+    g.fillStyle(0x080010, 0.7); g.fillEllipse(cx, 34, 28, 44);
+    g.fillStyle(0x0d0018, 0.6); g.fillCircle(cx, 12, 13);
+    // Glitch scanlines
+    for (let y = 0; y < 60; y += 4) {
+      g.fillStyle(0x000000, 0.25); g.fillRect(0, y, 44, 2);
+    }
+    // Fragmented/shifted outlines
+    g.fillStyle(0x00ffff, 0.8); g.fillRect(cx - 4, 8, 10, 3);
+    g.fillStyle(0xff00ff, 0.8); g.fillRect(cx - 7, 11, 8, 3);
+    g.fillStyle(0xffff00, 0.8); g.fillRect(cx, 14, 12, 3);
+    // Eyes — glitching between colors
+    g.fillStyle(0xff00ff, 1); g.fillEllipse(cx - 5, 12, 10, 8); g.fillEllipse(cx + 5, 12, 10, 8);
+    g.fillStyle(0x00ffff, 0.85); g.fillEllipse(cx - 4, 11, 7, 5); g.fillEllipse(cx + 6, 11, 7, 5);
+    g.fillStyle(0xffffff, 0.95); g.fillEllipse(cx - 5, 12, 4, 3); g.fillEllipse(cx + 5, 12, 4, 3);
+    // Offset ghost (glitch double)
+    g.fillStyle(0xff00ff, 0.2); g.fillEllipse(cx + 4, 34, 20, 36);
+    g.fillStyle(0x00ffff, 0.2); g.fillEllipse(cx - 4, 34, 20, 36);
+    // Random pixel scatter
+    const scatterCols = [0xffffff, 0xff00ff, 0x00ffff, 0xffff00];
+    for (let i = 0; i < 20; i++) {
+      g.fillStyle(scatterCols[i % 4], 0.9);
+      g.fillRect(Math.random() * 44, Math.random() * 60, 2, 2);
+    }
+    // ERROR text hint (mouth area)
+    g.fillStyle(0xffffff, 0.7); g.fillRect(cx - 8, 21, 16, 3);
+    g.fillStyle(0x000000, 0.8); g.fillRect(cx - 7, 21, 5, 2); g.fillRect(cx - 1, 21, 5, 2);
+    g.generateTexture('glitch', 44, 60); g.destroy();
   }
 
   // ── TNT (Boom Drop) ────────────────────────────────────────────────────────
