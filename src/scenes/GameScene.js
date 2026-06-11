@@ -37,21 +37,27 @@ const BOT_WEAPONS = [
 ];
 
 // Custom slot-1 weapon per character
+// Damage tiers: STARTER ~55 | RARE ~70-80 | EPIC ~100-130 | MYTHIC ~150-170 | ??? godlike
 const CHAR_SLOT1 = {
-  banana:       { name: 'Peel Launcher',   type: 'projectile', fireRate: 700,  damage: 55,  speed: 8,  auto: false, splash: 1.5,  reloadTime: 0,    projKey: 'peel',      projScale: 0.30 },
-  sloth_pirate: { name: 'Flintlock',       type: 'hitscan',    fireRate: 1800, damage: 110, speed: 50, auto: false, ammo: 1,  maxAmmo: 1,  reloadTime: 1600 },
-  hot_dog:      { name: 'Mustard Gun',     type: 'projectile', fireRate: 550,  damage: 40,  speed: 11, auto: false, splash: 1.8,  reloadTime: 0,    projKey: 'peel',      projScale: 0.25, projTint: 0xffdd00 },
-  cactus:       { name: 'Thorn Shooter',   type: 'projectile', fireRate: 300,  damage: 22,  speed: 17, auto: true,  ammo: 20, maxAmmo: 20, reloadTime: 900,  projKey: 'shuriken',  projScale: 0.55, projTint: 0x44aa22 },
-  ghost:        { name: 'Spook Blaster',   type: 'hitscan',    fireRate: 800,  damage: 70,  speed: 35, auto: false, ammo: 6,  maxAmmo: 6,  reloadTime: 1800 },
-  astronaut:    { name: 'Space Pistol',    type: 'hitscan',    fireRate: 500,  damage: 55,  speed: 60, auto: false, ammo: 8,  maxAmmo: 8,  reloadTime: 1400 },
-  penguin:      { name: 'Snowball Cannon', type: 'projectile', fireRate: 900,  damage: 50,  speed: 9,  auto: false, splash: 1.6,  reloadTime: 0,    projKey: 'cannonball', projScale: 0.55, projTint: 0xaaddff },
-  rock_ninja:   { name: 'Shuriken',        type: 'projectile', fireRate: 185,  damage: 30,  speed: 19, auto: true,  ammo: 24, maxAmmo: 24, reloadTime: 1100, projKey: 'shuriken',  projScale: 0.85 },
-  viking:       { name: 'Axe Launcher',    type: 'projectile', fireRate: 1200, damage: 90,  speed: 12, auto: false, splash: 1.0,  reloadTime: 0,    projKey: 'shuriken',  projScale: 1.1,  projTint: 0xaaaaaa },
-  robot:        { name: 'Plasma Rifle',    type: 'hitscan',    fireRate: 100,  damage: 20,  speed: 40, auto: true,  ammo: 40, maxAmmo: 40, reloadTime: 1400 },
-  wizard:       { name: 'Magic Staff',     type: 'projectile', fireRate: 650,  damage: 60,  speed: 10, auto: false, splash: 2.0,  reloadTime: 0,    projKey: 'pickup',    projScale: 0.5,  projTint: 0xaa44ff },
-  shark:        { name: 'Jaw Launcher',    type: 'projectile', fireRate: 800,  damage: 75,  speed: 13, auto: false, splash: 1.4,  reloadTime: 0,    projKey: 'cannonball', projScale: 0.65, projTint: 0x4488cc },
-  trash_can:    { name: 'Junk Cannon',     type: 'projectile', fireRate: 1000, damage: 65,  speed: 7,  auto: false, splash: 2.2,  reloadTime: 0,    projKey: 'pickup',    projScale: 0.55, projTint: 0x886633 },
-  dragon:       { name: 'Inferno Blaster', type: 'projectile', fireRate: 180,  damage: 35,  speed: 16, auto: true,  ammo: 30, maxAmmo: 30, reloadTime: 1200, projKey: 'peel',      projScale: 0.30, projTint: 0xff4400 },
+  // STARTER
+  banana:       { name: 'Peel Launcher',   type: 'projectile', fireRate: 700,  damage: 55,  speed: 8,  auto: false, splash: 1.5,  reloadTime: 0,    projKey: 'peel',       projScale: 0.30 },
+  // RARE
+  sloth_pirate: { name: 'Flintlock',       type: 'hitscan',    fireRate: 1800, damage: 115, speed: 50, auto: false, ammo: 1,  maxAmmo: 1,  reloadTime: 1600 },
+  hot_dog:      { name: 'Mustard Gun',     type: 'projectile', fireRate: 520,  damage: 70,  speed: 11, auto: false, splash: 1.8,  reloadTime: 0,    projKey: 'peel',       projScale: 0.25, projTint: 0xffdd00 },
+  cactus:       { name: 'Thorn Shooter',   type: 'projectile', fireRate: 260,  damage: 35,  speed: 17, auto: true,  ammo: 20, maxAmmo: 20, reloadTime: 900,  projKey: 'shuriken',   projScale: 0.55, projTint: 0x44aa22 },
+  ghost:        { name: 'Spook Blaster',   type: 'hitscan',    fireRate: 780,  damage: 78,  speed: 35, auto: false, ammo: 6,  maxAmmo: 6,  reloadTime: 1800 },
+  astronaut:    { name: 'Space Pistol',    type: 'hitscan',    fireRate: 480,  damage: 72,  speed: 60, auto: false, ammo: 8,  maxAmmo: 8,  reloadTime: 1400 },
+  penguin:      { name: 'Snowball Cannon', type: 'projectile', fireRate: 850,  damage: 68,  speed: 9,  auto: false, splash: 1.6,  reloadTime: 0,    projKey: 'cannonball', projScale: 0.55, projTint: 0xaaddff },
+  // EPIC
+  rock_ninja:   { name: 'Shuriken',        type: 'projectile', fireRate: 175,  damage: 45,  speed: 19, auto: true,  ammo: 24, maxAmmo: 24, reloadTime: 1100, projKey: 'shuriken',   projScale: 0.85 },
+  viking:       { name: 'Axe Launcher',    type: 'projectile', fireRate: 1100, damage: 115, speed: 12, auto: false, splash: 1.0,  reloadTime: 0,    projKey: 'shuriken',   projScale: 1.1,  projTint: 0xaaaaaa },
+  robot:        { name: 'Plasma Rifle',    type: 'hitscan',    fireRate: 95,   damage: 30,  speed: 40, auto: true,  ammo: 40, maxAmmo: 40, reloadTime: 1400 },
+  wizard:       { name: 'Magic Staff',     type: 'projectile', fireRate: 600,  damage: 100, speed: 10, auto: false, splash: 2.0,  reloadTime: 0,    projKey: 'pickup',     projScale: 0.5,  projTint: 0xaa44ff },
+  shark:        { name: 'Jaw Launcher',    type: 'projectile', fireRate: 750,  damage: 105, speed: 13, auto: false, splash: 1.4,  reloadTime: 0,    projKey: 'cannonball', projScale: 0.65, projTint: 0x4488cc },
+  // MYTHIC
+  trash_can:    { name: 'Junk Cannon',     type: 'projectile', fireRate: 950,  damage: 140, speed: 7,  auto: false, splash: 2.2,  reloadTime: 0,    projKey: 'pickup',     projScale: 0.55, projTint: 0x886633 },
+  dragon:       { name: 'Inferno Blaster', type: 'projectile', fireRate: 160,  damage: 55,  speed: 16, auto: true,  ammo: 30, maxAmmo: 30, reloadTime: 1200, projKey: 'peel',       projScale: 0.30, projTint: 0xff4400 },
+  // ???
   mystery:      { name: 'Void Cannon',     type: 'hitscan',    fireRate: 50,   damage: 999, speed: 99, auto: true,  ammo: 99, maxAmmo: 99, reloadTime: 500 },
 };
 
@@ -1119,14 +1125,34 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.shake(250, 0.02);
   }
 
-  // Mystery — OBLITERATE: 9999 damage to every bot on screen, full screen flash
+  // Mystery — OBLITERATE: fully heal + restore all lives, then fire a random ability
   _specialObliterate() {
-    for (const bot of this.bots) {
-      if (!bot.alive) continue;
-      this._hitEntity(bot, 9999, 'banana');
-    }
-    this.cameras.main.flash(500, 255, 0, 255, 0.9);
-    this.cameras.main.shake(400, 0.035);
+    // ── Full heal ──────────────────────────────────────────────────────────
+    this.player.hp    = this.player.maxHp;
+    this.player.lives = 3;
+    this._syncAll();
+
+    // ── Random attack from all other characters' supers ───────────────────
+    const pool = [
+      () => this._specialPeelTrap(),
+      () => this._specialCannon(),
+      () => this._specialMustardBlast(),
+      () => this._specialSpikeBurst(),
+      () => this._specialSoulScream(),
+      () => this._specialGravityBomb(),
+      () => this._specialIceSlide(),
+      () => this._specialShurikenStorm(),
+      () => this._specialBerserker(),
+      () => this._specialLaserBeam(),
+      () => this._specialMeteorStorm(),
+      () => this._specialFeedingFrenzy(),
+      () => this._specialTrashWave(),
+      () => this._specialFireBreath(),
+    ];
+    pool[Math.floor(Math.random() * pool.length)]();
+
+    this.cameras.main.flash(600, 255, 0, 255, 0.92);
+    this.cameras.main.shake(500, 0.04);
   }
 
   // ── Ground hazards (peel traps etc.) ──────────────────────────────────────

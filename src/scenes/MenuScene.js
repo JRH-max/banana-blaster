@@ -35,7 +35,7 @@ const CHARACTERS = [
   { key: 'trash_can',    name: 'Trash Can', subtitle: '',          price: 1000, ability: 'TRASH WAVE',     rarity: 'MYTHIC',  rarityColor: '#ff8800', gun: 'Junk Cannon',      gunIcon: '🗑️' },
   { key: 'dragon',       name: 'Dragon',    subtitle: '',          price: 1000, ability: 'FIRE BREATH',    rarity: 'MYTHIC',  rarityColor: '#ff8800', gun: 'Inferno Blaster',  gunIcon: '🐲' },
   // ???
-  { key: 'mystery',      name: '???',       subtitle: '',          price: 3000, ability: 'OBLITERATE',     rarity: '???',     rarityColor: '#ff00ff', gun: 'Void Cannon',      gunIcon: '❓' },
+  { key: 'mystery',      name: '???',       subtitle: '',          price: 5000, ability: 'OBLITERATE',     rarity: '???',     rarityColor: '#ff00ff', gun: 'Void Cannon',      gunIcon: '❓' },
 ];
 
 const WEAPON_NAMES  = ['Peel Launcher', 'Automatic Rifle', 'Sniper'];
