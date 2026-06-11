@@ -55,11 +55,13 @@ export class MenuScene extends Phaser.Scene {
 
     this.menuItems    = [];
     this.shopItems    = [];
-    this.charItems    = [];   // character panel overlay
+    this.charItems    = [];
+    this.boxItems     = [];
 
     this._buildMenu();
     this._buildShopPanel();
     this._buildCharPanel();
+    this._buildBoxPanel();
     this._showMenu();
   }
 
@@ -116,13 +118,15 @@ export class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5));
     this._refreshMenuCoins();
 
-    // ── Three buttons: PLAY  CHARACTERS  SHOP ────────────────────────────────
-    const btnY = 506, btnH = 52;
+    // ── Four buttons: PLAY  CHARACTERS  BOXES  SHOP ──────────────────────────
+    const btnY = 506, btnH = 52, btnW = 172, btnGap = 10;
+    const btn1 = SW / 2 - btnW * 1.5 - btnGap * 1.5;  // 400 - 258 - 15 = 127
+    const [bx1, bx2, bx3, bx4] = [0,1,2,3].map(i => btn1 + i * (btnW + btnGap));
 
-    const playBtn = push(this.add.rectangle(142, btnY, 200, btnH, 0x228822)
+    const playBtn = push(this.add.rectangle(bx1, btnY, btnW, btnH, 0x228822)
       .setStrokeStyle(3, 0x88ff88, 0.9).setInteractive().setDepth(1));
-    push(this.add.text(142, btnY, '▶  PLAY', {
-      fontSize: '22px', fontFamily: 'Arial Black', color: '#ffffff',
+    push(this.add.text(bx1, btnY, '▶  PLAY', {
+      fontSize: '20px', fontFamily: 'Arial Black', color: '#ffffff',
       stroke: '#000000', strokeThickness: 5,
     }).setOrigin(0.5).setDepth(2));
     playBtn.on('pointerover', () => playBtn.setFillStyle(0x33cc33));
@@ -131,20 +135,30 @@ export class MenuScene extends Phaser.Scene {
     this.input.keyboard.once('keydown-SPACE', () => this._go());
     this.input.keyboard.once('keydown-ENTER', () => this._go());
 
-    const charBtn = push(this.add.rectangle(400, btnY, 210, btnH, 0x1a2a6c)
+    const charBtn = push(this.add.rectangle(bx2, btnY, btnW, btnH, 0x1a2a6c)
       .setStrokeStyle(3, 0x66aaff, 0.9).setInteractive().setDepth(1));
-    push(this.add.text(400, btnY, '🎮  CHARACTERS', {
-      fontSize: '19px', fontFamily: 'Arial Black', color: '#aaddff',
+    push(this.add.text(bx2, btnY, '🎮 CHARS', {
+      fontSize: '18px', fontFamily: 'Arial Black', color: '#aaddff',
       stroke: '#000000', strokeThickness: 4,
     }).setOrigin(0.5).setDepth(2));
     charBtn.on('pointerover', () => charBtn.setFillStyle(0x2a3a9c));
     charBtn.on('pointerout',  () => charBtn.setFillStyle(0x1a2a6c));
     charBtn.on('pointerdown', () => this._openCharPanel());
 
-    const shopBtn = push(this.add.rectangle(658, btnY, 200, btnH, 0x886600)
+    const boxBtn = push(this.add.rectangle(bx3, btnY, btnW, btnH, 0x4a1a6c)
+      .setStrokeStyle(3, 0xcc66ff, 0.9).setInteractive().setDepth(1));
+    push(this.add.text(bx3, btnY, '📦 BOXES', {
+      fontSize: '18px', fontFamily: 'Arial Black', color: '#dd99ff',
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(2));
+    boxBtn.on('pointerover', () => boxBtn.setFillStyle(0x6a2a9c));
+    boxBtn.on('pointerout',  () => boxBtn.setFillStyle(0x4a1a6c));
+    boxBtn.on('pointerdown', () => this._openBoxPanel());
+
+    const shopBtn = push(this.add.rectangle(bx4, btnY, btnW, btnH, 0x886600)
       .setStrokeStyle(3, 0xffcc00, 0.8).setInteractive().setDepth(1));
-    push(this.add.text(658, btnY, '🛒  SHOP', {
-      fontSize: '22px', fontFamily: 'Arial Black', color: '#ffdd44',
+    push(this.add.text(bx4, btnY, '🛒  SHOP', {
+      fontSize: '20px', fontFamily: 'Arial Black', color: '#ffdd44',
       stroke: '#000000', strokeThickness: 5,
     }).setOrigin(0.5).setDepth(2));
     shopBtn.on('pointerover', () => shopBtn.setFillStyle(0xaa8800));
@@ -450,6 +464,7 @@ export class MenuScene extends Phaser.Scene {
     for (const el of this.charItems) el.setVisible(false);
     for (const el of (this.charTabContentItems || [])) el.setVisible(false);
     for (const el of this.shopItems) el.setVisible(false);
+    for (const el of (this.boxItems || [])) el.setVisible(false);
     this._refreshMenuCoins();
     this._refreshPreview();
   }
@@ -468,6 +483,276 @@ export class MenuScene extends Phaser.Scene {
     for (const el of this.charItems) el.setVisible(false);
     for (const el of this.shopItems) el.setVisible(true);
     this._refreshShop();
+  }
+
+  // ── Mystery Box panel ─────────────────────────────────────────────────────
+  _buildBoxPanel() {
+    for (const el of (this.boxItems || [])) { try { el.destroy(); } catch {} }
+    this.boxItems = [];
+    const add = el => { this.boxItems.push(el); return el; };
+
+    const BOX_COST = 500;
+    const PW = 500, PH = 390, PX = SW / 2, PY = SH / 2;
+
+    add(this.add.rectangle(PX, SH / 2, SW, SH, 0x000000, 0.78).setDepth(9));
+    add(this.add.rectangle(PX, PY, PW, PH, 0x08080e).setDepth(10)
+      .setStrokeStyle(2, 0xcc66ff, 0.85));
+
+    // Title
+    add(this.add.text(PX, PY - PH / 2 + 28, '📦  MYSTERY BOX', {
+      fontSize: '22px', fontFamily: 'Arial Black', color: '#dd99ff',
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(11));
+
+    add(this.add.text(PX, PY - PH / 2 + 56, `${BOX_COST} 💰 per box`, {
+      fontSize: '14px', fontFamily: 'Arial', color: '#aaaaaa',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(11));
+
+    // Divider
+    const dv = this.add.graphics().setDepth(11);
+    dv.lineStyle(1, 0x664488, 0.6);
+    dv.lineBetween(PX - PW / 2 + 20, PY - PH / 2 + 70, PX + PW / 2 - 20, PY - PH / 2 + 70);
+    add(dv);
+
+    // Odds table
+    const ODDS = [
+      { label: '???',    color: '#ff00ff', pct: '1%',  note: 'insanely rare' },
+      { label: 'MYTHIC', color: '#ff8800', pct: '5%',  note: 'extremely rare' },
+      { label: 'EPIC',   color: '#aa44ff', pct: '10%', note: 'very rare' },
+      { label: 'RARE',   color: '#4488ff', pct: '20%', note: 'uncommon' },
+      { label: 'COINS',  color: '#ffd700', pct: '64%', note: '50–150 coins' },
+    ];
+
+    add(this.add.text(PX - 160, PY - 105, 'RARITY', {
+      fontSize: '11px', fontFamily: 'Arial Black', color: '#666666', stroke: '#000', strokeThickness: 1,
+    }).setOrigin(0, 0.5).setDepth(11));
+    add(this.add.text(PX + 60, PY - 105, 'CHANCE', {
+      fontSize: '11px', fontFamily: 'Arial Black', color: '#666666', stroke: '#000', strokeThickness: 1,
+    }).setOrigin(0, 0.5).setDepth(11));
+    add(this.add.text(PX + 140, PY - 105, 'REWARD', {
+      fontSize: '11px', fontFamily: 'Arial Black', color: '#666666', stroke: '#000', strokeThickness: 1,
+    }).setOrigin(0, 0.5).setDepth(11));
+
+    ODDS.forEach((o, i) => {
+      const oy = PY - 75 + i * 30;
+      add(this.add.text(PX - 160, oy, o.label, {
+        fontSize: '14px', fontFamily: 'Arial Black', color: o.color,
+        stroke: '#000', strokeThickness: 2,
+      }).setOrigin(0, 0.5).setDepth(11));
+      add(this.add.text(PX + 60, oy, o.pct, {
+        fontSize: '14px', fontFamily: 'Arial Black', color: '#ffffff',
+        stroke: '#000', strokeThickness: 2,
+      }).setOrigin(0, 0.5).setDepth(11));
+      add(this.add.text(PX + 140, oy, o.note, {
+        fontSize: '12px', fontFamily: 'Arial', color: '#888888',
+        stroke: '#000', strokeThickness: 1,
+      }).setOrigin(0, 0.5).setDepth(11));
+    });
+
+    // Coin balance
+    const coins = getSavedCoins();
+    this.boxCoinTxt = add(this.add.text(PX, PY + 86, `💰 ${coins} coins`, {
+      fontSize: '16px', fontFamily: 'Arial Black', color: '#ffd700',
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(11));
+
+    // Open button
+    const canAfford = coins >= BOX_COST;
+    const openBg = add(this.add.rectangle(PX, PY + 122, 240, 38,
+      canAfford ? 0x5a1a7c : 0x221133, 0.95)
+      .setStrokeStyle(2, canAfford ? 0xcc66ff : 0x443355, 0.9).setDepth(11));
+    const openTxt = add(this.add.text(PX, PY + 122,
+      canAfford ? `📦  OPEN BOX  (${BOX_COST} 💰)` : `NEED ${BOX_COST} 💰`, {
+        fontSize: '14px', fontFamily: 'Arial Black',
+        color: canAfford ? '#dd99ff' : '#554466',
+        stroke: '#000', strokeThickness: 2,
+      }).setOrigin(0.5).setDepth(12));
+    if (canAfford) {
+      openBg.setInteractive();
+      openBg.on('pointerover', () => openBg.setFillStyle(0x7a2aac));
+      openBg.on('pointerout',  () => openBg.setFillStyle(0x5a1a7c));
+      openBg.on('pointerdown', () => this._rollBox());
+    }
+
+    // Back button
+    const backBtn = add(this.add.rectangle(PX, PY + PH / 2 - 24, 180, 30, 0x553300, 0.9)
+      .setStrokeStyle(2, 0xffaa44, 0.7).setInteractive().setDepth(11));
+    add(this.add.text(PX, PY + PH / 2 - 24, '◀  BACK TO MENU', {
+      fontSize: '13px', fontFamily: 'Arial Black', color: '#ffcc88',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(12));
+    backBtn.on('pointerover', () => backBtn.setFillStyle(0x774400));
+    backBtn.on('pointerout',  () => backBtn.setFillStyle(0x553300));
+    backBtn.on('pointerdown', () => this._showMenu());
+  }
+
+  _openBoxPanel() {
+    this._buildBoxPanel();
+    for (const el of this.menuItems) el.setVisible(false);
+    for (const el of this.charItems) el.setVisible(false);
+    for (const el of (this.charTabContentItems || [])) el.setVisible(false);
+    for (const el of this.shopItems) el.setVisible(false);
+    for (const el of this.boxItems) el.setVisible(true);
+  }
+
+  _rollBox() {
+    const BOX_COST = 500;
+    const coins = getSavedCoins();
+    if (coins < BOX_COST) return;
+    saveCoins(coins - BOX_COST);
+
+    const roll = Math.random() * 100;
+    let rarity;
+    if      (roll < 1)  rarity = '???';
+    else if (roll < 6)  rarity = 'MYTHIC';
+    else if (roll < 16) rarity = 'EPIC';
+    else if (roll < 36) rarity = 'RARE';
+    else                rarity = 'COINS';
+
+    let reward;
+    if (rarity === 'COINS') {
+      const bonus = 50 + Math.floor(Math.random() * 101);
+      saveCoins(getSavedCoins() + bonus);
+      reward = { type: 'coins', amount: bonus };
+    } else {
+      const unlocked  = getSavedUnlocked();
+      const available = CHARACTERS.filter(c => c.rarity === rarity && !unlocked.includes(c.key));
+      if (available.length === 0) {
+        // Already own them all — give coins as consolation
+        const bonus = { '???': 3000, 'MYTHIC': 1500, 'EPIC': 800, 'RARE': 300 }[rarity] || 300;
+        saveCoins(getSavedCoins() + bonus);
+        reward = { type: 'coins', amount: bonus, alreadyOwned: true, rarity };
+      } else {
+        const char = available[Math.floor(Math.random() * available.length)];
+        unlocked.push(char.key);
+        saveUnlocked(unlocked);
+        reward = { type: 'character', char, rarity };
+      }
+    }
+
+    this._showBoxResult(reward, rarity);
+  }
+
+  _showBoxResult(reward, rarity) {
+    const RARITY_COLORS = {
+      '???': '#ff00ff', 'MYTHIC': '#ff8800', 'EPIC': '#aa44ff',
+      'RARE': '#4488ff', 'COINS': '#ffd700',
+    };
+    const colorStr = RARITY_COLORS[rarity] || '#ffffff';
+    const colorHex = parseInt(colorStr.slice(1), 16);
+
+    // Spinning reveal — cycles through rarity labels before settling
+    const PX = SW / 2, PY = SH / 2;
+    const spinLabels = ['???', 'MYTHIC', 'EPIC', 'RARE', 'COINS'];
+    let spinCount = 0;
+    const totalSpins = 16;
+
+    const dimBg  = this.add.rectangle(PX, PY, SW, SH, 0x000000, 0.65).setDepth(30);
+    const spinBox = this.add.rectangle(PX, PY, 360, 100, 0x050510).setDepth(31)
+      .setStrokeStyle(2, 0x888888, 0.6);
+    const spinTxt = this.add.text(PX, PY, '...', {
+      fontSize: '32px', fontFamily: 'Arial Black', color: '#ffffff',
+      stroke: '#000', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(32);
+
+    const spinTimer = this.time.addEvent({
+      delay: 60,
+      repeat: totalSpins - 1,
+      callback: () => {
+        spinCount++;
+        const label = spinLabels[spinCount % spinLabels.length];
+        const c = RARITY_COLORS[label] || '#ffffff';
+        spinTxt.setText(label).setColor(c);
+        // Slow down near the end
+        if (spinCount > totalSpins - 4) spinTimer.delay = 140;
+        if (spinCount === totalSpins - 1) {
+          // Last frame — show the actual result
+          spinTxt.setText(rarity).setColor(colorStr);
+          spinBox.setStrokeStyle(3, colorHex, 1);
+        }
+        if (spinCount >= totalSpins) {
+          // Spin done — destroy spinner, show full result card
+          this.time.delayedCall(350, () => {
+            dimBg.destroy(); spinBox.destroy(); spinTxt.destroy();
+            this._showBoxCard(reward, rarity, colorStr, colorHex);
+          });
+        }
+      },
+    });
+  }
+
+  _showBoxCard(reward, rarity, colorStr, colorHex) {
+    const resultItems = [];
+    const addR = el => { resultItems.push(el); this.boxItems.push(el); return el; };
+    const PX = SW / 2, PY = SH / 2;
+
+    addR(this.add.rectangle(PX, PY, SW, SH, 0x000000, 0.72).setDepth(30));
+    addR(this.add.rectangle(PX, PY, 380, 300, 0x06060e).setDepth(31)
+      .setStrokeStyle(3, colorHex, 1));
+
+    // Rarity banner
+    addR(this.add.rectangle(PX, PY - 118, 380, 36, colorHex, 0.2).setDepth(31));
+    addR(this.add.text(PX, PY - 118, rarity, {
+      fontSize: '22px', fontFamily: 'Arial Black', color: colorStr,
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(32));
+
+    if (reward.type === 'character') {
+      addR(this.add.image(PX, PY - 40, reward.char.key).setScale(2.4).setDepth(32));
+      addR(this.add.text(PX, PY + 58, reward.char.name + (reward.char.subtitle ? ' ' + reward.char.subtitle : ''), {
+        fontSize: '18px', fontFamily: 'Arial Black', color: '#ffffff',
+        stroke: '#000', strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(32));
+      addR(this.add.text(PX, PY + 82, '✨  CHARACTER UNLOCKED!', {
+        fontSize: '12px', fontFamily: 'Arial Black', color: '#55ff88',
+        stroke: '#000', strokeThickness: 2,
+      }).setOrigin(0.5).setDepth(32));
+    } else {
+      addR(this.add.text(PX, PY - 30, '💰', { fontSize: '52px' }).setOrigin(0.5).setDepth(32));
+      const msg = reward.alreadyOwned
+        ? `Already own all ${reward.rarity}s!\n+${reward.amount} coins consolation`
+        : `+${reward.amount} coins`;
+      addR(this.add.text(PX, PY + 52, msg, {
+        fontSize: '16px', fontFamily: 'Arial Black', color: '#ffd700',
+        stroke: '#000', strokeThickness: 3, align: 'center',
+      }).setOrigin(0.5).setDepth(32));
+    }
+
+    // Open another button
+    const againBg = addR(this.add.rectangle(PX - 72, PY + 118, 130, 32, 0x5a1a7c, 0.9)
+      .setStrokeStyle(2, 0xcc66ff, 0.8).setInteractive().setDepth(32));
+    addR(this.add.text(PX - 72, PY + 118, '📦 OPEN AGAIN', {
+      fontSize: '11px', fontFamily: 'Arial Black', color: '#dd99ff',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(33));
+    againBg.on('pointerover', () => againBg.setFillStyle(0x7a2aac));
+    againBg.on('pointerout',  () => againBg.setFillStyle(0x5a1a7c));
+    againBg.on('pointerdown', () => {
+      for (const el of resultItems) { try { el.destroy(); } catch {} }
+      this.boxItems = this.boxItems.filter(e => !resultItems.includes(e));
+      this._buildBoxPanel();
+      for (const el of this.menuItems) el.setVisible(false);
+      for (const el of this.boxItems) el.setVisible(true);
+      this._rollBox();
+    });
+
+    // Back to boxes button
+    const backBg = addR(this.add.rectangle(PX + 72, PY + 118, 130, 32, 0x553300, 0.9)
+      .setStrokeStyle(2, 0xffaa44, 0.7).setInteractive().setDepth(32));
+    addR(this.add.text(PX + 72, PY + 118, '◀ BACK', {
+      fontSize: '11px', fontFamily: 'Arial Black', color: '#ffcc88',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(33));
+    backBg.on('pointerover', () => backBg.setFillStyle(0x774400));
+    backBg.on('pointerout',  () => backBg.setFillStyle(0x553300));
+    backBg.on('pointerdown', () => {
+      for (const el of resultItems) { try { el.destroy(); } catch {} }
+      this.boxItems = this.boxItems.filter(e => !resultItems.includes(e));
+      this._buildBoxPanel();
+      for (const el of this.menuItems) el.setVisible(false);
+      for (const el of this.boxItems) el.setVisible(true);
+    });
   }
 
   // ── Weapon shop panel ──────────────────────────────────────────────────────
