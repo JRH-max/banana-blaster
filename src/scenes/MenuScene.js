@@ -1031,25 +1031,25 @@ export class MenuScene extends Phaser.Scene {
 
       const BOX_DEFS = [
         {
-          id: 'small', label: '📦 SMALL BOX', cost: 100,
+          id: 'small', label: '📦 SMALL BOX', cost: 500,
           borderColor: 0x9955cc, glowColor: '#dd99ff',
+          odds: [
+            { label: '???',       color: '#ff00ff', pct: '0.1%' },
+            { label: 'MYTHIC',    color: '#ff8800', pct: '1%'   },
+            { label: 'EPIC',      color: '#aa44ff', pct: '5%'   },
+            { label: 'RARE',      color: '#4488ff', pct: '10%'  },
+            { label: '500 COINS', color: '#ffd700', pct: '83.9%'},
+          ],
+        },
+        {
+          id: 'big', label: '🎁 BIG BOX', cost: 1000,
+          borderColor: 0xffaa00, glowColor: '#ffdd66',
           odds: [
             { label: '???',       color: '#ff00ff', pct: '1%'  },
             { label: 'MYTHIC',    color: '#ff8800', pct: '5%'  },
             { label: 'EPIC',      color: '#aa44ff', pct: '10%' },
             { label: 'RARE',      color: '#4488ff', pct: '20%' },
             { label: '500 COINS', color: '#ffd700', pct: '64%' },
-          ],
-        },
-        {
-          id: 'big', label: '🎁 BIG BOX', cost: 200,
-          borderColor: 0xffaa00, glowColor: '#ffdd66',
-          odds: [
-            { label: '???',        color: '#ff00ff', pct: '5%'  },
-            { label: 'MYTHIC',     color: '#ff8800', pct: '10%' },
-            { label: 'EPIC',       color: '#aa44ff', pct: '30%' },
-            { label: 'RARE',       color: '#4488ff', pct: '40%' },
-            { label: '1000 COINS', color: '#ffd700', pct: '15%' },
           ],
         },
       ];
@@ -1127,34 +1127,33 @@ export class MenuScene extends Phaser.Scene {
   }
 
   _rollBox(boxId = 'small') {
-    const cost = boxId === 'big' ? 200 : 100;
+    const cost = boxId === 'big' ? 1000 : 500;
     const coins = getSavedCoins();
     if (coins < cost) return;
     saveCoins(coins - cost);
 
-    // Small box:  1% ???, 5% MYTHIC, 10% EPIC, 20% RARE, 64% = 500 coins
-    // Big box:    5% ???, 10% MYTHIC, 30% EPIC, 40% RARE, 15% = 1000 coins
-    const roll = Math.random() * 100;
+    // Small box: 0.1% ???, 1% MYTHIC, 5% EPIC, 10% RARE, 83.9% = 500 coins
+    // Big box:   1%   ???, 5% MYTHIC, 10% EPIC, 20% RARE, 64%   = 500 coins
+    const roll = Math.random() * 1000; // use 1000 for 0.1% precision
     let rarity;
     if (boxId === 'big') {
-      if      (roll < 5)  rarity = '???';
-      else if (roll < 15) rarity = 'MYTHIC';
-      else if (roll < 45) rarity = 'EPIC';
-      else if (roll < 85) rarity = 'RARE';
-      else                rarity = 'COINS_1000';
+      if      (roll < 10)  rarity = '???';
+      else if (roll < 60)  rarity = 'MYTHIC';
+      else if (roll < 160) rarity = 'EPIC';
+      else if (roll < 360) rarity = 'RARE';
+      else                 rarity = 'COINS_500';
     } else {
-      if      (roll < 1)  rarity = '???';
-      else if (roll < 6)  rarity = 'MYTHIC';
-      else if (roll < 16) rarity = 'EPIC';
-      else if (roll < 36) rarity = 'RARE';
-      else                rarity = 'COINS_500';
+      if      (roll < 1)   rarity = '???';
+      else if (roll < 11)  rarity = 'MYTHIC';
+      else if (roll < 61)  rarity = 'EPIC';
+      else if (roll < 161) rarity = 'RARE';
+      else                 rarity = 'COINS_500';
     }
 
     let reward;
-    if (rarity === 'COINS_500' || rarity === 'COINS_1000') {
-      const amount = rarity === 'COINS_1000' ? 1000 : 500;
-      saveCoins(getSavedCoins() + amount);
-      reward = { type: 'coins', amount, rarity: 'COINS' };
+    if (rarity === 'COINS_500') {
+      saveCoins(getSavedCoins() + 500);
+      reward = { type: 'coins', amount: 500, rarity: 'COINS' };
     } else {
       const unlocked  = getSavedUnlocked();
       const available = CHARACTERS.filter(c => c.rarity === rarity && !unlocked.includes(c.key));
@@ -1176,7 +1175,7 @@ export class MenuScene extends Phaser.Scene {
   _showBoxResult(reward, rarity, boxId = 'small') {
     const RARITY_COLORS = {
       '???': '#ff00ff', 'MYTHIC': '#ff8800', 'EPIC': '#aa44ff',
-      'RARE': '#4488ff', 'COINS_1000': '#ffd700', 'COINS_500': '#ccaa00', 'COINS': '#ffd700',
+      'RARE': '#4488ff', 'COINS_500': '#ffd700', 'COINS': '#ffd700',
     };
     const colorStr = RARITY_COLORS[rarity] || '#ffffff';
     const colorHex = parseInt(colorStr.slice(1), 16);
@@ -1201,7 +1200,7 @@ export class MenuScene extends Phaser.Scene {
         spinTxt.setText(spinLabels[idx]).setColor(spinColors[idx]);
         if (spinCount > totalSpins - 5) spinTimer.delay = 130;
         if (spinCount === totalSpins - 1) {
-          const finalLabel = rarity.startsWith('COINS') ? (rarity === 'COINS_1000' ? '1000 💰' : '500 💰') : rarity;
+          const finalLabel = rarity === 'COINS_500' ? '500 💰' : rarity;
           spinTxt.setText(finalLabel).setColor(colorStr);
           spinBox.setStrokeStyle(3, colorHex, 1);
         }
@@ -1225,7 +1224,7 @@ export class MenuScene extends Phaser.Scene {
 
     // Rarity banner
     addR(this.add.rectangle(PX, PY - 118, 380, 36, colorHex, 0.2).setDepth(31));
-    const displayRarity = rarity.startsWith('COINS') ? (rarity === 'COINS_1000' ? '1000 COINS' : '500 COINS') : rarity;
+    const displayRarity = rarity === 'COINS_500' ? '500 COINS' : rarity;
     addR(this.add.text(PX, PY - 118, displayRarity, {
       fontSize: '22px', fontFamily: 'Arial Black', color: colorStr, stroke: '#000000', strokeThickness: 4,
     }).setOrigin(0.5).setDepth(32));
