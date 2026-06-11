@@ -36,6 +36,7 @@ export class BootScene extends Phaser.Scene {
     this._shark();
     this._dragon();
     this._mystery();
+    this._tnt();
     this.scene.start('MenuScene');
   }
 
@@ -992,5 +993,36 @@ export class BootScene extends Phaser.Scene {
     g.fillTriangle(cx-15,42,cx-9,58,cx-3,42);
     g.fillTriangle(cx+15,42,cx+9,58,cx+3,42);
     g.generateTexture('mystery',44,60); g.destroy();
+  }
+
+  // ── TNT (Boom Drop) ────────────────────────────────────────────────────────
+  _tnt() {
+    const g = this._g(), W = 48, H = 52;
+    // Main red body
+    g.fillStyle(0xdd1111, 1); g.fillRect(0, 8, W, H - 8);
+    // Black band top
+    g.fillStyle(0x110000, 1); g.fillRect(0, 8, W, 8);
+    // Black band middle
+    g.fillStyle(0x110000, 1); g.fillRect(0, 26, W, 9);
+    // Black band bottom
+    g.fillStyle(0x110000, 1); g.fillRect(0, 44, W, 8);
+    // White label panel
+    g.fillStyle(0xffffff, 0.95); g.fillRect(6, 27, 36, 18);
+    // Red diamond corners on label
+    g.fillStyle(0xdd1111, 1);
+    g.fillRect(6, 27, 6, 6);  g.fillRect(36, 27, 6, 6);
+    g.fillRect(6, 39, 6, 6);  g.fillRect(36, 39, 6, 6);
+    g.fillRect(19, 27, 10, 18);
+    // Light red highlight on body
+    g.fillStyle(0xff4444, 0.35); g.fillRect(6, 9, 14, 15);
+    g.fillStyle(0xff4444, 0.20); g.fillRect(6, 35, 14, 8);
+    // Fuse rope
+    g.fillStyle(0x886644, 1); g.fillRect(20, 0, 5, 10);
+    g.fillStyle(0xaa7755, 0.5); g.fillRect(21, 1, 2, 9);
+    // Fuse spark glow
+    g.fillStyle(0xffee00, 0.9); g.fillCircle(22, 2, 4);
+    g.fillStyle(0xff8800, 0.7); g.fillCircle(22, 2, 2.5);
+    g.fillStyle(0xffffff, 0.8); g.fillCircle(22, 1, 1.2);
+    g.generateTexture('tnt', W, H); g.destroy();
   }
 }

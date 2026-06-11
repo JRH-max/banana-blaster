@@ -4,14 +4,18 @@ import Phaser from 'phaser';
 const SAVE_KEY = 'bananaBlasterSave';
 function loadSave()        { try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch { return {}; } }
 function writeSave(data)   { try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch {} }
-function getSavedCoins()   { return loadSave().coins     || 0; }
-function getSavedUpgrades(){ return loadSave().upgrades  || [[0,0,0],[0,0,0],[0,0,0]]; }
-function getSavedChar()    { return loadSave().character || 'banana'; }
-function getSavedUnlocked(){ return loadSave().unlocked  || ['banana']; }
-function saveCoins(c)      { writeSave({ ...loadSave(), coins: c }); }
-function saveUpgrades(ups) { writeSave({ ...loadSave(), upgrades: ups }); }
-function saveCharacter(k)  { writeSave({ ...loadSave(), character: k }); }
-function saveUnlocked(arr) { writeSave({ ...loadSave(), unlocked: arr }); }
+function getSavedCoins()      { return loadSave().coins        || 0; }
+function getSavedUpgrades()   { return loadSave().upgrades     || [[0,0,0],[0,0,0],[0,0,0]]; }
+function getSavedChar()       { return loadSave().character    || 'banana'; }
+function getSavedUnlocked()   { return loadSave().unlocked     || ['banana']; }
+function getSavedBoomDrops()  { return loadSave().boomDrops    || 0; }
+function getSavedBoomDate()   { return loadSave().boomDate     || ''; }
+function saveCoins(c)         { writeSave({ ...loadSave(), coins: c }); }
+function saveUpgrades(ups)    { writeSave({ ...loadSave(), upgrades: ups }); }
+function saveCharacter(k)     { writeSave({ ...loadSave(), character: k }); }
+function saveUnlocked(arr)    { writeSave({ ...loadSave(), unlocked: arr }); }
+function saveBoomDrops(n)     { writeSave({ ...loadSave(), boomDrops: n }); }
+function saveBoomDate(d)      { writeSave({ ...loadSave(), boomDate: d }); }
 
 const SW = 800, SH = 600;
 
@@ -56,6 +60,14 @@ export class MenuScene extends Phaser.Scene {
     this.menuItems    = [];
     this.shopItems    = [];
     this.charItems    = [];
+    this.boomItems    = [];
+
+    // Daily Boom Drop gift — 2 free drops each new calendar day
+    const today = new Date().toDateString();
+    if (getSavedBoomDate() !== today) {
+      saveBoomDate(today);
+      saveBoomDrops(getSavedBoomDrops() + 2);
+    }
 
     this._buildMenu();
     this._buildShopPanel();
@@ -154,6 +166,8 @@ export class MenuScene extends Phaser.Scene {
     push(this.add.text(SW / 2, 558, 'Press SPACE or ENTER to play', {
       fontSize: '12px', fontFamily: 'Arial', color: '#555555',
     }).setOrigin(0.5));
+
+    this._buildBoomDropButton();
   }
 
   // ── Character panel (overlay) ──────────────────────────────────────────────
@@ -450,6 +464,7 @@ export class MenuScene extends Phaser.Scene {
     for (const el of this.charItems) el.setVisible(false);
     for (const el of (this.charTabContentItems || [])) el.setVisible(false);
     for (const el of this.shopItems) el.setVisible(false);
+    for (const el of (this.boomItems || [])) el.setVisible(false);
     this._refreshMenuCoins();
     this._refreshPreview();
   }
@@ -470,6 +485,395 @@ export class MenuScene extends Phaser.Scene {
     for (const el of (this.charTabContentItems || [])) el.setVisible(false);
     for (const el of this.charItems) el.setVisible(false);
     for (const el of this.shopItems) el.setVisible(true);
+  }
+
+  // ── Boom Drop ──────────────────────────────────────────────────────────────
+  _buildBoomDropButton() {
+    const x = SW - 52, y = 52;
+    const count = getSavedBoomDrops();
+
+    // TNT icon
+    this.boomBtn = this.add.image(x, y, 'tnt').setScale(1.5).setDepth(5)
+      .setInteractive({ useHandCursor: true });
+    this.menuItems.push(this.boomBtn);
+
+    // "BOOM DROP" label
+    this.boomLbl = this.add.text(x, y + 38, 'BOOM DROP', {
+      fontSize: '9px', fontFamily: 'Arial Black', color: '#ff6600',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(5);
+    this.menuItems.push(this.boomLbl);
+
+    // Count badge
+    this.boomBadge = this.add.text(x + 20, y - 22, `×${count}`, {
+      fontSize: '13px', fontFamily: 'Arial Black', color: '#ffffff',
+      stroke: '#000000', strokeThickness: 3,
+      backgroundColor: count > 0 ? '#cc0000' : '#444444',
+      padding: { x: 4, y: 2 },
+    }).setOrigin(0.5).setDepth(6);
+    this.menuItems.push(this.boomBadge);
+
+    // Daily badge (if drops available)
+    if (count > 0) {
+      this.boomDailyLbl = this.add.text(x, y - 40, '🎁 DAILY!', {
+        fontSize: '11px', fontFamily: 'Arial Black', color: '#ffee00',
+        stroke: '#000', strokeThickness: 2,
+      }).setOrigin(0.5).setDepth(6);
+      this.menuItems.push(this.boomDailyLbl);
+      // Bounce the daily label
+      this.tweens.add({
+        targets: this.boomDailyLbl,
+        y: { from: y - 40, to: y - 46 }, duration: 600, yoyo: true, repeat: -1,
+      });
+    }
+
+    // Pulse tween on icon when drops available
+    if (count > 0) {
+      this.tweens.add({
+        targets: this.boomBtn,
+        angle: { from: -6, to: 6 }, duration: 180, yoyo: true, repeat: -1,
+      });
+    }
+
+    this.boomBtn.on('pointerover', () => this.boomBtn.setScale(1.75));
+    this.boomBtn.on('pointerout',  () => this.boomBtn.setScale(1.5));
+    this.boomBtn.on('pointerdown', () => {
+      if (getSavedBoomDrops() > 0) this._openBoomDrop();
+    });
+  }
+
+  _refreshBoomBadge() {
+    const count = getSavedBoomDrops();
+    if (this.boomBadge) {
+      this.boomBadge.setText(`×${count}`);
+      this.boomBadge.setBackgroundColor(count > 0 ? '#cc0000' : '#444444');
+    }
+  }
+
+  _openBoomDrop() {
+    // Hide main menu, show boom drop panel
+    for (const el of this.menuItems) el.setVisible(false);
+    this.boomClickCount = 0;
+    for (const el of (this.boomItems || [])) { try { el.destroy(); } catch {} }
+    this.boomItems = [];
+    const addB = el => { this.boomItems.push(el); return el; };
+
+    const PX = SW / 2, PY = SH / 2;
+
+    // Full dark overlay
+    addB(this.add.rectangle(PX, PY, SW, SH, 0x000000, 0.92).setDepth(20));
+
+    // Title
+    const titleTxt = addB(this.add.text(PX, 55, '💥  BOOM DROP', {
+      fontSize: '36px', fontFamily: 'Arial Black', color: '#ff4400',
+      stroke: '#000000', strokeThickness: 6,
+    }).setOrigin(0.5).setDepth(21));
+    this.tweens.add({ targets: titleTxt, scaleX: { from:1, to:1.04 }, scaleY: { from:1, to:1.04 }, duration: 500, yoyo:true, repeat:-1 });
+
+    // Remaining count
+    this.boomRemainingTxt = addB(this.add.text(PX, 95, `${getSavedBoomDrops()} remaining today`, {
+      fontSize: '14px', fontFamily: 'Arial Black', color: '#ff9966',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(21));
+
+    // Big TNT block
+    this.boomTntSpr = addB(this.add.image(PX, PY - 20, 'tnt')
+      .setScale(5).setDepth(22).setInteractive({ useHandCursor: true }));
+
+    // Crack graphics layer (drawn on top of TNT)
+    this.boomCrackGfx = addB(this.add.graphics().setDepth(23));
+
+    // 4 progress dots
+    this.boomDots = [];
+    for (let i = 0; i < 4; i++) {
+      const dx = PX - 45 + i * 30, dy = PY + 150;
+      const dot = addB(this.add.rectangle(dx, dy, 22, 22, 0x222222, 1)
+        .setStrokeStyle(2, 0x555555, 0.8).setDepth(22));
+      addB(this.add.text(dx, dy, `${i + 1}`, {
+        fontSize: '11px', fontFamily: 'Arial Black', color: '#555555',
+      }).setOrigin(0.5).setDepth(23));
+      this.boomDots.push(dot);
+    }
+
+    // Instruction text
+    this.boomInstrTxt = addB(this.add.text(PX, PY + 186, 'TAP THE TNT  4  TIMES!', {
+      fontSize: '17px', fontFamily: 'Arial Black', color: '#ffaa00',
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(22));
+
+    // Pulse tween
+    this.boomTntTween = this.tweens.add({
+      targets: this.boomTntSpr,
+      scaleX: { from: 5, to: 5.25 }, scaleY: { from: 5, to: 5.25 },
+      duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+    });
+
+    // Back button
+    const backBtn = addB(this.add.rectangle(PX, SH - 32, 160, 30, 0x553300, 0.9)
+      .setStrokeStyle(2, 0xffaa44, 0.7).setInteractive().setDepth(22));
+    addB(this.add.text(PX, SH - 32, '◀  BACK', {
+      fontSize: '13px', fontFamily: 'Arial Black', color: '#ffcc88',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(23));
+    backBtn.on('pointerover', () => backBtn.setFillStyle(0x774400));
+    backBtn.on('pointerout',  () => backBtn.setFillStyle(0x553300));
+    backBtn.on('pointerdown', () => this._closeBoomDrop());
+
+    // Click handler on TNT
+    this.boomTntSpr.on('pointerdown', () => this._boomTap());
+    this.boomTntSpr.on('pointerover', () => this.boomTntSpr.setTint(0xff9977));
+    this.boomTntSpr.on('pointerout',  () => this.boomTntSpr.clearTint());
+  }
+
+  _boomTap() {
+    this.boomClickCount++;
+    const n = this.boomClickCount;
+
+    // Light up dot
+    const dotColors = [0xff8800, 0xff6600, 0xff3300, 0xff0000];
+    this.boomDots[n - 1].setFillStyle(dotColors[n - 1], 1)
+      .setStrokeStyle(2, 0xffcc00, 1);
+
+    // Screen shake + flash — grows more intense
+    this.cameras.main.shake(100 + n * 40, 0.008 + n * 0.006);
+    const flashR = [255, 255, 255, 255], flashG = [200, 150, 80, 30], flashB = [0, 0, 0, 0];
+    this.cameras.main.flash(80 + n * 30, flashR[n-1], flashG[n-1], flashB[n-1], 0.18 + n * 0.07);
+
+    // Scale pop on TNT
+    if (this.boomTntTween) this.boomTntTween.stop();
+    const baseScale = 5 + (n - 1) * 0.2;
+    this.tweens.add({
+      targets: this.boomTntSpr,
+      scaleX: { from: baseScale * 1.35, to: baseScale },
+      scaleY: { from: baseScale * 1.35, to: baseScale },
+      duration: 220, ease: 'Bounce.easeOut',
+      onComplete: () => {
+        if (n < 4) {
+          this.boomTntTween = this.tweens.add({
+            targets: this.boomTntSpr,
+            scaleX: { from: baseScale, to: baseScale + 0.25 },
+            scaleY: { from: baseScale, to: baseScale + 0.25 },
+            duration: 500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+          });
+        }
+      },
+    });
+
+    // Draw progressive cracks
+    this._drawCracks(n);
+
+    // Update instruction text
+    const msgs    = ['KEEP GOING!', 'ALMOST THERE! 🔥', 'ONE MORE!! 💥', ''];
+    const colors  = ['#ffaa00', '#ff8800', '#ff4400', '#ff0000'];
+    if (n < 4) this.boomInstrTxt.setText(msgs[n - 1]).setColor(colors[n - 1]);
+
+    // On 4th tap — EXPLODE
+    if (n === 4) {
+      this.boomTntSpr.removeInteractive();
+      this.boomInstrTxt.setText('💥  B O O M !  💥').setColor('#ff0000').setFontSize(28);
+      this.time.delayedCall(120, () => this._boomExplode());
+    }
+  }
+
+  _drawCracks(n) {
+    const g = this.boomCrackGfx;
+    const PX = SW / 2, PY = SH / 2 - 20;
+    g.clear();
+
+    // Crack set 1
+    if (n >= 1) {
+      g.lineStyle(3, 0x000000, 0.9);
+      g.beginPath(); g.moveTo(PX - 18, PY - 55); g.lineTo(PX + 5, PY - 10); g.strokePath();
+      g.beginPath(); g.moveTo(PX + 5, PY - 10); g.lineTo(PX - 30, PY + 5); g.strokePath();
+      g.lineStyle(2, 0x330000, 0.6);
+      g.beginPath(); g.moveTo(PX + 35, PY - 40); g.lineTo(PX + 20, PY - 5); g.strokePath();
+    }
+    // Crack set 2
+    if (n >= 2) {
+      g.lineStyle(4, 0x000000, 0.9);
+      g.beginPath(); g.moveTo(PX - 45, PY + 20); g.lineTo(PX + 10, PY - 5); g.lineTo(PX + 45, PY + 35); g.strokePath();
+      g.lineStyle(2, 0xff2200, 0.5);
+      g.beginPath(); g.moveTo(PX - 10, PY + 35); g.lineTo(PX + 22, PY + 60); g.strokePath();
+      g.beginPath(); g.moveTo(PX + 48, PY - 55); g.lineTo(PX + 28, PY - 20); g.strokePath();
+      // Red inner glow
+      g.fillStyle(0xff2200, 0.08); g.fillCircle(PX, PY, 80);
+    }
+    // Crack set 3
+    if (n >= 3) {
+      g.lineStyle(5, 0xff1100, 0.85);
+      g.beginPath(); g.moveTo(PX - 55, PY - 30); g.lineTo(PX + 8, PY + 8); g.lineTo(PX + 55, PY - 50); g.strokePath();
+      g.lineStyle(3, 0xff6600, 0.7);
+      g.beginPath(); g.moveTo(PX - 8, PY - 70); g.lineTo(PX - 15, PY + 10); g.lineTo(PX + 15, PY + 55); g.strokePath();
+      g.beginPath(); g.moveTo(PX + 20, PY + 5); g.lineTo(PX + 52, PY + 28); g.strokePath();
+      // Heavy red glow
+      g.fillStyle(0xff3300, 0.18); g.fillCircle(PX, PY, 100);
+      g.fillStyle(0xff6600, 0.10); g.fillCircle(PX, PY, 130);
+    }
+  }
+
+  _boomExplode() {
+    const PX = SW / 2, PY = SH / 2 - 20;
+
+    // Deduct one drop
+    saveBoomDrops(getSavedBoomDrops() - 1);
+    this._refreshBoomBadge();
+    this.boomRemainingTxt.setText(`${getSavedBoomDrops()} remaining today`);
+
+    // Explode the TNT outward
+    this.tweens.add({
+      targets: this.boomTntSpr,
+      scaleX: 12, scaleY: 12, alpha: 0,
+      duration: 380, ease: 'Power3',
+    });
+    this.boomCrackGfx.clear();
+
+    // Big flash + shake
+    this.cameras.main.flash(600, 255, 140, 0, 0.95);
+    this.cameras.main.shake(500, 0.05);
+
+    // Spawn flying debris sprites
+    const debrisTextures = ['peel', 'pickup', 'shuriken', 'coin'];
+    for (let i = 0; i < 14; i++) {
+      const angle  = (i / 14) * Math.PI * 2 + Math.random() * 0.4;
+      const speed  = 200 + Math.random() * 260;
+      const tex    = debrisTextures[Math.floor(Math.random() * debrisTextures.length)];
+      const debris = this.add.image(PX, PY, tex).setScale(0.8 + Math.random()).setDepth(24)
+        .setTint([0xff4400, 0xffcc00, 0xff8800, 0xffffff][Math.floor(Math.random() * 4)]);
+      this.boomItems.push(debris);
+      this.tweens.add({
+        targets: debris,
+        x: PX + Math.cos(angle) * speed,
+        y: PY + Math.sin(angle) * speed,
+        angle: Math.random() * 720 - 360,
+        alpha: 0, scaleX: 0.2, scaleY: 0.2,
+        duration: 700 + Math.random() * 300,
+        ease: 'Power2',
+        onComplete: () => { try { debris.destroy(); } catch {} },
+      });
+    }
+
+    // Roll and show reward after explosion settles
+    this.time.delayedCall(750, () => {
+      const reward = this._rollBoomDropReward();
+      this._closeBoomDrop();
+      this._showBoomDropResult(reward);
+    });
+  }
+
+  _rollBoomDropReward() {
+    // 40% RARE, 30% EPIC, 15% MYTHIC, 5% ???, 10% coins
+    const roll = Math.random() * 100;
+    let rarity;
+    if      (roll < 5)  rarity = '???';
+    else if (roll < 20) rarity = 'MYTHIC';
+    else if (roll < 50) rarity = 'EPIC';
+    else if (roll < 90) rarity = 'RARE';
+    else                rarity = 'COINS';
+
+    if (rarity === 'COINS') {
+      const amount = 300;
+      saveCoins(getSavedCoins() + amount);
+      return { type: 'coins', amount, rarity };
+    }
+    const unlocked  = getSavedUnlocked();
+    const available = CHARACTERS.filter(c => c.rarity === rarity && !unlocked.includes(c.key));
+    if (available.length === 0) {
+      const bonus = { '???': 3000, 'MYTHIC': 1500, 'EPIC': 800, 'RARE': 300 }[rarity] || 300;
+      saveCoins(getSavedCoins() + bonus);
+      return { type: 'coins', amount: bonus, alreadyOwned: true, rarity };
+    }
+    const char = available[Math.floor(Math.random() * available.length)];
+    unlocked.push(char.key);
+    saveUnlocked(unlocked);
+    return { type: 'character', char, rarity };
+  }
+
+  _showBoomDropResult(reward) {
+    const RARITY_COLORS = { '???':'#ff00ff','MYTHIC':'#ff8800','EPIC':'#aa44ff','RARE':'#4488ff','COINS':'#ffd700' };
+    const colorStr = RARITY_COLORS[reward.rarity] || '#ffffff';
+    const colorHex = parseInt(colorStr.slice(1), 16);
+    const resultItems = [];
+    const addR = el => { resultItems.push(el); return el; };
+    const PX = SW / 2, PY = SH / 2;
+
+    addR(this.add.rectangle(PX, PY, SW, SH, 0x000000, 0.82).setDepth(30));
+
+    // Result card — slides in from top
+    const card = addR(this.add.rectangle(PX, PY - 300, 400, 320, 0x06060e).setDepth(31)
+      .setStrokeStyle(3, colorHex, 1));
+    this.tweens.add({ targets: card, y: PY, duration: 450, ease: 'Back.easeOut' });
+
+    // Rarity banner
+    const banner = addR(this.add.rectangle(PX, PY - 300 - 130, 400, 40, colorHex, 0.25).setDepth(31));
+    this.tweens.add({ targets: banner, y: PY - 130, duration: 450, ease: 'Back.easeOut' });
+    const rarityTxt = addR(this.add.text(PX, PY - 300 - 130, reward.rarity, {
+      fontSize: '24px', fontFamily: 'Arial Black', color: colorStr,
+      stroke: '#000000', strokeThickness: 5,
+    }).setOrigin(0.5).setDepth(32));
+    this.tweens.add({ targets: rarityTxt, y: PY - 130, duration: 450, ease: 'Back.easeOut' });
+
+    if (reward.type === 'character') {
+      const spr = addR(this.add.image(PX, PY - 300 - 30, reward.char.key).setScale(2.6).setDepth(32));
+      this.tweens.add({ targets: spr, y: PY - 30, duration: 450, ease: 'Back.easeOut' });
+      const nameTxt = addR(this.add.text(PX, PY - 300 + 70, reward.char.name + (reward.char.subtitle ? ' '+reward.char.subtitle : ''), {
+        fontSize: '20px', fontFamily: 'Arial Black', color: '#ffffff', stroke: '#000', strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(32));
+      this.tweens.add({ targets: nameTxt, y: PY + 70, duration: 450, ease: 'Back.easeOut' });
+      const unlockedTxt = addR(this.add.text(PX, PY - 300 + 96, '✨  CHARACTER UNLOCKED!', {
+        fontSize: '13px', fontFamily: 'Arial Black', color: '#55ff88', stroke: '#000', strokeThickness: 2,
+      }).setOrigin(0.5).setDepth(32));
+      this.tweens.add({ targets: unlockedTxt, y: PY + 96, duration: 450, ease: 'Back.easeOut' });
+    } else {
+      const coinTxt = addR(this.add.text(PX, PY - 300 - 20, '💰', { fontSize: '60px' }).setOrigin(0.5).setDepth(32));
+      this.tweens.add({ targets: coinTxt, y: PY - 20, duration: 450, ease: 'Back.easeOut' });
+      const msg = reward.alreadyOwned
+        ? `All ${reward.rarity} owned!\n+${reward.amount} coins`
+        : `+${reward.amount} coins`;
+      const coinAmt = addR(this.add.text(PX, PY - 300 + 70, msg, {
+        fontSize: '18px', fontFamily: 'Arial Black', color: '#ffd700',
+        stroke: '#000', strokeThickness: 3, align: 'center',
+      }).setOrigin(0.5).setDepth(32));
+      this.tweens.add({ targets: coinAmt, y: PY + 70, duration: 450, ease: 'Back.easeOut' });
+    }
+
+    // Buttons (delayed so they appear after card slides in)
+    this.time.delayedCall(500, () => {
+      const hasMore = getSavedBoomDrops() > 0;
+
+      if (hasMore) {
+        const againBg = addR(this.add.rectangle(PX - 80, PY + 128, 144, 32, 0x882200, 0.95)
+          .setStrokeStyle(2, 0xff6600, 0.9).setInteractive().setDepth(32));
+        addR(this.add.text(PX - 80, PY + 128, '💥 OPEN AGAIN', {
+          fontSize: '12px', fontFamily: 'Arial Black', color: '#ff9966', stroke: '#000', strokeThickness: 2,
+        }).setOrigin(0.5).setDepth(33));
+        againBg.on('pointerover', () => againBg.setFillStyle(0xbb3300));
+        againBg.on('pointerout',  () => againBg.setFillStyle(0x882200));
+        againBg.on('pointerdown', () => {
+          for (const el of resultItems) { try { el.destroy(); } catch {} }
+          this._showMenu();
+          this._openBoomDrop();
+        });
+      }
+
+      const okBg = addR(this.add.rectangle(hasMore ? PX + 80 : PX, PY + 128, 144, 32, 0x553300, 0.9)
+        .setStrokeStyle(2, 0xffaa44, 0.7).setInteractive().setDepth(32));
+      addR(this.add.text(hasMore ? PX + 80 : PX, PY + 128, '◀ BACK TO MENU', {
+        fontSize: '11px', fontFamily: 'Arial Black', color: '#ffcc88', stroke: '#000', strokeThickness: 2,
+      }).setOrigin(0.5).setDepth(33));
+      okBg.on('pointerover', () => okBg.setFillStyle(0x774400));
+      okBg.on('pointerout',  () => okBg.setFillStyle(0x553300));
+      okBg.on('pointerdown', () => {
+        for (const el of resultItems) { try { el.destroy(); } catch {} }
+        this._showMenu();
+      });
+    });
+  }
+
+  _closeBoomDrop() {
+    if (this.boomTntTween) { this.boomTntTween.stop(); this.boomTntTween = null; }
+    for (const el of (this.boomItems || [])) { try { el.destroy(); } catch {} }
+    this.boomItems = [];
+    this._showMenu();
   }
 
   // ── Shop panel (WEAPONS | BOXES tabs) ────────────────────────────────────
