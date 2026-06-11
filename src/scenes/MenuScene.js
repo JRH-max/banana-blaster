@@ -448,6 +448,7 @@ export class MenuScene extends Phaser.Scene {
   _showMenu() {
     for (const el of this.menuItems) el.setVisible(true);
     for (const el of this.charItems) el.setVisible(false);
+    for (const el of (this.charTabContentItems || [])) el.setVisible(false);
     for (const el of this.shopItems) el.setVisible(false);
     this._refreshMenuCoins();
     this._refreshPreview();
@@ -457,6 +458,7 @@ export class MenuScene extends Phaser.Scene {
     this._buildCharPanel();
     for (const el of this.menuItems) el.setVisible(false);
     for (const el of this.charItems) el.setVisible(true);
+    for (const el of (this.charTabContentItems || [])) el.setVisible(true);
     for (const el of this.shopItems) el.setVisible(false);
     if (this.charPanelCoinTxt) this.charPanelCoinTxt.setText('💰 ' + getSavedCoins());
   }
