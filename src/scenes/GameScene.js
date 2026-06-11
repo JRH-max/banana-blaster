@@ -304,7 +304,7 @@ export class GameScene extends Phaser.Scene {
       strafeDir: 1, stunTimer: 0,
       alive: true,
       sprite: this.add.image(s.x, s.y - 20, tex).setOrigin(0.5, 1).setScale(st.scale).setDepth(d + 10),
-      gunSpr: this.add.image(s.x + 12, s.y - 28, 'bot_gun').setOrigin(0, 0.5).setScale(0.85).setDepth(d + 11),
+      gunSpr: null,
       shadow: this.add.ellipse(s.x, s.y - 4, 22, 8, 0x000000, 0.2).setDepth(d - 1),
       ring, hpBg, hpBar,
     };
@@ -497,14 +497,14 @@ export class GameScene extends Phaser.Scene {
       this.registry.set('score', this.player.score);
     }
 
-    [bot.sprite, bot.gunSpr, bot.shadow, bot.hpBg, bot.hpBar, bot.ring]
+    [bot.sprite, bot.shadow, bot.hpBg, bot.hpBar, bot.ring]
       .forEach(o => o.setVisible(false));
 
     if (bot.faction === 'banana') {
       this.time.delayedCall(7000, () => {
         bot.wx = 4 + Math.random() * 10; bot.wy = 4 + Math.random() * 10;
         bot.hp = bot.maxHp; bot.alive = true;
-        [bot.sprite, bot.gunSpr, bot.shadow, bot.hpBg, bot.hpBar, bot.ring]
+        [bot.sprite, bot.shadow, bot.hpBg, bot.hpBar, bot.ring]
           .forEach(o => o.setVisible(true));
       });
     }
@@ -591,12 +591,6 @@ export class GameScene extends Phaser.Scene {
     bot.sprite.setFlipX(Math.cos(bot.angle) < 0);
     bot.shadow.setPosition(s.x, s.y - 4).setDepth(d - 1);
     bot.ring.setPosition(s.x, s.y - 4).setDepth(d - 2);
-    const gx = s.x + Math.cos(bot.angle) * 12;
-    const gy = s.y - 28 + Math.sin(bot.angle) * 5;
-    bot.gunSpr.setPosition(gx, gy)
-      .setAngle(Phaser.Math.RadToDeg(bot.angle))
-      .setFlipY(Math.cos(bot.angle) < 0)
-      .setDepth(d + 11);
     const pct = bot.hp / bot.maxHp;
     bot.hpBg.setPosition(s.x, s.y - 38).setDepth(d + 150);
     bot.hpBar.setPosition(s.x - 13, s.y - 38)
