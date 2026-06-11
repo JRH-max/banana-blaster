@@ -627,7 +627,7 @@ export class MenuScene extends Phaser.Scene {
 
       const BOX_DEFS = [
         {
-          id: 'small', label: '📦 SMALL BOX', cost: 500,
+          id: 'small', label: '📦 SMALL BOX', cost: 100,
           borderColor: 0x9955cc, glowColor: '#dd99ff',
           odds: [
             { label: '???',       color: '#ff00ff', pct: '1%'  },
@@ -638,7 +638,7 @@ export class MenuScene extends Phaser.Scene {
           ],
         },
         {
-          id: 'big', label: '🎁 BIG BOX', cost: 750,
+          id: 'big', label: '🎁 BIG BOX', cost: 200,
           borderColor: 0xffaa00, glowColor: '#ffdd66',
           odds: [
             { label: '???',        color: '#ff00ff', pct: '5%'  },
@@ -723,7 +723,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   _rollBox(boxId = 'small') {
-    const cost = boxId === 'big' ? 750 : 500;
+    const cost = boxId === 'big' ? 200 : 100;
     const coins = getSavedCoins();
     if (coins < cost) return;
     saveCoins(coins - cost);
