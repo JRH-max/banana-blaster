@@ -25,14 +25,14 @@ function isoDepth(wx, wy) { return Math.round((wx + wy) * 100); }
 // Slot 1 is character-specific (set in create()). Slots 2+3 are the same for everyone.
 const WEAPONS = [
   { name: 'Peel Launcher', type: 'projectile', fireRate: 700,  damage: 55,  speed: 8,  auto: false, splash: 1.5,  reloadTime: 0,    projKey: 'peel',     projScale: 0.30 },
-  { name: 'Auto Rifle',    type: 'hitscan',    fireRate: 120,  damage: 18,  speed: 28, auto: true,  ammo: 30, maxAmmo: 30, reloadTime: 1600 },
+  { name: 'Automatic Rifle',    type: 'hitscan',    fireRate: 120,  damage: 18,  speed: 28, auto: true,  ammo: 30, maxAmmo: 30, reloadTime: 1600 },
   { name: 'Sniper',        type: 'hitscan',    fireRate: 1800, damage: 130, speed: 50, auto: false, ammo: 5,  maxAmmo: 5,  reloadTime: 2600 },
 ];
 
 // Bots always use this fixed set so player's custom slot-1 doesn't affect them
 const BOT_WEAPONS = [
   { name: 'Peel Launcher', type: 'projectile', fireRate: 700,  damage: 55,  speed: 8,  auto: false, splash: 1.5,  reloadTime: 0,    projKey: 'peel', projScale: 0.30 },
-  { name: 'Auto Rifle',    type: 'hitscan',    fireRate: 120,  damage: 18,  speed: 28, auto: true,  ammo: 30, maxAmmo: 30, reloadTime: 1600 },
+  { name: 'Automatic Rifle',    type: 'hitscan',    fireRate: 120,  damage: 18,  speed: 28, auto: true,  ammo: 30, maxAmmo: 30, reloadTime: 1600 },
   { name: 'Sniper',        type: 'hitscan',    fireRate: 1800, damage: 130, speed: 50, auto: false, ammo: 5,  maxAmmo: 5,  reloadTime: 2600 },
 ];
 

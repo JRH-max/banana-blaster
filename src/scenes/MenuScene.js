@@ -18,11 +18,11 @@ const SW = 800, SH = 600;
 const CHARACTERS = [
   { key: 'banana',       name: 'Banana',    subtitle: '(Default)',  price: 0,    ability: 'PEEL TRAP',      rarity: 'STARTING FIGHTER', rarityColor: '#aaaaaa', gun: 'Peel Launcher', gunIcon: '🍌' },
   { key: 'sloth_pirate', name: 'Sloth',     subtitle: 'Pirate',     price: 200,  ability: 'CANNONBALL',     rarity: 'RARE',             rarityColor: '#4488ff', gun: 'Sniper',        gunIcon: '🔭' },
-  { key: 'rock_ninja',   name: 'Rock',      subtitle: 'Ninja',      price: 500,  ability: 'SHURIKEN STORM', rarity: 'EPIC',             rarityColor: '#aa44ff', gun: 'Auto Rifle',    gunIcon: '⚡' },
+  { key: 'rock_ninja',   name: 'Rock',      subtitle: 'Ninja',      price: 500,  ability: 'SHURIKEN STORM', rarity: 'EPIC',             rarityColor: '#aa44ff', gun: 'Automatic Rifle',    gunIcon: '⚡' },
   { key: 'trash_can',    name: 'Trash Can', subtitle: '',           price: 1000, ability: 'TRASH WAVE',     rarity: 'MYTHIC',           rarityColor: '#ff8800', gun: 'Peel Launcher', gunIcon: '🗑️' },
 ];
 
-const WEAPON_NAMES  = ['Peel Launcher', 'Auto Rifle', 'Sniper'];
+const WEAPON_NAMES  = ['Peel Launcher', 'Automatic Rifle', 'Sniper'];
 const WEAPON_COLORS = ['#c8960a', '#4caf50', '#2196f3'];
 const UPGRADES = [
   { key: 'damage', label: 'DAMAGE',    costs: [30, 60, 100] },

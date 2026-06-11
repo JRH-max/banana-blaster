@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 
 const SW = 800, SH = 600;
-const WEAPON_NAMES  = ['Peel Launcher', 'Auto Rifle', 'Sniper'];
+const WEAPON_NAMES  = ['Peel Launcher', 'Automatic Rifle', 'Sniper'];
 const WEAPON_COLORS = [0xb8860b, 0x2e7d22, 0x0066aa];
 
 export class UIScene extends Phaser.Scene {
@@ -328,7 +328,7 @@ export class UIScene extends Phaser.Scene {
     hdiv.lineBetween(PX - PW / 2 + 10, PY - PH / 2 + 36, PX + PW / 2 - 10, PY - PH / 2 + 36);
     this.shopElements.push(hdiv);
 
-    const WNAMES  = ['Peel Launcher', 'Auto Rifle', 'Sniper'];
+    const WNAMES  = ['Peel Launcher', 'Automatic Rifle', 'Sniper'];
     const WCOLS   = ['#c8960a', '#4caf50', '#2196f3'];
     const UPGRADES = [
       { key: 'damage', label: 'DAMAGE',    costs: [30, 60, 100] },
