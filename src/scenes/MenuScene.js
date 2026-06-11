@@ -622,80 +622,129 @@ export class MenuScene extends Phaser.Scene {
       this._refreshShop();
 
     } else {
-      // ── Mystery Boxes ─────────────────────────────────────────────────────
-      const BOX_COST = 500;
-      const cx = PX;
+      // ── Mystery Boxes (two cards side-by-side) ────────────────────────────
+      const coins = getSavedCoins();
 
-      addT(this.add.text(cx, contentTop + 18, '📦  MYSTERY BOX', {
-        fontSize: '20px', fontFamily: 'Arial Black', color: '#dd99ff',
-        stroke: '#000', strokeThickness: 3,
-      }).setOrigin(0.5).setDepth(11));
-
-      addT(this.add.text(cx, contentTop + 44, `${BOX_COST} 💰 per box — contains a random character or coins`, {
-        fontSize: '12px', fontFamily: 'Arial', color: '#888888',
-        stroke: '#000', strokeThickness: 1,
-      }).setOrigin(0.5).setDepth(11));
-
-      // Odds table
-      const ODDS = [
-        { label: '???',        color: '#ff00ff', pct: '1%',  note: 'Mystery character' },
-        { label: 'MYTHIC',     color: '#ff8800', pct: '5%',  note: 'Mythic character' },
-        { label: 'EPIC',       color: '#aa44ff', pct: '10%', note: 'Epic character' },
-        { label: 'RARE',       color: '#4488ff', pct: '20%', note: 'Rare character' },
-        { label: '1000 COINS', color: '#ffd700', pct: '24%', note: 'Coin reward' },
-        { label: '500 COINS',  color: '#ccaa00', pct: '40%', note: 'Coin reward' },
+      const BOX_DEFS = [
+        {
+          id: 'small', label: '📦 SMALL BOX', cost: 500,
+          borderColor: 0x9955cc, glowColor: '#dd99ff',
+          odds: [
+            { label: '???',       color: '#ff00ff', pct: '1%'  },
+            { label: 'MYTHIC',    color: '#ff8800', pct: '5%'  },
+            { label: 'EPIC',      color: '#aa44ff', pct: '10%' },
+            { label: 'RARE',      color: '#4488ff', pct: '20%' },
+            { label: '500 COINS', color: '#ffd700', pct: '64%' },
+          ],
+        },
+        {
+          id: 'big', label: '🎁 BIG BOX', cost: 750,
+          borderColor: 0xffaa00, glowColor: '#ffdd66',
+          odds: [
+            { label: '???',        color: '#ff00ff', pct: '5%'  },
+            { label: 'MYTHIC',     color: '#ff8800', pct: '10%' },
+            { label: 'EPIC',       color: '#aa44ff', pct: '30%' },
+            { label: 'RARE',       color: '#4488ff', pct: '40%' },
+            { label: '1000 COINS', color: '#ffd700', pct: '15%' },
+          ],
+        },
       ];
 
-      const tableTop = contentTop + 68;
-      const colRarity = cx - 220, colPct = cx + 60, colNote = cx + 130;
+      // Card geometry
+      const CARD_W = 282, CARD_H = 340;
+      const gap    = 16;
+      const card1X = PX - CARD_W / 2 - gap / 2;
+      const card2X = PX + CARD_W / 2 + gap / 2;
+      const cardY  = contentTop + CARD_H / 2 + 14;
 
-      addT(this.add.text(colRarity, tableTop, 'REWARD',  { fontSize: '10px', fontFamily: 'Arial Black', color: '#555566', stroke: '#000', strokeThickness: 1 }).setOrigin(0, 0.5).setDepth(11));
-      addT(this.add.text(colPct,    tableTop, 'CHANCE',  { fontSize: '10px', fontFamily: 'Arial Black', color: '#555566', stroke: '#000', strokeThickness: 1 }).setOrigin(0, 0.5).setDepth(11));
-      addT(this.add.text(colNote,   tableTop, 'TYPE',    { fontSize: '10px', fontFamily: 'Arial Black', color: '#555566', stroke: '#000', strokeThickness: 1 }).setOrigin(0, 0.5).setDepth(11));
+      BOX_DEFS.forEach((box, bi) => {
+        const cx = bi === 0 ? card1X : card2X;
+        const canAfford = coins >= box.cost;
 
-      ODDS.forEach((o, i) => {
-        const oy = tableTop + 22 + i * 26;
-        addT(this.add.text(colRarity, oy, o.label, { fontSize: '13px', fontFamily: 'Arial Black', color: o.color, stroke: '#000', strokeThickness: 2 }).setOrigin(0, 0.5).setDepth(11));
-        addT(this.add.text(colPct,    oy, o.pct,   { fontSize: '13px', fontFamily: 'Arial Black', color: '#ffffff', stroke: '#000', strokeThickness: 2 }).setOrigin(0, 0.5).setDepth(11));
-        addT(this.add.text(colNote,   oy, o.note,  { fontSize: '11px', fontFamily: 'Arial', color: '#777777', stroke: '#000', strokeThickness: 1 }).setOrigin(0, 0.5).setDepth(11));
-      });
+        // Card background
+        addT(this.add.rectangle(cx, cardY, CARD_W, CARD_H, 0x0a0818, 0.96)
+          .setStrokeStyle(2, box.borderColor, 0.85).setDepth(11));
 
-      // Open button
-      const coins = getSavedCoins();
-      const canAfford = coins >= BOX_COST;
-      const openBg = addT(this.add.rectangle(cx, tableTop + 22 + ODDS.length * 26 + 30, 250, 40,
-        canAfford ? 0x5a1a7c : 0x221133, 0.95)
-        .setStrokeStyle(2, canAfford ? 0xcc66ff : 0x443355, 0.9).setDepth(11));
-      addT(this.add.text(cx, tableTop + 22 + ODDS.length * 26 + 30,
-        canAfford ? `📦  OPEN BOX  (${BOX_COST} 💰)` : `NEED ${BOX_COST} 💰`, {
-          fontSize: '14px', fontFamily: 'Arial Black',
-          color: canAfford ? '#dd99ff' : '#554466', stroke: '#000', strokeThickness: 2,
+        // Title
+        addT(this.add.text(cx, cardY - CARD_H / 2 + 20, box.label, {
+          fontSize: '16px', fontFamily: 'Arial Black', color: box.glowColor,
+          stroke: '#000', strokeThickness: 3,
         }).setOrigin(0.5).setDepth(12));
-      if (canAfford) {
-        openBg.setInteractive();
-        openBg.on('pointerover', () => openBg.setFillStyle(0x7a2aac));
-        openBg.on('pointerout',  () => openBg.setFillStyle(0x5a1a7c));
-        openBg.on('pointerdown', () => this._rollBox());
-      }
+
+        // Cost
+        addT(this.add.text(cx, cardY - CARD_H / 2 + 40, `${box.cost} 💰 per box`, {
+          fontSize: '12px', fontFamily: 'Arial', color: '#999999',
+          stroke: '#000', strokeThickness: 1,
+        }).setOrigin(0.5).setDepth(12));
+
+        // Divider
+        const dv = this.add.graphics().setDepth(12);
+        dv.lineStyle(1, box.borderColor, 0.4);
+        dv.lineBetween(cx - CARD_W / 2 + 12, cardY - CARD_H / 2 + 52,
+                       cx + CARD_W / 2 - 12, cardY - CARD_H / 2 + 52);
+        addT(dv);
+
+        // Odds rows
+        const rowStart = cardY - CARD_H / 2 + 68;
+        box.odds.forEach((o, i) => {
+          const oy = rowStart + i * 28;
+          addT(this.add.text(cx - 100, oy, o.label, {
+            fontSize: '12px', fontFamily: 'Arial Black', color: o.color,
+            stroke: '#000', strokeThickness: 2,
+          }).setOrigin(0, 0.5).setDepth(12));
+          addT(this.add.text(cx + 68, oy, o.pct, {
+            fontSize: '12px', fontFamily: 'Arial Black', color: '#dddddd',
+            stroke: '#000', strokeThickness: 2,
+          }).setOrigin(1, 0.5).setDepth(12));
+        });
+
+        // Open button
+        const btnY = cardY + CARD_H / 2 - 28;
+        const openBg = addT(this.add.rectangle(cx, btnY, CARD_W - 24, 36,
+          canAfford ? (bi === 0 ? 0x5a1a7c : 0x7a4400) : 0x1a1122, 0.95)
+          .setStrokeStyle(2, canAfford ? box.borderColor : 0x332244, 0.9).setDepth(12));
+        addT(this.add.text(cx, btnY,
+          canAfford ? `OPEN  (${box.cost} 💰)` : `NEED ${box.cost} 💰`, {
+            fontSize: '13px', fontFamily: 'Arial Black',
+            color: canAfford ? box.glowColor : '#443355',
+            stroke: '#000', strokeThickness: 2,
+          }).setOrigin(0.5).setDepth(13));
+        if (canAfford) {
+          const hoverCol = bi === 0 ? 0x7a2aac : 0xaa6600;
+          const baseCol  = bi === 0 ? 0x5a1a7c : 0x7a4400;
+          openBg.setInteractive();
+          openBg.on('pointerover', () => openBg.setFillStyle(hoverCol));
+          openBg.on('pointerout',  () => openBg.setFillStyle(baseCol));
+          openBg.on('pointerdown', () => this._rollBox(box.id));
+        }
+      });
     }
     if (this.shopCoinText) this.shopCoinText.setText('💰 ' + getSavedCoins());
   }
 
-  _rollBox() {
-    const BOX_COST = 500;
+  _rollBox(boxId = 'small') {
+    const cost = boxId === 'big' ? 750 : 500;
     const coins = getSavedCoins();
-    if (coins < BOX_COST) return;
-    saveCoins(coins - BOX_COST);
+    if (coins < cost) return;
+    saveCoins(coins - cost);
 
-    // Roll: 1% ???, 5% MYTHIC, 10% EPIC, 20% RARE, 24% = 1000 coins, 40% = 500 coins
+    // Small box:  1% ???, 5% MYTHIC, 10% EPIC, 20% RARE, 64% = 500 coins
+    // Big box:    5% ???, 10% MYTHIC, 30% EPIC, 40% RARE, 15% = 1000 coins
     const roll = Math.random() * 100;
     let rarity;
-    if      (roll < 1)  rarity = '???';
-    else if (roll < 6)  rarity = 'MYTHIC';
-    else if (roll < 16) rarity = 'EPIC';
-    else if (roll < 36) rarity = 'RARE';
-    else if (roll < 60) rarity = 'COINS_1000';
-    else                rarity = 'COINS_500';
+    if (boxId === 'big') {
+      if      (roll < 5)  rarity = '???';
+      else if (roll < 15) rarity = 'MYTHIC';
+      else if (roll < 45) rarity = 'EPIC';
+      else if (roll < 85) rarity = 'RARE';
+      else                rarity = 'COINS_1000';
+    } else {
+      if      (roll < 1)  rarity = '???';
+      else if (roll < 6)  rarity = 'MYTHIC';
+      else if (roll < 16) rarity = 'EPIC';
+      else if (roll < 36) rarity = 'RARE';
+      else                rarity = 'COINS_500';
+    }
 
     let reward;
     if (rarity === 'COINS_500' || rarity === 'COINS_1000') {
@@ -717,10 +766,10 @@ export class MenuScene extends Phaser.Scene {
       }
     }
 
-    this._showBoxResult(reward, rarity);
+    this._showBoxResult(reward, rarity, boxId);
   }
 
-  _showBoxResult(reward, rarity) {
+  _showBoxResult(reward, rarity, boxId = 'small') {
     const RARITY_COLORS = {
       '???': '#ff00ff', 'MYTHIC': '#ff8800', 'EPIC': '#aa44ff',
       'RARE': '#4488ff', 'COINS_1000': '#ffd700', 'COINS_500': '#ccaa00', 'COINS': '#ffd700',
@@ -755,14 +804,14 @@ export class MenuScene extends Phaser.Scene {
         if (spinCount >= totalSpins) {
           this.time.delayedCall(380, () => {
             dimBg.destroy(); spinBox.destroy(); spinTxt.destroy();
-            this._showBoxCard(reward, rarity, colorStr, colorHex);
+            this._showBoxCard(reward, rarity, colorStr, colorHex, boxId);
           });
         }
       },
     });
   }
 
-  _showBoxCard(reward, rarity, colorStr, colorHex) {
+  _showBoxCard(reward, rarity, colorStr, colorHex, boxId = 'small') {
     const resultItems = [];
     const addR = el => { resultItems.push(el); this.shopItems.push(el); return el; };
     const PX = SW / 2, PY = SH / 2;
@@ -808,7 +857,7 @@ export class MenuScene extends Phaser.Scene {
       for (const el of resultItems) { try { el.destroy(); } catch {} }
       this.shopItems = this.shopItems.filter(e => !resultItems.includes(e));
       this._switchShopTab('BOXES');
-      this._rollBox();
+      this._rollBox(boxId);
     });
 
     const backBg = addR(this.add.rectangle(PX + 76, PY + 118, 136, 32, 0x553300, 0.9)
