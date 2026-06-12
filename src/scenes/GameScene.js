@@ -268,14 +268,35 @@ export class GameScene extends Phaser.Scene {
       if (this.trees.some(t => Math.hypot(t.wx - wx, t.wy - wy) < MIN_D)) continue;
       this.trees.push({ wx, wy, scale: 0.72 + Math.random() * 0.52 });
     }
+    // Build integer-cell lookup set for O(1) collision checks
+    this._treeSet = new Set();
+    for (const t of this.trees) {
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          this._treeSet.add(`${Math.round(t.wx + dx)},${Math.round(t.wy + dy)}`);
+        }
+      }
+    }
   }
 
   _drawGround() {
+    // Bake all tiles into one RenderTexture — 28 900 images → 1 draw call
+    const tw = this.textures.get('tile_grass').getSourceImage();
+    const th = this.textures.get('tile_grass').getSourceImage();
+    const tileW = tw.width  || TW;
+    const tileH = th.height || TH;
+
+    const rtW = GRID * TW + tileW;
+    const rtH = GRID * TH + tileH;
+    const rt  = this.add.renderTexture(0, 0, rtW, rtH)
+      .setOrigin(0, 0).setDepth(-10000);
+
+    // Stamp each tile at its iso position relative to rt origin (0,0)
     for (let x = 0; x < GRID; x++) {
       for (let y = 0; y < GRID; y++) {
-        const s = iso(x, y);
+        const s   = iso(x, y);
         const key = (x + y) % 2 === 0 ? 'tile_grass' : 'tile_grass2';
-        this.add.image(s.x, s.y, key).setOrigin(0.5, 0.5).setDepth(-10000);
+        rt.stamp(key, 0, s.x, s.y);
       }
     }
   }
@@ -292,6 +313,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   _treeAt(wx, wy) {
+    // Fast O(1) lookup via pre-built cell set
+    if (this._treeSet) {
+      const cx = Math.round(wx), cy = Math.round(wy);
+      if (!this._treeSet.has(`${cx},${cy}`)) return false;
+    }
     return this.trees.some(t => Math.hypot(t.wx - wx, t.wy - wy) < 0.55);
   }
 
@@ -750,7 +776,16 @@ export class GameScene extends Phaser.Scene {
 
   // ── wave system ────────────────────────────────────────────────────────────
   _waveCheck(delta) {
-    const alive = this.bots.filter(b => b.faction === 'raccoon' && b.alive).length;
+    // Periodically purge dead bots to keep iteration cost low
+    this._pruneTimer = (this._pruneTimer || 0) + delta;
+    if (this._pruneTimer > 5000) {
+      this._pruneTimer = 0;
+      this.bots = this.bots.filter(b => b.alive);
+    }
+
+    // Count alive raccoons without allocating a new array every frame
+    let alive = 0;
+    for (const b of this.bots) { if (b.faction === 'raccoon' && b.alive) alive++; }
     if (alive === 0) {
       this.waveTimer += delta;
       if (this.waveTimer > 3200) { this.waveTimer = 0; this.waveNum++; this._spawnWave(); }
