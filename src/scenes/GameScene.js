@@ -655,31 +655,31 @@ export class GameScene extends Phaser.Scene {
     [bot.sprite, bot.shadow, bot.hpBg, bot.hpBar, bot.ring, bot.dot]
       .forEach(o => o && o.setVisible(false));
 
-    // Check if both members of the team are now dead
-    const teammates = this.bots.filter(b => b.team === bot.team);
-    const allDead   = teammates.every(b => !b.alive);
+    // Check if teammate is already dead (waiting to respawn) → instant elimination
+    const teammates    = this.bots.filter(b => b.team === bot.team && b !== bot);
+    const teammateDown = teammates.some(b => !b.alive);
 
-    if (allDead) {
+    // For team 0: also count player as a teammate
+    const playerDown   = bot.team === 0 && this.playerRespawning;
+
+    if (teammateDown || playerDown) {
+      // Both members down → eliminate the whole team
+      bot.eliminated = true;
+      teammates.forEach(b => { b.eliminated = true; }); // cancel any pending respawn
       if (bot.team === 0) {
-        // Player's ally is dead AND we check player status below in _playerDied
-        // But if player is also dead → handled there. If player is alive, just respawn ally after 10s.
-        this.time.delayedCall(10000, () => {
-          if (bot.alive) return; // already respawned somehow
-          bot.wx = 58 + Phaser.Math.FloatBetween(-2, 2);
-          bot.wy = 62 + Phaser.Math.FloatBetween(-2, 2);
-          bot.hp = bot.maxHp; bot.alive = true;
-          [bot.sprite, bot.shadow, bot.hpBg, bot.hpBar, bot.ring, bot.dot]
-            .forEach(o => o && o.setVisible(true));
+        // Player's team eliminated → back to menu
+        this._showEliminationBanner(0);
+        this.time.delayedCall(2600, () => {
+          this.scene.stop('UIScene');
+          this.scene.start('MenuScene');
         });
       } else {
-        // Whole enemy team eliminated — show banner then keep them gone
         this._showEliminationBanner(bot.team);
       }
     } else {
-      // Teammate still alive — respawn this bot after 10s
+      // Teammate still alive → respawn this bot after 10s
       this.time.delayedCall(10000, () => {
-        if (bot.alive) return;
-        // Respawn near surviving teammate
+        if (bot.eliminated) return; // team got eliminated while waiting
         const alive = teammates.find(b => b.alive);
         bot.wx = (alive ? alive.wx : GRID / 2) + Phaser.Math.FloatBetween(-2, 2);
         bot.wy = (alive ? alive.wy : GRID / 2) + Phaser.Math.FloatBetween(-2, 2);
@@ -920,6 +920,7 @@ export class GameScene extends Phaser.Scene {
 
     if (allyDead) {
       // Both team 0 members dead → eliminated → back to menu
+      if (ally) ally.eliminated = true; // cancel ally's pending respawn
       this._showEliminationBanner(0);
       this.time.delayedCall(2600, () => {
         this.scene.stop('UIScene');
