@@ -447,7 +447,6 @@ export class GameScene extends Phaser.Scene {
     // 1. Right-side touch aim joystick (highest priority on touch)
     if (this.aimJoyActive) {
       this.player.angle = this.aimJoyAngle;
-      this.isFiring = true;
       return;
     }
     // 2. Mouse / pointer aim — convert screen → iso world
@@ -528,7 +527,9 @@ export class GameScene extends Phaser.Scene {
     this.fireCooldown = Math.max(0, this.fireCooldown - delta);
     const w = WEAPONS[this.currentWeapon];
     const justFire = Phaser.Input.Keyboard.JustDown(this.keys.SPACE);
-    const wantFire = this.isFiring || (w.auto && this.keys.SPACE.isDown) || (!w.auto && justFire);
+    // fireOnRelease: single shot triggered when aim joystick is released
+    const wantFire = this.isFiring || this.fireOnRelease || (w.auto && this.keys.SPACE.isDown) || (!w.auto && justFire);
+    if (this.fireOnRelease) this.fireOnRelease = false; // consume immediately
     if (!wantFire || this.fireCooldown > 0) return;
     const up = this.weaponUpgrades[this.currentWeapon];
     this.fireCooldown = w.fireRate / (1 + up.speed * 0.2);
@@ -1575,6 +1576,18 @@ export class GameScene extends Phaser.Scene {
     const JX = 110, JY = 478, JR = 50;
     const SW = this.scale.width;
 
+    // Visual joystick rings (fixed to camera via setScrollFactor(0))
+    const AJX = SW - 110, AJY = 478, AJR = 50;
+    this.aimJoyBase = this.add.circle(AJX, AJY, AJR, 0xffffff, 0.10)
+      .setStrokeStyle(2, 0xffffff, 0.35).setScrollFactor(0).setDepth(20000);
+    this.aimJoyKnob = this.add.circle(AJX, AJY, 22, 0xff3333, 0.55)
+      .setStrokeStyle(2, 0xff6666, 0.8).setScrollFactor(0).setDepth(20001);
+
+    this.movJoyBase = this.add.circle(JX, JY, JR, 0xffffff, 0.10)
+      .setStrokeStyle(2, 0xffffff, 0.35).setScrollFactor(0).setDepth(20000);
+    this.movJoyKnob = this.add.circle(JX, JY, 22, 0x4488ff, 0.55)
+      .setStrokeStyle(2, 0x66aaff, 0.8).setScrollFactor(0).setDepth(20001);
+
     this.input.on('pointerdown', p => {
       // Left side — movement joystick
       if (p.x < SW * 0.45 && p.y > 360) {
@@ -1588,23 +1601,44 @@ export class GameScene extends Phaser.Scene {
         this.aimJoyPointerId = p.id;
         this.aimJoyOriginX   = p.x;
         this.aimJoyOriginY   = p.y;
+        this.aimJoyBase.setPosition(p.x, p.y);
+        this.aimJoyKnob.setPosition(p.x, p.y);
         this._calcAimJoy(p);
       }
     });
     this.input.on('pointermove', p => {
-      if (this.joystickActive && p.id === this.joystickPointerId)
+      if (this.joystickActive && p.id === this.joystickPointerId) {
         this._calcJoy(p, JX, JY, JR);
-      if (this.aimJoyActive && p.id === this.aimJoyPointerId)
+        // Update move knob position
+        const dx = Phaser.Math.Clamp(p.x - JX, -JR, JR);
+        const dy = Phaser.Math.Clamp(p.y - JY, -JR, JR);
+        this.movJoyKnob.setPosition(JX + dx, JY + dy);
+      }
+      if (this.aimJoyActive && p.id === this.aimJoyPointerId) {
         this._calcAimJoy(p);
+        // Update aim knob position (clamped to ring radius)
+        const dx = p.x - this.aimJoyOriginX;
+        const dy = p.y - this.aimJoyOriginY;
+        const dist = Math.min(Math.hypot(dx, dy), AJR);
+        const a = Math.atan2(dy, dx);
+        this.aimJoyKnob.setPosition(
+          this.aimJoyOriginX + Math.cos(a) * dist,
+          this.aimJoyOriginY + Math.sin(a) * dist
+        );
+      }
     });
     this.input.on('pointerup', p => {
       if (p.id === this.joystickPointerId) {
         this.joystickActive = false;
         this.joystickDir    = { x: 0, y: 0 };
+        this.movJoyKnob.setPosition(JX, JY);
       }
       if (p.id === this.aimJoyPointerId) {
+        // Fire on release if joystick was dragged far enough
+        if (this.aimJoyActive) this.fireOnRelease = true;
         this.aimJoyActive = false;
-        this.isFiring     = false;
+        this.aimJoyBase.setPosition(AJX, AJY);
+        this.aimJoyKnob.setPosition(AJX, AJY);
       }
     });
   }
@@ -1613,11 +1647,6 @@ export class GameScene extends Phaser.Scene {
     const dx = p.x - this.aimJoyOriginX;
     const dy = p.y - this.aimJoyOriginY;
     if (Math.hypot(dx, dy) > 8) {
-      // Convert screen drag → iso world angle
-      const screenAngle = Math.atan2(dy, dx);
-      // screen-space to iso-world: inverse rotate by iso skew
-      // In iso: screen_x maps to (wx-wy) direction, screen_y to (wx+wy)
-      // So world angle = atan2( dy/TH, dx/TW ) scaled back
       const worldDx = dx / TW + dy / TH;
       const worldDy = dy / TH - dx / TW;
       this.aimJoyAngle = Math.atan2(worldDy, worldDx);
