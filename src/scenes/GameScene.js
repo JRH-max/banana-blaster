@@ -381,20 +381,41 @@ export class GameScene extends Phaser.Scene {
       [pool[6], pool[7]],       // team 4
     ];
     const TEAM_COLORS = [0x4488ff, 0xff4422, 0xff8800, 0xaa44ff, 0xffcc00];
-    const SPAWNS = [
-      [[58, 62]],
-      [[18, 18], [22, 18]],
-      [[100, 18], [104, 18]],
-      [[18, 100], [22, 100]],
-      [[100, 100], [104, 100]],
-    ];
+    const CX = GRID / 2, CY = GRID / 2;
+    const BORDER = 6;
+
+    // Pick a random valid spawn point near center for a team anchor
+    const randomSpawnNear = (cx, cy, radius) => {
+      for (let tries = 0; tries < 200; tries++) {
+        const a  = Math.random() * Math.PI * 2;
+        const r  = 4 + Math.random() * radius;
+        const wx = cx + Math.cos(a) * r;
+        const wy = cy + Math.sin(a) * r;
+        if (wx < BORDER || wx > GRID - BORDER || wy < BORDER || wy > GRID - BORDER) continue;
+        if (this._treeAt(wx, wy)) continue;
+        return [wx, wy];
+      }
+      return [cx, cy]; // fallback
+    };
+
+    // Spread team anchors evenly around the center at random distances
+    const teamAnchors = [];
+    for (let t = 0; t < 5; t++) {
+      const baseAngle = (t / 5) * Math.PI * 2 + Math.random() * 0.8;
+      const dist      = 8 + Math.random() * 18; // 8–26 tiles from center
+      const ax        = CX + Math.cos(baseAngle) * dist;
+      const ay        = CY + Math.sin(baseAngle) * dist;
+      const [wx, wy]  = randomSpawnNear(ax, ay, 3);
+      teamAnchors.push([wx, wy]);
+    }
 
     for (let team = 0; team < 5; team++) {
-      const chars  = TEAM_CHARS[team];
-      const color  = TEAM_COLORS[team];
-      const spawns = SPAWNS[team];
+      const chars = TEAM_CHARS[team];
+      const color = TEAM_COLORS[team];
+      const [ax, ay] = teamAnchors[team];
       chars.forEach((charKey, i) => {
-        const [wx, wy] = spawns[i] || spawns[0];
+        // Each member spawns within 3 tiles of their team anchor
+        const [wx, wy] = randomSpawnNear(ax, ay, 3);
         this._spawnBot(charKey, team, color, wx, wy);
       });
     }
