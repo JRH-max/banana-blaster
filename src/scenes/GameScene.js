@@ -102,14 +102,7 @@ const CHAR_GUN_SPRITE = {
   kraken: 'gun_peel', witch: 'gun_peel', glitch: 'gun_sniper',
 };
 
-const BOT_STATS = {
-  banana:  { normal:  { hp: 100, speed: 5.2, weaponIdx: 1, scale: 0.48 } },
-  raccoon: {
-    normal:  { hp: 60,  speed: 5.5, weaponIdx: 1, scale: 0.37 },
-    armored: { hp: 220, speed: 3.5, weaponIdx: 1, scale: 0.40 },
-    boss:    { hp: 600, speed: 6.2, weaponIdx: 0, scale: 0.50 },
-  },
-};
+const BOT_STATS = { hp: 220, speed: 5.0, scale: 0.52 };
 
 export class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
@@ -379,48 +372,59 @@ export class GameScene extends Phaser.Scene {
 
   // ── spawn bots ─────────────────────────────────────────────────────────────
   _spawnBots() {
-    // Spread banana bots around different map corners so they naturally clash with raccoons
-    const bananaStarts = [
-      [15, 15], [105, 15], [15, 105], [60, 15], [15, 60],
+    const TEAM_CHARS = [
+      ['penguin'],                        // team 0: ally
+      ['hot_dog',   'cactus'],            // team 1
+      ['viking',    'rock_ninja'],        // team 2
+      ['ghost',     'mummy'],             // team 3
+      ['dragon',    'phoenix'],           // team 4
     ];
-    for (let i = 0; i < 5; i++)
-      this._spawnBot('banana', 'normal', bananaStarts[i][0], bananaStarts[i][1]);
+    const TEAM_COLORS = [0x4488ff, 0xff4422, 0xff8800, 0xaa44ff, 0xffcc00];
+    const SPAWNS = [
+      [[58, 62]],
+      [[18, 18], [22, 18]],
+      [[100, 18], [104, 18]],
+      [[18, 100], [22, 100]],
+      [[100, 100], [104, 100]],
+    ];
 
-    const types = ['normal','normal','normal','normal','normal','armored','armored','boss','normal','normal'];
-    types.forEach((type, i) => {
-      this._spawnBot('raccoon', type,
-        30 + (i % 5) * 3 + Phaser.Math.FloatBetween(-1, 1),
-        30 + Math.floor(i / 5) * 5 + Phaser.Math.FloatBetween(-1, 1));
-    });
+    for (let team = 0; team < 5; team++) {
+      const chars  = TEAM_CHARS[team];
+      const color  = TEAM_COLORS[team];
+      const spawns = SPAWNS[team];
+      chars.forEach((charKey, i) => {
+        const [wx, wy] = spawns[i] || spawns[0];
+        this._spawnBot(charKey, team, color, wx, wy);
+      });
+    }
   }
 
-  _spawnBot(faction, type, wx, wy) {
-    const st  = BOT_STATS[faction][type] ?? BOT_STATS[faction].normal;
-    const tex = faction === 'banana' ? 'banana' : `raccoon_${type}`;
-    const s   = iso(wx, wy);
-    const d   = isoDepth(wx, wy);
+  _spawnBot(charKey, team, teamColor, wx, wy) {
+    const s = iso(wx, wy);
+    const d = isoDepth(wx, wy);
 
-    const ringCol = faction === 'banana' ? 0x44aaff : 0xff4422;
-    const ring    = this.add.ellipse(s.x, s.y - 4, 26, 10, ringCol, 0.2).setDepth(d - 2);
-    const hpBg    = this.add.rectangle(s.x, s.y - 38, 26, 5, 0x111111, 0.85).setOrigin(0.5, 0.5).setDepth(d + 150);
-    const hpBar   = this.add.rectangle(s.x - 13, s.y - 38, 26, 5, 0x33cc33).setOrigin(0, 0.5).setDepth(d + 151);
+    const ring  = this.add.ellipse(s.x, s.y - 4, 30, 11, teamColor, 0.35).setDepth(d - 2);
+    const hpBg  = this.add.rectangle(s.x, s.y - 40, 28, 5, 0x111111, 0.85).setOrigin(0.5, 0.5).setDepth(d + 150);
+    const hpBar = this.add.rectangle(s.x - 14, s.y - 40, 28, 5, teamColor).setOrigin(0, 0.5).setDepth(d + 151);
+    // Team label dot above HP bar
+    const dot = this.add.circle(s.x + 18, s.y - 40, 3, teamColor, 1).setDepth(d + 152);
 
     const bot = {
-      faction, type, wx, wy,
-      angle:       Math.random() * Math.PI * 2,
-      hp: st.hp,   maxHp: st.hp,
-      speed:       st.speed,
-      weaponIdx:   st.weaponIdx,
-      scale:       st.scale,
+      charKey, team, teamColor, wx, wy,
+      angle:        Math.random() * Math.PI * 2,
+      hp:           BOT_STATS.hp, maxHp: BOT_STATS.hp,
+      speed:        BOT_STATS.speed,
+      weaponIdx:    1,  // AR by default
+      scale:        BOT_STATS.scale,
       fireCooldown: Phaser.Math.Between(200, 800),
       aiTimer:      Phaser.Math.Between(500, 3000),
       wanderWx: wx, wanderWy: wy,
       strafeDir: 1, stunTimer: 0,
       alive: true,
-      sprite: this.add.image(s.x, s.y - 20, tex).setOrigin(0.5, 1).setScale(st.scale).setDepth(d + 10),
+      sprite: this.add.image(s.x, s.y - 20, charKey).setOrigin(0.5, 1).setScale(BOT_STATS.scale).setDepth(d + 10),
       gunSpr: null,
       shadow: this.add.ellipse(s.x, s.y - 4, 22, 8, 0x000000, 0.2).setDepth(d - 1),
-      ring, hpBg, hpBar,
+      ring, hpBg, hpBar, dot,
     };
     this.bots.push(bot);
     return bot;
@@ -454,10 +458,10 @@ export class GameScene extends Phaser.Scene {
         return;
       }
     }
-    // Fallback: auto-aim at nearest raccoon
+    // Fallback: auto-aim at nearest non-team-0 bot
     let best = null, bestD = 9999;
     for (const b of this.bots) {
-      if (!b.alive || b.faction !== 'raccoon') continue;
+      if (!b.alive || b.team === 0) continue;  // skip allies
       const d = Math.hypot(b.wx - this.player.wx, b.wy - this.player.wy);
       if (d < bestD) { best = b; bestD = d; }
     }
@@ -495,10 +499,10 @@ export class GameScene extends Phaser.Scene {
       this.registry.set('ammo', this.ammo);
     }
     const effectiveDamage = Math.round(w.damage * (1 + up.damage * 0.25));
-    this._shootFrom(this.player, this.currentWeapon, 'banana', effectiveDamage);
+    this._shootFrom(this.player, this.currentWeapon, 0, effectiveDamage);
   }
 
-  _shootFrom(shooter, weaponIdx, faction, overrideDamage = null) {
+  _shootFrom(shooter, weaponIdx, team, overrideDamage = null) {
     // Player uses WEAPONS (which has custom slot-1); bots use the fixed BOT_WEAPONS
     const w      = (shooter === this.player) ? WEAPONS[weaponIdx] : BOT_WEAPONS[weaponIdx];
     const damage = overrideDamage !== null ? overrideDamage : w.damage;
@@ -511,7 +515,7 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(80, () => flash.destroy());
 
     if (w.type === 'hitscan') {
-      this._hitscanShot(shooter, angle, w, faction, damage);
+      this._hitscanShot(shooter, angle, w, team, damage);
     } else {
       const projSpr = this.add.image(0, 0, w.projKey || 'peel').setScale(w.projScale || 0.30).setDepth(5000);
       if (w.projTint) projSpr.setTint(w.projTint);
@@ -520,7 +524,7 @@ export class GameScene extends Phaser.Scene {
         wy: shooter.wy + Math.sin(angle) * 0.7,
         vx: Math.cos(angle) * w.speed,
         vy: Math.sin(angle) * w.speed,
-        damage, faction,
+        damage, team,
         splash: w.splash ?? 0,
         life: 3.5,
         sprite: projSpr,
@@ -528,10 +532,10 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  _hitscanShot(shooter, angle, w, faction, damage) {
+  _hitscanShot(shooter, angle, w, team, damage) {
     const enemies = [
-      ...this.bots.filter(b => b.alive && b.faction !== faction),
-      ...(faction === 'raccoon' ? [{ wx: this.player.wx, wy: this.player.wy, _isPlayer: true }] : []),
+      ...this.bots.filter(b => b.alive && b.team !== team),
+      ...(team !== 0 ? [{ wx: this.player.wx, wy: this.player.wy, _isPlayer: true }] : []),
     ];
     let hit = null, hitDist = 9999;
     for (const t of enemies) {
@@ -549,14 +553,15 @@ export class GameScene extends Phaser.Scene {
         this.cameras.main.shake(80, 0.004);
         if (this.player.hp <= 0) this._playerDied();
       } else {
-        this._hitEntity(hit, damage, faction);
+        this._hitEntity(hit, damage, team);
       }
     }
-    this._spawnTrail(shooter, angle, hitDist < 9999 ? hitDist : 22, faction);
+    this._spawnTrail(shooter, angle, hitDist < 9999 ? hitDist : 22, team);
   }
 
-  _spawnTrail(shooter, angle, dist, faction) {
-    const col = faction === 'banana' ? 0xffee44 : 0xff4422;
+  _spawnTrail(shooter, angle, dist, team) {
+    const TEAM_COLORS = [0x4488ff, 0xff4422, 0xff8800, 0xaa44ff, 0xffcc00];
+    const col = TEAM_COLORS[team] ?? 0xffffff;
     const s   = iso(shooter.wx, shooter.wy);
     const ex  = s.x + Math.cos(angle) * dist * (TW / 2);
     const ey  = s.y - 20 + Math.sin(angle) * dist * (TH / 2);
@@ -605,21 +610,23 @@ export class GameScene extends Phaser.Scene {
       });
     }
 
-    if (attackerFaction === 'banana' && bot.faction === 'raccoon') {
-      const pts = bot.type === 'boss' ? 500 : bot.type === 'armored' ? 200 : 100;
+    // Score for player killing enemies
+    if (attackerFaction === 0 && bot.team !== 0) {
+      const pts = 100;
       this.player.score += pts;
       this.registry.set('score', this.player.score);
     }
 
-    [bot.sprite, bot.shadow, bot.hpBg, bot.hpBar, bot.ring]
-      .forEach(o => o.setVisible(false));
+    [bot.sprite, bot.shadow, bot.hpBg, bot.hpBar, bot.ring, bot.dot]
+      .forEach(o => o && o.setVisible(false));
 
-    if (bot.faction === 'banana') {
+    // Allies respawn after a delay
+    if (bot.team === 0) {
       this.time.delayedCall(7000, () => {
-        bot.wx = 4 + Math.random() * 10; bot.wy = 4 + Math.random() * 10;
+        bot.wx = 58; bot.wy = 62;
         bot.hp = bot.maxHp; bot.alive = true;
-        [bot.sprite, bot.shadow, bot.hpBg, bot.hpBar, bot.ring]
-          .forEach(o => o.setVisible(true));
+        [bot.sprite, bot.shadow, bot.hpBg, bot.hpBar, bot.ring, bot.dot]
+          .forEach(o => o && o.setVisible(true));
       });
     }
   }
@@ -637,15 +644,15 @@ export class GameScene extends Phaser.Scene {
       bot.fireCooldown -= delta;
       bot.aiTimer      -= delta;
 
-      // Find nearest enemy — raccoons prefer banana bots unless player is very close
+      // Find nearest enemy from a different team
       let best = null, bestD = 9999;
       for (const b of this.bots) {
-        if (!b.alive || b.faction === bot.faction) continue;
+        if (!b.alive || b.team === bot.team) continue;
         const d = Math.hypot(b.wx - bot.wx, b.wy - bot.wy);
         if (d < bestD) { best = b; bestD = d; }
       }
-      if (bot.faction === 'raccoon') {
-        // Only switch to targeting player if they are noticeably closer
+      // Enemy teams also target the player; ally (team 0) does not target player
+      if (bot.team !== 0) {
         const pd = Math.hypot(this.player.wx - bot.wx, this.player.wy - bot.wy);
         if (pd < bestD * 0.65) {
           best = { wx: this.player.wx, wy: this.player.wy, _isPlayer: true };
@@ -676,7 +683,7 @@ export class GameScene extends Phaser.Scene {
         if (dist < 13 && bot.fireCooldown <= 0) {
           const w = WEAPONS[bot.weaponIdx];
           bot.fireCooldown = w.fireRate + Phaser.Math.Between(-80, 180);
-          this._shootFrom(bot, bot.weaponIdx, bot.faction);
+          this._shootFrom(bot, bot.weaponIdx, bot.team);
         }
       } else {
         // Wander
@@ -725,19 +732,19 @@ export class GameScene extends Phaser.Scene {
 
       let hit = false;
       for (const t of this.bots) {
-        if (!t.alive || t.faction === b.faction) continue;
+        if (!t.alive || t.team === b.team) continue;
         if (Math.hypot(t.wx - b.wx, t.wy - b.wy) < 0.65) {
-          this._hitEntity(t, b.damage, b.faction);
+          this._hitEntity(t, b.damage, b.team);
           if (b.splash > 0) {
             for (const t2 of this.bots) {
-              if (t2 !== t && t2.alive && t2.faction !== b.faction &&
+              if (t2 !== t && t2.alive && t2.team !== b.team &&
                   Math.hypot(t2.wx - b.wx, t2.wy - b.wy) < b.splash) {
-                this._hitEntity(t2, b.damage * 0.5, b.faction);
+                this._hitEntity(t2, b.damage * 0.5, b.team);
               }
             }
           }
-          // Peel splash can also hit player if raccoon fires it
-          if (b.faction === 'raccoon' && b.splash > 0 &&
+          // Splash from enemy teams can also hit player
+          if (b.team !== 0 && b.splash > 0 &&
               Math.hypot(this.player.wx - b.wx, this.player.wy - b.wy) < b.splash) {
             this.player.hp = Math.max(0, this.player.hp - b.damage * 0.5);
             this.registry.set('health', this.player.hp);
@@ -747,9 +754,9 @@ export class GameScene extends Phaser.Scene {
         }
       }
 
-      if (!hit && b.faction === 'raccoon') {
+      // Enemy team projectile can hit player directly
+      if (!hit && b.team !== 0) {
         if (Math.hypot(this.player.wx - b.wx, this.player.wy - b.wy) < 0.55) {
-          // Projectile from bot also reduced
           this.player.hp = Math.max(0, this.player.hp - b.damage * 0.25);
           this.registry.set('health', this.player.hp);
           this.cameras.main.shake(80, 0.004);
@@ -804,7 +811,8 @@ export class GameScene extends Phaser.Scene {
 
   // ── wave system ────────────────────────────────────────────────────────────
   _waveCheck(delta) {
-    const alive = this.bots.filter(b => b.faction === 'raccoon' && b.alive).length;
+    // All non-team-0 bots dead = wave clear
+    const alive = this.bots.filter(b => b.team !== 0 && b.alive).length;
     if (alive === 0) {
       this.waveTimer += delta;
       if (this.waveTimer > 3200) { this.waveTimer = 0; this.waveNum++; this._spawnWave(); }
@@ -812,17 +820,19 @@ export class GameScene extends Phaser.Scene {
   }
 
   _spawnWave() {
+    const ENEMY_CHARS = ['hot_dog','cactus','viking','rock_ninja','ghost','mummy','dragon','phoenix'];
+    const TEAM_COLORS = [0x4488ff, 0xff4422, 0xff8800, 0xaa44ff, 0xffcc00];
     const count = 8 + this.waveNum * 2;
     for (let i = 0; i < count; i++) {
-      const r    = Math.random();
-      const type = this.waveNum >= 3 ? (r < 0.12 ? 'boss' : r < 0.38 ? 'armored' : 'normal') : 'normal';
+      const team = 1 + Math.floor(Math.random() * 4); // teams 1-4
+      const charKey = ENEMY_CHARS[Math.floor(Math.random() * ENEMY_CHARS.length)];
       const edge = Phaser.Math.Between(0, 3);
       let wx, wy;
       if (edge === 0) { wx = 1 + Math.random() * (GRID - 2); wy = 1; }
       else if (edge === 1) { wx = GRID - 1.5; wy = 1 + Math.random() * (GRID - 2); }
       else if (edge === 2) { wx = 1 + Math.random() * (GRID - 2); wy = GRID - 1.5; }
       else { wx = 1; wy = 1 + Math.random() * (GRID - 2); }
-      this._spawnBot('raccoon', type, wx, wy);
+      this._spawnBot(charKey, team, TEAM_COLORS[team], wx, wy);
     }
   }
 
@@ -1004,7 +1014,7 @@ export class GameScene extends Phaser.Scene {
       wx: this.player.wx + Math.cos(a) * 0.9,
       wy: this.player.wy + Math.sin(a) * 0.9,
       vx: Math.cos(a) * 5, vy: Math.sin(a) * 5,
-      damage: 130, faction: 'banana', splash: 3.5, life: 4.5,
+      damage: 130, team: 0, splash: 3.5, life: 4.5,
       sprite: this.add.image(0, 0, 'cannonball').setScale(1.2).setDepth(5000),
     });
   }
@@ -1018,7 +1028,7 @@ export class GameScene extends Phaser.Scene {
         wx: this.player.wx + Math.cos(a) * 0.9,
         wy: this.player.wy + Math.sin(a) * 0.9,
         vx: Math.cos(a) * 17, vy: Math.sin(a) * 17,
-        damage: 72, faction: 'banana', splash: 0, life: 1.9,
+        damage: 72, team: 0, splash: 0, life: 1.9,
         sprite: this.add.image(0, 0, 'shuriken').setScale(0.9).setDepth(5000),
       });
     }
@@ -1032,7 +1042,7 @@ export class GameScene extends Phaser.Scene {
     for (const bot of this.bots) {
       if (!bot.alive) continue;
       if (Math.hypot(bot.wx - this.player.wx, bot.wy - this.player.wy) < 3.5)
-        this._hitEntity(bot, 90, 'banana');
+        this._hitEntity(bot, 90, 0);
     }
     // Fling 6 trash projectiles
     for (let i = 0; i < 6; i++) {
@@ -1041,7 +1051,7 @@ export class GameScene extends Phaser.Scene {
         wx: this.player.wx + Math.cos(a) * 0.8,
         wy: this.player.wy + Math.sin(a) * 0.8,
         vx: Math.cos(a) * 10, vy: Math.sin(a) * 10,
-        damage: 75, faction: 'banana', splash: 0.9, life: 2.0,
+        damage: 75, team: 0, splash: 0.9, life: 2.0,
         sprite: this.add.image(0, 0, 'pickup').setTint(0x886633).setScale(0.55).setDepth(5000),
       });
     }
@@ -1057,7 +1067,7 @@ export class GameScene extends Phaser.Scene {
         wx: this.player.wx + Math.cos(a) * 0.8,
         wy: this.player.wy + Math.sin(a) * 0.8,
         vx: Math.cos(a) * 9, vy: Math.sin(a) * 9,
-        damage: 45, faction: 'banana', splash: 0.8, life: 2.2,
+        damage: 45, team: 0, splash: 0.8, life: 2.2,
         sprite: this.add.image(0, 0, 'peel').setTint(0xffdd00).setScale(0.28).setDepth(5000),
       });
     }
@@ -1078,7 +1088,7 @@ export class GameScene extends Phaser.Scene {
         wx: this.player.wx + Math.cos(a) * 0.8,
         wy: this.player.wy + Math.sin(a) * 0.8,
         vx: Math.cos(a) * 14, vy: Math.sin(a) * 14,
-        damage: 55, faction: 'banana', splash: 0, life: 2.0,
+        damage: 55, team: 0, splash: 0, life: 2.0,
         sprite: this.add.image(0, 0, 'shuriken').setTint(0x44aa22).setScale(0.65).setDepth(5000),
       });
     }
@@ -1089,7 +1099,7 @@ export class GameScene extends Phaser.Scene {
   _specialSoulScream() {
     for (const bot of this.bots) {
       if (!bot.alive) continue;
-      this._hitEntity(bot, 50, 'banana');
+      this._hitEntity(bot, 50, 0);
       bot.stunTimer = 2000;
     }
     this.cameras.main.flash(200, 200, 200, 255, 0.4);
@@ -1113,7 +1123,7 @@ export class GameScene extends Phaser.Scene {
     for (const bot of this.bots) {
       if (!bot.alive) continue;
       const d = Math.hypot(bot.wx - wx, bot.wy - wy);
-      if (d < 4) this._hitEntity(bot, 100 - d * 12, 'banana');
+      if (d < 4) this._hitEntity(bot, 100 - d * 12, 0);
     }
     this.cameras.main.flash(250, 80, 180, 255, 0.5);
     this.cameras.main.shake(300, 0.018);
@@ -1129,7 +1139,7 @@ export class GameScene extends Phaser.Scene {
       for (const bot of this.bots) {
         if (!bot.alive) continue;
         if (Math.hypot(bot.wx - tx, bot.wy - ty) < 1.2) {
-          this._hitEntity(bot, 65, 'banana');
+          this._hitEntity(bot, 65, 0);
           bot.stunTimer = (bot.stunTimer || 0) + 1800;
         }
       }
@@ -1147,7 +1157,7 @@ export class GameScene extends Phaser.Scene {
     for (const bot of this.bots) {
       if (!bot.alive) continue;
       if (Math.hypot(bot.wx - this.player.wx, bot.wy - this.player.wy) < 2.5)
-        this._hitEntity(bot, 120, 'banana');
+        this._hitEntity(bot, 120, 0);
     }
     this.cameras.main.flash(150, 255, 60, 0, 0.4);
     this.cameras.main.shake(200, 0.015);
@@ -1165,7 +1175,7 @@ export class GameScene extends Phaser.Scene {
       const along = dx * Math.cos(a) + dy * Math.sin(a);
       if (along < 0) continue;
       const perp = Math.abs(-dx * Math.sin(a) + dy * Math.cos(a));
-      if (perp < 0.8) { this._hitEntity(bot, 160, 'banana'); hit++; }
+      if (perp < 0.8) { this._hitEntity(bot, 160, 0); hit++; }
     }
     this.cameras.main.flash(120, 0, 255, 200, 0.4);
     this.cameras.main.shake(100, 0.008);
@@ -1182,7 +1192,7 @@ export class GameScene extends Phaser.Scene {
         for (const b2 of this.bots) {
           if (!b2.alive) continue;
           if (Math.hypot(b2.wx - jx, b2.wy - jy) < 2.0)
-            this._hitEntity(b2, 90, 'banana');
+            this._hitEntity(b2, 90, 0);
         }
         const ps = iso(jx, jy);
         const flash = this.add.image(ps.x, ps.y - 16, 'explosion').setScale(1.4).setDepth(9200).setTint(0xaa44ff);
@@ -1203,7 +1213,7 @@ export class GameScene extends Phaser.Scene {
           if (!bot.alive) continue;
           if (Math.hypot(bot.wx - this.player.wx, bot.wy - this.player.wy) < 3.5) {
             const da = Math.abs(Phaser.Math.Angle.Wrap(Math.atan2(bot.wy - this.player.wy, bot.wx - this.player.wx) - a));
-            if (da < Math.PI * 0.6) { this._hitEntity(bot, 55, 'banana'); bites++; }
+            if (da < Math.PI * 0.6) { this._hitEntity(bot, 55, 0); bites++; }
           }
         }
       },
@@ -1224,7 +1234,7 @@ export class GameScene extends Phaser.Scene {
           if (dist > 6) continue;
           const ang = Math.atan2(dy, dx);
           if (Math.abs(Phaser.Math.Angle.Wrap(ang - a)) < coneW)
-            this._hitEntity(bot, 40, 'banana');
+            this._hitEntity(bot, 40, 0);
         }
         // Spawn visual fireball projectiles
         const spread = (Math.random() - 0.5) * coneW;
@@ -1233,7 +1243,7 @@ export class GameScene extends Phaser.Scene {
           wx: this.player.wx + Math.cos(fa) * 0.9,
           wy: this.player.wy + Math.sin(fa) * 0.9,
           vx: Math.cos(fa) * 13, vy: Math.sin(fa) * 13,
-          damage: 0, faction: 'banana', splash: 0, life: 1.2,
+          damage: 0, team: 0, splash: 0, life: 1.2,
           sprite: this.add.image(0, 0, 'peel').setTint(0xff4400).setScale(0.35).setDepth(5000),
         });
       });
@@ -1277,7 +1287,7 @@ export class GameScene extends Phaser.Scene {
     for (let i = -2; i <= 2; i++) {
       const fa = a + i * 0.22;
       this.bullets.push({ wx: this.player.wx + Math.cos(fa)*0.8, wy: this.player.wy + Math.sin(fa)*0.8,
-        vx: Math.cos(fa)*11, vy: Math.sin(fa)*11, damage: 80, faction: 'banana', splash: 1.5, life: 2.2,
+        vx: Math.cos(fa)*11, vy: Math.sin(fa)*11, damage: 80, team: 0, splash: 1.5, life: 2.2,
         sprite: this.add.image(0,0,'peel').setTint(0xff4400).setScale(0.35).setDepth(5000) });
     }
     for (const bot of this.bots) { if (!bot.alive) continue; if (Math.hypot(bot.wx-this.player.wx,bot.wy-this.player.wy)<4) bot.stunTimer=(bot.stunTimer||0)+800; }
@@ -1288,7 +1298,7 @@ export class GameScene extends Phaser.Scene {
     for (const bot of this.bots) {
       if (!bot.alive) continue;
       const d = Math.hypot(bot.wx-this.player.wx, bot.wy-this.player.wy);
-      if (d < 6) { this._hitEntity(bot, 55, 'banana'); bot.stunTimer = (bot.stunTimer||0)+2500; }
+      if (d < 6) { this._hitEntity(bot, 55, 0); bot.stunTimer = (bot.stunTimer||0)+2500; }
     }
     this.cameras.main.flash(200,180,220,255,0.4); this.cameras.main.shake(150,0.008);
   }
@@ -1297,7 +1307,7 @@ export class GameScene extends Phaser.Scene {
     for (let i = 0; i < 10; i++) {
       const a = (i/10)*Math.PI*2;
       this.bullets.push({ wx: this.player.wx+Math.cos(a)*0.8, wy: this.player.wy+Math.sin(a)*0.8,
-        vx: Math.cos(a)*10, vy: Math.sin(a)*10, damage: 45, faction: 'banana', splash: 0.6, life: 2.0,
+        vx: Math.cos(a)*10, vy: Math.sin(a)*10, damage: 45, team: 0, splash: 0.6, life: 2.0,
         sprite: this.add.image(0,0,'pickup').setTint(0x88cc44).setScale(0.35).setDepth(5000) });
     }
     this.cameras.main.flash(100,100,200,80,0.2);
@@ -1308,7 +1318,7 @@ export class GameScene extends Phaser.Scene {
     for (let i = -1; i <= 1; i++) {
       const fa = a + i * 0.3;
       this.bullets.push({ wx: this.player.wx+Math.cos(fa)*0.8, wy: this.player.wy+Math.sin(fa)*0.8,
-        vx: Math.cos(fa)*12, vy: Math.sin(fa)*12, damage: 110, faction: 'banana', splash: 2.2, life: 2.0,
+        vx: Math.cos(fa)*12, vy: Math.sin(fa)*12, damage: 110, team: 0, splash: 2.2, life: 2.0,
         sprite: this.add.image(0,0,'peel').setTint(0xffee00).setScale(0.4).setDepth(5000) });
     }
     this.cameras.main.flash(120,255,230,0,0.35); this.cameras.main.shake(150,0.01);
@@ -1319,7 +1329,7 @@ export class GameScene extends Phaser.Scene {
     targets.forEach((bot,i) => {
       this.time.delayedCall(i*100, () => {
         if (!bot.alive) return;
-        this._hitEntity(bot, 95, 'banana'); bot.stunTimer=(bot.stunTimer||0)+600;
+        this._hitEntity(bot, 95, 0); bot.stunTimer=(bot.stunTimer||0)+600;
         const ps=iso(bot.wx,bot.wy); const flash=this.add.image(ps.x,ps.y-20,'muzzle_flash').setScale(1.2).setDepth(9200).setTint(0xaaaaff);
         this.time.delayedCall(150,()=>flash.destroy());
       });
@@ -1343,7 +1353,7 @@ export class GameScene extends Phaser.Scene {
     const a = this.player.angle;
     for (let s=1; s<=7; s++) {
       const tx=this.player.wx+Math.cos(a)*s*0.9, ty=this.player.wy+Math.sin(a)*s*0.9;
-      for (const bot of this.bots) { if (!bot.alive) continue; if (Math.hypot(bot.wx-tx,bot.wy-ty)<1.0) this._hitEntity(bot,130,'banana'); }
+      for (const bot of this.bots) { if (!bot.alive) continue; if (Math.hypot(bot.wx-tx,bot.wy-ty)<1.0) this._hitEntity(bot, 130, 0); }
     }
     this.player.wx=Phaser.Math.Clamp(this.player.wx+Math.cos(a)*5,1,GRID-1);
     this.player.wy=Phaser.Math.Clamp(this.player.wy+Math.sin(a)*5,1,GRID-1);
@@ -1360,7 +1370,7 @@ export class GameScene extends Phaser.Scene {
     const a = this.player.angle;
     for (let s=1; s<=6; s++) {
       const tx=this.player.wx+Math.cos(a)*s, ty=this.player.wy+Math.sin(a)*s;
-      for (const bot of this.bots) { if (!bot.alive) continue; if (Math.hypot(bot.wx-tx,bot.wy-ty)<1.2) { this._hitEntity(bot,100,'banana'); bot.stunTimer=1000; } }
+      for (const bot of this.bots) { if (!bot.alive) continue; if (Math.hypot(bot.wx-tx,bot.wy-ty)<1.2) { this._hitEntity(bot, 100, 0); bot.stunTimer=1000; } }
     }
     this.player.wx=Phaser.Math.Clamp(this.player.wx+Math.cos(a)*4,1,GRID-1);
     this.player.wy=Phaser.Math.Clamp(this.player.wy+Math.sin(a)*4,1,GRID-1);
@@ -1372,8 +1382,8 @@ export class GameScene extends Phaser.Scene {
     const {wx,wy}=this.player;
     const closest=this.bots.filter(b=>b.alive).sort((a,b)=>Math.hypot(a.wx-wx,a.wy-wy)-Math.hypot(b.wx-wx,b.wy-wy))[0];
     if (closest) {
-      this._hitEntity(closest,250,'banana');
-      for (const bot of this.bots) { if (!bot.alive||bot===closest) continue; if (Math.hypot(bot.wx-closest.wx,bot.wy-closest.wy)<3) this._hitEntity(bot,80,'banana'); }
+      this._hitEntity(closest, 250, 0);
+      for (const bot of this.bots) { if (!bot.alive||bot===closest) continue; if (Math.hypot(bot.wx-closest.wx,bot.wy-closest.wy)<3) this._hitEntity(bot, 80, 0); }
     }
     this.cameras.main.flash(200,0,200,255,0.5); this.cameras.main.shake(200,0.015);
   }
@@ -1382,7 +1392,7 @@ export class GameScene extends Phaser.Scene {
     for (let i=0;i<12;i++) {
       const a=(i/12)*Math.PI*2;
       this.bullets.push({ wx:this.player.wx+Math.cos(a)*0.8, wy:this.player.wy+Math.sin(a)*0.8,
-        vx:Math.cos(a)*11, vy:Math.sin(a)*11, damage:85, faction:'banana', splash:0.7, life:2.2,
+        vx:Math.cos(a)*11, vy:Math.sin(a)*11, damage:85, team: 0, splash:0.7, life:2.2,
         sprite:this.add.image(0,0,'pickup').setTint(0xaacc88).setScale(0.45).setDepth(5000) });
     }
     this.cameras.main.flash(120,100,180,80,0.3); this.cameras.main.shake(150,0.01);
@@ -1400,7 +1410,7 @@ export class GameScene extends Phaser.Scene {
       const a=(i/5)*Math.PI*2;
       const tx=this.player.wx+Math.cos(a)*3, ty=this.player.wy+Math.sin(a)*3;
       this.time.delayedCall(i*130,()=>{
-        for (const bot of this.bots) { if (!bot.alive) continue; if (Math.hypot(bot.wx-tx,bot.wy-ty)<2.2) this._hitEntity(bot,160,'banana'); }
+        for (const bot of this.bots) { if (!bot.alive) continue; if (Math.hypot(bot.wx-tx,bot.wy-ty)<2.2) this._hitEntity(bot, 160, 0); }
         const ps=iso(tx,ty); const fx=this.add.image(ps.x,ps.y-10,'explosion').setScale(1.3).setDepth(9200).setTint(0x224466);
         this.time.delayedCall(200,()=>fx.destroy()); this.cameras.main.shake(80,0.01);
       });
@@ -1411,7 +1421,7 @@ export class GameScene extends Phaser.Scene {
   _specialWitchsCurse() {
     for (const bot of this.bots) {
       if (!bot.alive) continue;
-      this._hitEntity(bot, 90, 'banana');
+      this._hitEntity(bot, 90, 0);
       bot.stunTimer = (bot.stunTimer || 0) + 1500;
       const ps = iso(bot.wx, bot.wy);
       const fx = this.add.image(ps.x, ps.y - 16, 'explosion').setScale(1.1).setDepth(9200).setTint(0x9900cc);
@@ -1424,7 +1434,7 @@ export class GameScene extends Phaser.Scene {
   _specialRealityWarp() {
     for (const bot of this.bots) {
       if (!bot.alive) continue;
-      this._hitEntity(bot,500,'banana');
+      this._hitEntity(bot, 500, 0);
       bot.wx=1+Math.random()*(GRID-2); bot.wy=1+Math.random()*(GRID-2);
     }
     this.cameras.main.flash(700,180,0,255,0.95); this.cameras.main.shake(500,0.04);
@@ -1439,11 +1449,11 @@ export class GameScene extends Phaser.Scene {
       const s = iso(h.wx, h.wy);
       h.sprite.setPosition(s.x, s.y - 6 + Math.sin(h.bob) * 2).setDepth(isoDepth(h.wx, h.wy) + 5);
 
-      // Check if a raccoon steps on it
+      // Check if an enemy bot (non-team-0) steps on it
       for (const bot of this.bots) {
-        if (!bot.alive || bot.faction !== 'raccoon') continue;
+        if (!bot.alive || bot.team === 0) continue;
         if (Math.hypot(bot.wx - h.wx, bot.wy - h.wy) < 0.7) {
-          this._hitEntity(bot, h.damage, 'banana');
+          this._hitEntity(bot, h.damage, 0);
           if (h.stun) bot.stunTimer = h.stun;
           h.life = 0;
           break;
