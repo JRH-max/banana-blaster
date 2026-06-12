@@ -194,7 +194,14 @@ export class GameScene extends Phaser.Scene {
     this.joystickActive    = false;
     this.joystickDir       = { x: 0, y: 0 };
     this.joystickPointerId = -1;
+    // Aim joystick state (right side touch)
+    this.aimJoyActive      = false;
+    this.aimJoyPointerId   = -1;
+    this.aimJoyAngle       = 0;
     this._setupTouchJoy();
+
+    // Aim laser line (drawn each frame in _updatePlayerSprite)
+    this.aimLine = this.add.graphics().setDepth(9100);
 
     this.scene.launch('UIScene');
     this._syncAll();
@@ -455,24 +462,41 @@ export class GameScene extends Phaser.Scene {
   }
 
   _aimPlayer() {
-    // Primary: aim at mouse / pointer (Fortnite-style OTS aiming)
+    // 1. Right-side touch aim joystick (highest priority on touch)
+    if (this.aimJoyActive) {
+      this.player.angle = this.aimJoyAngle;
+      this.isFiring = true;
+      return;
+    }
+    // 2. Mouse / pointer aim — convert screen → iso world
     const ptr = this.input.activePointer;
-    if (ptr && (ptr.x > 0 || ptr.y > 0)) {
+    if (ptr && ptr.isDown && ptr.x > this.scale.width * 0.35) {
+      // pointer is on the right half — treat as aim
       const wp = this.cameras.main.getWorldPoint(ptr.x, ptr.y);
-      // Inverse iso transform: wx = sx/TW + sy/TH, wy = sy/TH - sx/TW
       const targetWx = wp.x / TW + wp.y / TH;
       const targetWy = wp.y / TH - wp.x / TW;
       const dx = targetWx - this.player.wx;
       const dy = targetWy - this.player.wy;
-      if (Math.hypot(dx, dy) > 0.5) {
+      if (Math.hypot(dx, dy) > 0.3) {
+        this.player.angle = Math.atan2(dy, dx);
+        return;
+      }
+    } else if (ptr && !ptr.isDown) {
+      // Mouse hover (desktop) — always aim at cursor even without clicking
+      const wp = this.cameras.main.getWorldPoint(ptr.x, ptr.y);
+      const targetWx = wp.x / TW + wp.y / TH;
+      const targetWy = wp.y / TH - wp.x / TW;
+      const dx = targetWx - this.player.wx;
+      const dy = targetWy - this.player.wy;
+      if (Math.hypot(dx, dy) > 0.3) {
         this.player.angle = Math.atan2(dy, dx);
         return;
       }
     }
-    // Fallback: auto-aim at nearest non-team-0 bot
+    // 3. Fallback: auto-aim at nearest enemy
     let best = null, bestD = 9999;
     for (const b of this.bots) {
-      if (!b.alive || b.team === 0) continue;  // skip allies
+      if (!b.alive || b.team === 0) continue;
       const d = Math.hypot(b.wx - this.player.wx, b.wy - this.player.wy);
       if (d < bestD) { best = b; bestD = d; }
     }
@@ -492,6 +516,28 @@ export class GameScene extends Phaser.Scene {
       .setAngle(Phaser.Math.RadToDeg(this.player.angle))
       .setFlipY(Math.cos(this.player.angle) < 0)
       .setDepth(d + 13);
+
+    // Aim laser line
+    if (this.aimLine) {
+      this.aimLine.clear();
+      const a   = this.player.angle;
+      const len = 180; // pixels
+      const ex  = gx + Math.cos(a) * len;
+      const ey  = gy + Math.sin(a) * len;
+      // Dashed line effect — 6 segments
+      for (let i = 0; i < 6; i++) {
+        const t0 = i / 6, t1 = (i + 0.55) / 6;
+        const alpha = 0.55 - i * 0.08;
+        this.aimLine.lineStyle(1.5, 0xff3333, alpha);
+        this.aimLine.lineBetween(
+          gx + Math.cos(a) * len * t0, gy + Math.sin(a) * len * t0,
+          gx + Math.cos(a) * len * t1, gy + Math.sin(a) * len * t1
+        );
+      }
+      // Crosshair dot at end
+      this.aimLine.fillStyle(0xff3333, 0.75);
+      this.aimLine.fillCircle(ex, ey, 4);
+    }
   }
 
   // ── firing ─────────────────────────────────────────────────────────────────
@@ -1478,23 +1524,55 @@ export class GameScene extends Phaser.Scene {
   // ── touch joystick ─────────────────────────────────────────────────────────
   _setupTouchJoy() {
     const JX = 110, JY = 478, JR = 50;
+    const SW = this.scale.width;
+
     this.input.on('pointerdown', p => {
-      if (p.x < 200 && p.y > 360) {
+      // Left side — movement joystick
+      if (p.x < SW * 0.45 && p.y > 360) {
         this.joystickActive    = true;
         this.joystickPointerId = p.id;
         this._calcJoy(p, JX, JY, JR);
+      }
+      // Right side — aim joystick
+      if (p.x >= SW * 0.45) {
+        this.aimJoyActive    = true;
+        this.aimJoyPointerId = p.id;
+        this.aimJoyOriginX   = p.x;
+        this.aimJoyOriginY   = p.y;
+        this._calcAimJoy(p);
       }
     });
     this.input.on('pointermove', p => {
       if (this.joystickActive && p.id === this.joystickPointerId)
         this._calcJoy(p, JX, JY, JR);
+      if (this.aimJoyActive && p.id === this.aimJoyPointerId)
+        this._calcAimJoy(p);
     });
     this.input.on('pointerup', p => {
       if (p.id === this.joystickPointerId) {
         this.joystickActive = false;
         this.joystickDir    = { x: 0, y: 0 };
       }
+      if (p.id === this.aimJoyPointerId) {
+        this.aimJoyActive = false;
+        this.isFiring     = false;
+      }
     });
+  }
+
+  _calcAimJoy(p) {
+    const dx = p.x - this.aimJoyOriginX;
+    const dy = p.y - this.aimJoyOriginY;
+    if (Math.hypot(dx, dy) > 8) {
+      // Convert screen drag → iso world angle
+      const screenAngle = Math.atan2(dy, dx);
+      // screen-space to iso-world: inverse rotate by iso skew
+      // In iso: screen_x maps to (wx-wy) direction, screen_y to (wx+wy)
+      // So world angle = atan2( dy/TH, dx/TW ) scaled back
+      const worldDx = dx / TW + dy / TH;
+      const worldDy = dy / TH - dx / TW;
+      this.aimJoyAngle = Math.atan2(worldDy, worldDx);
+    }
   }
 
   _calcJoy(p, cx, cy, r) {
