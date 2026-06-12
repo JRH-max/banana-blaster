@@ -1128,11 +1128,11 @@ export class MenuScene extends Phaser.Scene {
           id: 'small', label: '📦 SMALL BOX', cost: 100,
           borderColor: 0x9955cc, glowColor: '#dd99ff',
           odds: [
-            { label: '???',    color: '#ff00ff', pct: '5%'  },
-            { label: 'MYTHIC', color: '#ff8800', pct: '15%' },
-            { label: 'EPIC',   color: '#aa44ff', pct: '30%' },
-            { label: 'RARE',   color: '#4488ff', pct: '40%' },
-            { label: 'COINS',  color: '#ffd700', pct: '10%' },
+            { label: '???',    color: '#ff00ff', pct: '1%'  },
+            { label: 'MYTHIC', color: '#ff8800', pct: '5%'  },
+            { label: 'EPIC',   color: '#aa44ff', pct: '15%' },
+            { label: 'RARE',   color: '#4488ff', pct: '30%' },
+            { label: 'COINS',  color: '#ffd700', pct: '49%' },
           ],
         },
         {
@@ -1226,14 +1226,23 @@ export class MenuScene extends Phaser.Scene {
     if (coins < cost) return;
     saveCoins(coins - cost);
 
-    // Both boxes: 5% ???, 15% MYTHIC, 30% EPIC, 40% RARE, 10% COINS
     const roll = Math.random() * 100;
     let rarity;
-    if      (roll < 5)  rarity = '???';
-    else if (roll < 20) rarity = 'MYTHIC';
-    else if (roll < 50) rarity = 'EPIC';
-    else if (roll < 90) rarity = 'RARE';
-    else                rarity = 'COINS_300';
+    if (boxId === 'small') {
+      // Small box: 1% ???, 5% MYTHIC, 15% EPIC, 30% RARE, 49% COINS
+      if      (roll < 1)  rarity = '???';
+      else if (roll < 6)  rarity = 'MYTHIC';
+      else if (roll < 21) rarity = 'EPIC';
+      else if (roll < 51) rarity = 'RARE';
+      else                rarity = 'COINS_300';
+    } else {
+      // Big box: 5% ???, 15% MYTHIC, 30% EPIC, 40% RARE, 10% COINS
+      if      (roll < 5)  rarity = '???';
+      else if (roll < 20) rarity = 'MYTHIC';
+      else if (roll < 50) rarity = 'EPIC';
+      else if (roll < 90) rarity = 'RARE';
+      else                rarity = 'COINS_300';
+    }
 
     let reward;
     if (rarity === 'COINS_300') {
