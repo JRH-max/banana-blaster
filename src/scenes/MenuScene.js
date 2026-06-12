@@ -273,6 +273,7 @@ export class MenuScene extends Phaser.Scene {
 
   _switchCharTab(tabId) {
     this.charActiveTab = tabId;
+    this.charTabPage = 0;
     // Update tab button visuals
     const TABS = [
       { id: 'STARTER', color: '#aaaaaa', active: 0x2a2a2a, inactive: 0x111111 },
@@ -300,17 +301,22 @@ export class MenuScene extends Phaser.Scene {
 
     const addC = el => { this.charTabContentItems.push(el); return el; };
 
-    const tab   = this.charActiveTab || 'STARTER';
-    const chars = CHARACTERS.filter(c => c.rarity === tab);
+    const tab      = this.charActiveTab || 'STARTER';
+    const allChars = CHARACTERS.filter(c => c.rarity === tab);
+    const PER_PAGE = 6;
+    const totalPages = Math.max(1, Math.ceil(allChars.length / PER_PAGE));
+    if (this.charTabPage === undefined) this.charTabPage = 0;
+    this.charTabPage = Phaser.Math.Clamp(this.charTabPage, 0, totalPages - 1);
+
+    const chars = allChars.slice(this.charTabPage * PER_PAGE, (this.charTabPage + 1) * PER_PAGE);
     const n     = chars.length;
     if (n === 0) return;
 
     const PW = 780, PH = 510, PX = SW / 2, PY = SH / 2;
-    // Content area: below tab divider (y=82 from top) to above back btn (y=40 from bottom)
-    const CONTENT_TOP = PY - PH / 2 + 90;   // ~45
-    const CONTENT_BOT = PY + PH / 2 - 50;   // ~505
+    const CONTENT_TOP = PY - PH / 2 + 90;
+    const CONTENT_BOT = PY + PH / 2 - 50;
     const CONTENT_CY  = (CONTENT_TOP + CONTENT_BOT) / 2;
-    const CONTENT_H   = CONTENT_BOT - CONTENT_TOP; // ~460
+    const CONTENT_H   = CONTENT_BOT - CONTENT_TOP;
 
     // Determine rows
     let rows;
@@ -335,6 +341,40 @@ export class MenuScene extends Phaser.Scene {
         this._drawCharBox(addC, ch, bx, rowY, BOX_W, BOX_H);
       });
     });
+
+    // Pagination arrows
+    const arrowY = CONTENT_CY;
+    const panelRight = PX + PW / 2;
+    const panelLeft  = PX - PW / 2;
+
+    if (this.charTabPage > 0) {
+      const leftArrowBg = addC(this.add.rectangle(panelLeft + 18, arrowY, 28, 60, 0x222222, 0.85)
+        .setStrokeStyle(2, 0x888888, 0.8).setDepth(20).setInteractive({ useHandCursor: true }));
+      const leftArrowTxt = addC(this.add.text(panelLeft + 18, arrowY, '◀', {
+        fontSize: '18px', fontFamily: 'Arial Black', color: '#ffffff',
+      }).setOrigin(0.5).setDepth(21));
+      leftArrowBg.on('pointerdown', () => { this.charTabPage--; this._buildCharTabContent(); });
+      leftArrowBg.on('pointerover', () => leftArrowBg.setFillStyle(0x444444, 0.95));
+      leftArrowBg.on('pointerout',  () => leftArrowBg.setFillStyle(0x222222, 0.85));
+    }
+
+    if (this.charTabPage < totalPages - 1) {
+      const rightArrowBg = addC(this.add.rectangle(panelRight - 18, arrowY, 28, 60, 0x222222, 0.85)
+        .setStrokeStyle(2, 0x888888, 0.8).setDepth(20).setInteractive({ useHandCursor: true }));
+      const rightArrowTxt = addC(this.add.text(panelRight - 18, arrowY, '▶', {
+        fontSize: '18px', fontFamily: 'Arial Black', color: '#ffffff',
+      }).setOrigin(0.5).setDepth(21));
+      rightArrowBg.on('pointerdown', () => { this.charTabPage++; this._buildCharTabContent(); });
+      rightArrowBg.on('pointerover', () => rightArrowBg.setFillStyle(0x444444, 0.95));
+      rightArrowBg.on('pointerout',  () => rightArrowBg.setFillStyle(0x222222, 0.85));
+    }
+
+    // Page indicator (e.g. "1 / 2")
+    if (totalPages > 1) {
+      addC(this.add.text(PX, CONTENT_BOT - 8, `${this.charTabPage + 1} / ${totalPages}`, {
+        fontSize: '11px', fontFamily: 'Arial', color: '#888888',
+      }).setOrigin(0.5, 1).setDepth(21));
+    }
 
     this._updateCharSelect();
   }
