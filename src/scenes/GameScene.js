@@ -299,8 +299,6 @@ export class GameScene extends Phaser.Scene {
 
   _drawGround() {
     const CX = GRID / 2, CY = GRID / 2;
-    const WATER_R = 28; // corner water radius
-    const BORDER  = 4;  // border wall thickness in tiles
 
     // Generate bush zones (random clusters, symmetrical)
     const bushZones = [];
@@ -319,25 +317,13 @@ export class GameScene extends Phaser.Scene {
     for (let x = 0; x < GRID; x++) {
       for (let y = 0; y < GRID; y++) {
         const s = iso(x, y);
-        // Corner water — triangular corners
-        const dx = Math.min(x, GRID - 1 - x);
-        const dy = Math.min(y, GRID - 1 - y);
-        if (dx + dy < WATER_R * 0.55) {
-          this.add.image(s.x, s.y, 'tile_water').setOrigin(0.5, 0.5).setDepth(-10000);
-          continue;
-        }
-        // Border wall zone
-        if (x < BORDER || x >= GRID - BORDER || y < BORDER || y >= GRID - BORDER) {
-          this.add.image(s.x, s.y, 'tile_road').setOrigin(0.5, 0.5).setDepth(-10000);
-          continue;
-        }
-        // Bush zones
+        // Bush zones — darker green patches
         const inBush = bushZones.some(z => Math.hypot(x - z.x, y - z.y) < z.r);
         if (inBush) {
           this.add.image(s.x, s.y, 'tile_bush').setOrigin(0.5, 0.5).setDepth(-10000);
           continue;
         }
-        // Normal grass
+        // Normal grass everywhere else
         const key = (x + y) % 2 === 0 ? 'tile_grass' : 'tile_grass2';
         this.add.image(s.x, s.y, key).setOrigin(0.5, 0.5).setDepth(-10000);
       }
@@ -363,11 +349,7 @@ export class GameScene extends Phaser.Scene {
 
   _canMove(wx, wy) {
     const BORDER = 4;
-    const WATER_R = 28;
-    const dx = Math.min(wx, GRID - 1 - wx);
-    const dy = Math.min(wy, GRID - 1 - wy);
-    if (dx + dy < WATER_R * 0.55) return false; // water corner
-    if (wx < BORDER || wx >= GRID - BORDER || wy < BORDER || wy >= GRID - BORDER) return false; // border wall
+    if (wx < BORDER || wx >= GRID - BORDER || wy < BORDER || wy >= GRID - BORDER) return false;
     return !this._treeAt(wx, wy);
   }
 
@@ -652,40 +634,73 @@ export class GameScene extends Phaser.Scene {
       sprite: this.add.image(s.x, s.y - 10, 'pickup').setScale(0.62).setDepth(isoDepth(bot.wx, bot.wy) + 8),
       bob: Math.random() * Math.PI * 2,
     });
-    // Drop 10 coins scattered around
+    // Drop coins
     const coinValues = [4, 3, 3];
     for (let c = 0; c < 3; c++) {
       const cx = bot.wx + Phaser.Math.FloatBetween(-1.8, 1.8);
       const cy = bot.wy + Phaser.Math.FloatBetween(-1.8, 1.8);
       const cs = iso(cx, cy);
       this.pickups.push({
-        type: 'coin',
-        value: coinValues[c],
-        wx: cx, wy: cy,
+        type: 'coin', value: coinValues[c], wx: cx, wy: cy,
         sprite: this.add.image(cs.x, cs.y - 10, 'coin').setScale(0.95).setDepth(isoDepth(cx, cy) + 8),
         bob: Math.random() * Math.PI * 2,
       });
     }
 
-    // Score for player killing enemies
     if (attackerFaction === 0 && bot.team !== 0) {
-      const pts = 100;
-      this.player.score += pts;
+      this.player.score += 100;
       this.registry.set('score', this.player.score);
     }
 
     [bot.sprite, bot.shadow, bot.hpBg, bot.hpBar, bot.ring, bot.dot]
       .forEach(o => o && o.setVisible(false));
 
-    // Allies respawn after a delay
-    if (bot.team === 0) {
-      this.time.delayedCall(7000, () => {
-        bot.wx = 58; bot.wy = 62;
+    // Check if both members of the team are now dead
+    const teammates = this.bots.filter(b => b.team === bot.team);
+    const allDead   = teammates.every(b => !b.alive);
+
+    if (allDead) {
+      if (bot.team === 0) {
+        // Player's ally is dead AND we check player status below in _playerDied
+        // But if player is also dead → handled there. If player is alive, just respawn ally after 10s.
+        this.time.delayedCall(10000, () => {
+          if (bot.alive) return; // already respawned somehow
+          bot.wx = 58 + Phaser.Math.FloatBetween(-2, 2);
+          bot.wy = 62 + Phaser.Math.FloatBetween(-2, 2);
+          bot.hp = bot.maxHp; bot.alive = true;
+          [bot.sprite, bot.shadow, bot.hpBg, bot.hpBar, bot.ring, bot.dot]
+            .forEach(o => o && o.setVisible(true));
+        });
+      } else {
+        // Whole enemy team eliminated — show banner then keep them gone
+        this._showEliminationBanner(bot.team);
+      }
+    } else {
+      // Teammate still alive — respawn this bot after 10s
+      this.time.delayedCall(10000, () => {
+        if (bot.alive) return;
+        // Respawn near surviving teammate
+        const alive = teammates.find(b => b.alive);
+        bot.wx = (alive ? alive.wx : GRID / 2) + Phaser.Math.FloatBetween(-2, 2);
+        bot.wy = (alive ? alive.wy : GRID / 2) + Phaser.Math.FloatBetween(-2, 2);
         bot.hp = bot.maxHp; bot.alive = true;
         [bot.sprite, bot.shadow, bot.hpBg, bot.hpBar, bot.ring, bot.dot]
           .forEach(o => o && o.setVisible(true));
       });
     }
+  }
+
+  _showEliminationBanner(team) {
+    const NAMES  = ['Your Team', 'Team Red', 'Team Orange', 'Team Purple', 'Team Gold'];
+    const COLORS = ['#4488ff',   '#ff4422',  '#ff8800',     '#aa44ff',     '#ffcc00'];
+    const cx = this.cameras.main.scrollX + this.scale.width  / 2;
+    const cy = this.cameras.main.scrollY + this.scale.height / 2 - 40;
+    const bg  = this.add.rectangle(cx, cy, 340, 48, 0x000000, 0.75).setDepth(19000);
+    const txt = this.add.text(cx, cy, `💀 ${NAMES[team]} ELIMINATED`, {
+      fontSize: '18px', fontFamily: 'Arial Black', color: COLORS[team],
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(19001);
+    this.time.delayedCall(2500, () => { bg.destroy(); txt.destroy(); });
   }
 
   // ── bot AI ─────────────────────────────────────────────────────────────────
@@ -895,20 +910,53 @@ export class GameScene extends Phaser.Scene {
 
   // ── player death ───────────────────────────────────────────────────────────
   _playerDied() {
-    this.player.lives--;
-    this.registry.set('lives', this.player.lives);
-    if (this.player.lives <= 0) {
-      this.cameras.main.flash(600, 255, 0, 0);
-      this.time.delayedCall(1800, () => {
+    if (this.playerRespawning) return;
+    this.cameras.main.flash(400, 255, 0, 0);
+    this.cameras.main.shake(300, 0.02);
+
+    // Check if ally (team 0 bot) is also dead
+    const ally    = this.bots.find(b => b.team === 0);
+    const allyDead = !ally || !ally.alive;
+
+    if (allyDead) {
+      // Both team 0 members dead → eliminated → back to menu
+      this._showEliminationBanner(0);
+      this.time.delayedCall(2600, () => {
         this.scene.stop('UIScene');
         this.scene.start('MenuScene');
       });
       return;
     }
-    this.player.hp = this.player.maxHp;
-    this.player.wx = GRID / 2; this.player.wy = GRID / 2;
-    this.registry.set('health', this.player.hp);
-    this.cameras.main.flash(500, 255, 0, 0);
+
+    // Ally still alive → respawn player after 10s near ally
+    this.playerRespawning = true;
+    this.player.hp = 0;
+    this.registry.set('health', 0);
+
+    // Show countdown
+    const cx = this.cameras.main.scrollX + this.scale.width  / 2;
+    const cy = this.cameras.main.scrollY + this.scale.height / 2 + 60;
+    const countBg  = this.add.rectangle(cx, cy, 220, 40, 0x000000, 0.7).setDepth(19000);
+    const countTxt = this.add.text(cx, cy, 'Respawning in 10...', {
+      fontSize: '14px', fontFamily: 'Arial Black', color: '#ffffff',
+    }).setOrigin(0.5).setDepth(19001);
+
+    let remaining = 10;
+    const tick = this.time.addEvent({ delay: 1000, repeat: 9, callback: () => {
+      remaining--;
+      countTxt.setText(remaining > 0 ? `Respawning in ${remaining}...` : 'Respawning!');
+    }});
+
+    this.time.delayedCall(10000, () => {
+      countBg.destroy(); countTxt.destroy(); tick.remove();
+      const allyNow = this.bots.find(b => b.team === 0 && b.alive);
+      this.player.wx = (allyNow ? allyNow.wx : GRID / 2) + Phaser.Math.FloatBetween(-2, 2);
+      this.player.wy = (allyNow ? allyNow.wy : GRID / 2) + Phaser.Math.FloatBetween(-2, 2);
+      this.player.hp = this.player.maxHp;
+      this.registry.set('health', this.player.hp);
+      this.playerRespawning = false;
+      this.cameras.main.flash(300, 100, 200, 255);
+    });
   }
 
   // ── weapon controls ────────────────────────────────────────────────────────
