@@ -198,6 +198,9 @@ export class GameScene extends Phaser.Scene {
     this.input.on('pointerdown', p => { if (!this.sys.game.device.input.touch && p.x > 200) this.isFiring = true; });
     this.input.on('pointerup',   p => { if (!this.sys.game.device.input.touch) this.isFiring = false; });
 
+    // Support up to 4 simultaneous touches (move + aim + extras)
+    this.input.addPointer(3);
+
     // Touch joystick state
     this.joystickActive    = false;
     this.joystickDir       = { x: 0, y: 0 };
@@ -207,6 +210,7 @@ export class GameScene extends Phaser.Scene {
     this.aimJoyPointerId   = -1;
     this.aimJoyAngle       = 0;
     this.fireOnRelease     = false;
+    this.aimFireAngle      = 0;   // locked angle at the moment of release
     this._setupTouchJoy();
 
     // Aim laser
@@ -427,9 +431,12 @@ export class GameScene extends Phaser.Scene {
     this.fireCooldown = Math.max(0, this.fireCooldown - delta);
     const w = WEAPONS[this.currentWeapon];
     const justFire = Phaser.Input.Keyboard.JustDown(this.keys.SPACE);
-    const wantFire = this.isFiring || this.fireOnRelease || (w.auto && this.keys.SPACE.isDown) || (!w.auto && justFire);
-    if (this.fireOnRelease) this.fireOnRelease = false;
+    const wasRelease = this.fireOnRelease;
+    const wantFire = this.isFiring || wasRelease || (w.auto && this.keys.SPACE.isDown) || (!w.auto && justFire);
+    if (wasRelease) this.fireOnRelease = false;
     if (!wantFire || this.fireCooldown > 0) return;
+    // Use the locked angle from joystick release, not the current (potentially overwritten) angle
+    if (wasRelease) this.player.angle = this.aimFireAngle;
     const up = this.weaponUpgrades[this.currentWeapon];
     this.fireCooldown = w.fireRate / (1 + up.speed * 0.2);
     if (w.ammo !== undefined) {
@@ -1451,7 +1458,8 @@ export class GameScene extends Phaser.Scene {
         this.movJoyKnob.setPosition(JX, JY);
       }
       if (p.id === this.aimJoyPointerId) {
-        this._calcAimJoy(p);
+        this._calcAimJoy(p);                   // update angle from final finger position
+        this.aimFireAngle  = this.aimJoyAngle; // lock it before anything can overwrite it
         if (this.aimJoyActive) this.fireOnRelease = true;
         this.aimJoyActive = false;
         this.aimJoyBase.setPosition(AJX, AJY);
