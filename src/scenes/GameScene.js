@@ -794,15 +794,19 @@ export class GameScene extends Phaser.Scene {
 
   _spawnWave() {
     const count = 8 + this.waveNum * 2;
+    const BORDER = 2, MIN_DIST_FROM_PLAYER = 18;
     for (let i = 0; i < count; i++) {
       const r    = Math.random();
       const type = this.waveNum >= 3 ? (r < 0.12 ? 'boss' : r < 0.38 ? 'armored' : 'normal') : 'normal';
-      const edge = Phaser.Math.Between(0, 3);
-      let wx, wy;
-      if (edge === 0) { wx = 1 + Math.random() * (GRID - 2); wy = 1; }
-      else if (edge === 1) { wx = GRID - 1.5; wy = 1 + Math.random() * (GRID - 2); }
-      else if (edge === 2) { wx = 1 + Math.random() * (GRID - 2); wy = GRID - 1.5; }
-      else { wx = 1; wy = 1 + Math.random() * (GRID - 2); }
+      let wx, wy, tries = 0;
+      do {
+        wx = BORDER + Math.random() * (GRID - BORDER * 2);
+        wy = BORDER + Math.random() * (GRID - BORDER * 2);
+        tries++;
+      } while (
+        Math.hypot(wx - this.player.wx, wy - this.player.wy) < MIN_DIST_FROM_PLAYER &&
+        tries < 30
+      );
       this._spawnBot('raccoon', type, wx, wy);
     }
   }
