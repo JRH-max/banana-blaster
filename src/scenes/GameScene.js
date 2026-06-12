@@ -187,8 +187,9 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-TWO',   () => this.switchWeapon(1));
     this.input.keyboard.on('keydown-THREE', () => this.switchWeapon(2));
     this.input.keyboard.on('keydown-U', () => this.toggleShop());
-    this.input.on('pointerdown', p => { if (p.x > 200) this.isFiring = true; });
-    this.input.on('pointerup',   () => { this.isFiring = false; });
+    // Mouse click fires on desktop (right side only)
+    this.input.on('pointerdown', p => { if (!this.sys.game.device.input.touch && p.x > 200) this.isFiring = true; });
+    this.input.on('pointerup',   p => { if (!this.sys.game.device.input.touch) this.isFiring = false; });
 
     // Touch joystick state
     this.joystickActive    = false;
