@@ -46,12 +46,12 @@ const CHARACTERS = [
   { key: 'knight',       name: 'Knight',    subtitle: '',          price: 2000, ability: 'SHIELD CHARGE',  rarity: 'EPIC',    rarityColor: '#aa44ff', gun: 'Lance Launcher',   gunIcon: '🛡️' },
   { key: 'alien',        name: 'Alien',     subtitle: '',          price: 2000, ability: 'ABDUCTION',      rarity: 'EPIC',    rarityColor: '#aa44ff', gun: 'Plasma Pistol',    gunIcon: '👽' },
   { key: 'zombie',       name: 'Zombie',    subtitle: '',          price: 2000, ability: 'UNDEAD SURGE',   rarity: 'EPIC',    rarityColor: '#aa44ff', gun: 'Bone Launcher',    gunIcon: '🧟' },
+  { key: 'witch',        name: 'Witch',     subtitle: '',          price: 2000, ability: "WITCH'S CURSE",  rarity: 'EPIC',    rarityColor: '#aa44ff', gun: 'Spell Blaster',    gunIcon: '🧙‍♀️' },
   // MYTHIC
   { key: 'trash_can',    name: 'Trash Can', subtitle: '',          price: 5000, ability: 'TRASH WAVE',     rarity: 'MYTHIC',  rarityColor: '#ff8800', gun: 'Junk Cannon',      gunIcon: '🗑️' },
   { key: 'dragon',       name: 'Dragon',    subtitle: '',          price: 5000, ability: 'FIRE BREATH',    rarity: 'MYTHIC',  rarityColor: '#ff8800', gun: 'Inferno Blaster',  gunIcon: '🐲' },
   { key: 'phoenix',      name: 'Phoenix',   subtitle: '',          price: 5000, ability: 'REBIRTH',        rarity: 'MYTHIC',  rarityColor: '#ff8800', gun: 'Flame Wing',       gunIcon: '🔥' },
   { key: 'kraken',       name: 'Kraken',    subtitle: '',          price: 5000, ability: 'TENTACLE SLAM',  rarity: 'MYTHIC',  rarityColor: '#ff8800', gun: 'Ink Blaster',      gunIcon: '🐙' },
-  { key: 'demon',        name: 'Demon',     subtitle: '',          price: 5000, ability: 'HELLFIRE',       rarity: 'MYTHIC',  rarityColor: '#ff8800', gun: 'Soul Cannon',      gunIcon: '😈' },
   // ???
   { key: 'mystery',      name: '???',       subtitle: '',          price: 10000,ability: 'OBLITERATE',     rarity: '???',     rarityColor: '#ff00ff', gun: 'Void Cannon',      gunIcon: '❓' },
   { key: 'glitch',       name: 'GLITCH',    subtitle: '',          price: 10000,ability: 'REALITY WARP',   rarity: '???',     rarityColor: '#ff00ff', gun: 'Glitch Cannon',    gunIcon: '💀' },

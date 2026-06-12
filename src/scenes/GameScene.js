@@ -73,7 +73,7 @@ const CHAR_SLOT1 = {
   // NEW MYTHIC
   phoenix:     { name: 'Flame Wing',      type: 'projectile', fireRate: 200,  damage: 50,  speed: 18, auto: true,  ammo: 28, maxAmmo: 28, reloadTime: 1100, projKey: 'peel',      projScale: 0.28, projTint: 0xff6600 },
   kraken:      { name: 'Ink Blaster',     type: 'projectile', fireRate: 650,  damage: 155, speed: 9,  auto: false, splash: 2.5,  reloadTime: 0,    projKey: 'cannonball', projScale: 0.70, projTint: 0x224466 },
-  demon:       { name: 'Soul Cannon',     type: 'hitscan',    fireRate: 400,  damage: 145, speed: 60, auto: false, ammo: 6,  maxAmmo: 6,  reloadTime: 1500 },
+  witch:       { name: 'Spell Blaster',   type: 'projectile', fireRate: 550,  damage: 105, speed: 14, auto: false, splash: 1.8,  reloadTime: 0,    projKey: 'peel',       projScale: 0.32, projTint: 0x9900cc },
   // ???
   mystery:      { name: 'Void Cannon',     type: 'hitscan',    fireRate: 50,   damage: 999, speed: 99, auto: true,  ammo: 99, maxAmmo: 99, reloadTime: 500 },
   glitch:      { name: 'Glitch Cannon',   type: 'hitscan',    fireRate: 40,   damage: 888, speed: 99, auto: true,  ammo: 99, maxAmmo: 99, reloadTime: 300 },
@@ -99,7 +99,7 @@ const CHAR_GUN_SPRITE = {
   taco: 'gun_peel', snowman: 'gun_peel', mushroom: 'gun_rifle', pineapple: 'gun_peel',
   storm_cloud: 'gun_sniper', mummy: 'gun_peel', samurai: 'gun_peel', werewolf: 'gun_rifle',
   knight: 'gun_peel', alien: 'gun_sniper', zombie: 'gun_peel', phoenix: 'gun_rifle',
-  kraken: 'gun_peel', demon: 'gun_sniper', glitch: 'gun_sniper',
+  kraken: 'gun_peel', witch: 'gun_peel', glitch: 'gun_sniper',
 };
 
 const BOT_STATS = {
@@ -162,7 +162,7 @@ export class GameScene extends Phaser.Scene {
       wizard: 9000, shark: 5500, trash_can: 9000, dragon: 7000, mystery: 12000,
       taco: 5500, snowman: 6000, mushroom: 5000, pineapple: 5500, storm_cloud: 6500, mummy: 7000,
       samurai: 6000, werewolf: 5500, knight: 7000, alien: 7500, zombie: 6000,
-      phoenix: 10000, kraken: 8000, demon: 8500, glitch: 14000,
+      phoenix: 10000, kraken: 8000, witch: 7500, glitch: 14000,
     };
     this.specialMaxCD = _cdMap[_charKey] || 5000;
     this.specialCD    = 0; // ready to use immediately
@@ -855,7 +855,7 @@ export class GameScene extends Phaser.Scene {
       taco: 'SALSA SPLASH', snowman: 'BLIZZARD', mushroom: 'SPORE BURST', pineapple: 'JUICE BLAST',
       storm_cloud: 'THUNDERCLAP', mummy: 'BANDAGE TRAP', samurai: 'BLADE RUSH', werewolf: 'HOWL',
       knight: 'SHIELD CHARGE', alien: 'ABDUCTION', zombie: 'UNDEAD SURGE',
-      phoenix: 'REBIRTH', kraken: 'TENTACLE SLAM', demon: 'HELLFIRE', glitch: 'REALITY WARP',
+      phoenix: 'REBIRTH', kraken: 'TENTACLE SLAM', witch: "WITCH'S CURSE", glitch: 'REALITY WARP',
     };
     this.registry.set('specialName', _abilityNames[getSavedChar()] || 'SPECIAL');
     this.registry.set('weaponNames',  WEAPONS.map(w => w.name));
@@ -895,7 +895,7 @@ export class GameScene extends Phaser.Scene {
     else if (char === 'zombie')       this._specialUndeadSurge();
     else if (char === 'phoenix')      this._specialRebirth();
     else if (char === 'kraken')       this._specialTentacleSlam();
-    else if (char === 'demon')        this._specialHellfire();
+    else if (char === 'witch')        this._specialWitchsCurse();
     else if (char === 'glitch')       this._specialRealityWarp();
   }
 
@@ -1337,10 +1337,17 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.flash(150,20,60,120,0.4);
   }
 
-  _specialHellfire() {
-    const targets=this.bots.filter(b=>b.alive);
-    targets.forEach((bot,i)=>{ this.time.delayedCall(i*80,()=>{ if (!bot.alive) return; this._hitEntity(bot,140,'banana'); const ps=iso(bot.wx,bot.wy); const fx=this.add.image(ps.x,ps.y-16,'explosion').setScale(1.2).setDepth(9200).setTint(0xcc2200); this.time.delayedCall(180,()=>fx.destroy()); }); });
-    this.cameras.main.flash(300,255,30,0,0.6); this.cameras.main.shake(350,0.025);
+  _specialWitchsCurse() {
+    for (const bot of this.bots) {
+      if (!bot.alive) continue;
+      this._hitEntity(bot, 90, 'banana');
+      bot.stunTimer = (bot.stunTimer || 0) + 1500;
+      const ps = iso(bot.wx, bot.wy);
+      const fx = this.add.image(ps.x, ps.y - 16, 'explosion').setScale(1.1).setDepth(9200).setTint(0x9900cc);
+      this.time.delayedCall(200, () => fx.destroy());
+    }
+    this.cameras.main.flash(250, 150, 0, 220, 0.5);
+    this.cameras.main.shake(200, 0.012);
   }
 
   _specialRealityWarp() {

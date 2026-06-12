@@ -50,7 +50,7 @@ export class BootScene extends Phaser.Scene {
     this._zombie();
     this._phoenix();
     this._kraken();
-    this._demon();
+    this._witch();
     this._glitch();
     this.scene.start('MenuScene');
   }
@@ -1507,62 +1507,59 @@ export class BootScene extends Phaser.Scene {
     g.generateTexture('kraken', 44, 60); g.destroy();
   }
 
-  // ── Demon ──────────────────────────────────────────────────────────────────
-  _demon() {
+  // ── Witch ──────────────────────────────────────────────────────────────────
+  _witch() {
     const g = this._g(), cx = 22;
-    // Tail
-    g.fillStyle(0x880011, 1); g.fillEllipse(cx + 14, 50, 8, 18);
-    g.fillStyle(0xaa1122, 0.4); g.fillEllipse(cx + 13, 46, 5, 12);
-    g.fillStyle(0x660000, 1); g.fillTriangle(cx + 10, 56, cx + 18, 56, cx + 14, 62);
-    // Legs
-    g.fillStyle(0x880011, 1); g.fillRect(cx - 10, 34, 9, 22); g.fillRect(cx + 1, 34, 9, 22);
-    g.fillStyle(0xaa1122, 0.4); g.fillRect(cx - 9, 36, 4, 14); g.fillRect(cx + 2, 36, 4, 14);
-    // Cloven hooves
-    g.fillStyle(0x1a0000, 1); g.fillEllipse(cx - 6, 58, 8, 5); g.fillEllipse(cx - 3, 58, 8, 5);
-    g.fillStyle(0x1a0000, 1); g.fillEllipse(cx + 2, 58, 8, 5); g.fillEllipse(cx + 5, 58, 8, 5);
-    // Wings
-    g.fillStyle(0x660000, 0.85); g.fillTriangle(cx - 5, 20, cx - 22, 4, cx - 18, 32);
-    g.fillStyle(0x660000, 0.85); g.fillTriangle(cx + 5, 20, cx + 22, 4, cx + 18, 32);
-    g.fillStyle(0x880011, 0.5); g.fillTriangle(cx - 6, 22, cx - 20, 8, cx - 16, 30);
-    g.fillStyle(0x880011, 0.5); g.fillTriangle(cx + 6, 22, cx + 20, 8, cx + 16, 30);
-    // Wing bones
-    g.lineStyle(2, 0x440000, 0.9); g.lineBetween(cx - 5, 20, cx - 22, 4); g.lineBetween(cx + 5, 20, cx + 22, 4);
-    // Body
-    g.fillStyle(0xaa1122, 1); g.fillEllipse(cx, 24, 26, 30);
-    g.fillStyle(0xcc2233, 0.5); g.fillEllipse(cx - 4, 18, 14, 18);
-    g.fillStyle(0x770011, 0.5); g.fillEllipse(cx + 5, 28, 12, 14);
-    // Glowing rune on chest
-    g.fillStyle(0xff2200, 0.3); g.fillCircle(cx, 24, 8);
-    g.fillStyle(0xff4400, 0.7); g.fillCircle(cx, 24, 5);
-    g.lineStyle(2, 0xff6600, 0.8);
-    g.lineBetween(cx - 4, 22, cx + 4, 22); g.lineBetween(cx, 19, cx, 25);
-    g.lineBetween(cx - 3, 24, cx + 3, 28);
+    // Legs (dark robe base)
+    g.fillStyle(0x220033, 1); g.fillRect(cx - 10, 36, 9, 18); g.fillRect(cx + 1, 36, 9, 18);
+    g.fillStyle(0x330044, 0.4); g.fillRect(cx - 9, 38, 4, 12); g.fillRect(cx + 2, 38, 4, 12);
+    // Boots
+    g.fillStyle(0x110011, 1); g.fillEllipse(cx - 5, 58, 13, 5); g.fillEllipse(cx + 5, 58, 13, 5);
+    // Robe body (dark purple/black)
+    g.fillStyle(0x220033, 1); g.fillEllipse(cx, 26, 30, 36);
+    g.fillStyle(0x330044, 0.5); g.fillEllipse(cx - 4, 18, 16, 22);
+    g.fillStyle(0x110022, 0.5); g.fillEllipse(cx + 6, 30, 12, 16);
+    // Robe hem flare (wider at bottom)
+    g.fillStyle(0x1a0028, 1); g.fillRect(cx - 14, 40, 28, 8);
+    g.fillStyle(0x2a0038, 0.5); g.fillRect(cx - 12, 41, 12, 5);
+    // Purple star/moon emblem on robe
+    g.fillStyle(0x9900cc, 0.7); g.fillCircle(cx, 28, 6);
+    g.fillStyle(0xbb22ee, 0.5); g.fillCircle(cx - 1, 27, 3);
     // Arms
-    g.fillStyle(0xaa1122, 1); g.fillRect(cx - 19, 16, 9, 20); g.fillRect(cx + 10, 16, 9, 20);
-    g.fillStyle(0xcc2233, 0.4); g.fillRect(cx - 18, 17, 4, 14); g.fillRect(cx + 11, 17, 4, 14);
-    // Clawed hands
-    g.fillStyle(0x880011, 1);
-    for (let i = 0; i < 3; i++) {
-      g.fillTriangle(cx - 20 + i * 3, 35, cx - 18 + i * 3, 35, cx - 19 + i * 3, 40);
-      g.fillTriangle(cx + 10 + i * 3, 35, cx + 12 + i * 3, 35, cx + 11 + i * 3, 40);
-    }
-    // Head
-    g.fillStyle(0xaa1122, 1); g.fillCircle(cx, 10, 13);
-    g.fillStyle(0xcc2233, 0.5); g.fillCircle(cx - 3, 6, 8);
-    // Horns
-    g.fillStyle(0x440000, 1); g.fillTriangle(cx - 6, 2, cx - 10, 2, cx - 8, -6); g.fillTriangle(cx + 6, 2, cx + 10, 2, cx + 8, -6);
-    g.fillStyle(0x660000, 0.5); g.fillTriangle(cx - 7, 3, cx - 9, 3, cx - 8, -4); g.fillTriangle(cx + 7, 3, cx + 9, 3, cx + 8, -4);
-    // Eyes (hellfire)
-    g.fillStyle(0xff4400, 0.4); g.fillCircle(cx - 5, 9, 6); g.fillCircle(cx + 5, 9, 6);
-    g.fillStyle(0xff6600, 1); g.fillCircle(cx - 5, 9, 4); g.fillCircle(cx + 5, 9, 4);
-    g.fillStyle(0xffcc00, 0.8); g.fillCircle(cx - 4, 8, 2); g.fillCircle(cx + 6, 8, 2);
-    g.fillStyle(0x000000, 1); g.fillCircle(cx - 4, 9, 1.8); g.fillCircle(cx + 6, 9, 1.8);
-    // Sinister grin
-    g.fillStyle(0x1a0000, 1); g.fillRect(cx - 7, 15, 14, 5);
-    g.fillStyle(0xffffff, 1);
-    for (let i = 0; i < 5; i++) g.fillTriangle(cx - 6 + i * 3, 15, cx - 4 + i * 3, 15, cx - 5 + i * 3, 19);
-    g.fillStyle(0xff2200, 0.5); g.fillRect(cx - 6, 15, 12, 2);
-    g.generateTexture('demon', 44, 60); g.destroy();
+    g.fillStyle(0x220033, 1); g.fillRect(cx - 19, 16, 8, 22); g.fillRect(cx + 11, 16, 8, 22);
+    g.fillStyle(0x330044, 0.4); g.fillRect(cx - 18, 17, 4, 14); g.fillRect(cx + 12, 17, 4, 14);
+    // Hands (green tinted)
+    g.fillStyle(0x33aa44, 1); g.fillCircle(cx - 15, 39, 5); g.fillCircle(cx + 15, 39, 5);
+    g.fillStyle(0x55cc66, 0.5); g.fillCircle(cx - 14, 38, 3); g.fillCircle(cx + 16, 38, 3);
+    // Wand in right hand
+    g.fillStyle(0x4a2800, 1); g.fillRect(cx + 13, 30, 3, 18);
+    g.fillStyle(0x9900cc, 1); g.fillCircle(cx + 14, 29, 4);
+    g.fillStyle(0xcc44ff, 0.7); g.fillCircle(cx + 13, 28, 2);
+    // Neck (green)
+    g.fillStyle(0x44cc44, 1); g.fillRect(cx - 4, 6, 8, 8);
+    // Head (green face)
+    g.fillStyle(0x44cc44, 1); g.fillCircle(cx, 3, 12);
+    g.fillStyle(0x66ee66, 0.45); g.fillCircle(cx - 4, -1, 7);
+    g.fillStyle(0x228822, 0.4); g.fillCircle(cx + 5, 5, 6);
+    // Nose (long, witchy)
+    g.fillStyle(0x228822, 1); g.fillTriangle(cx - 1, 5, cx + 1, 5, cx + 5, 10);
+    // Eyes (glowing yellow)
+    g.fillStyle(0xffee00, 0.3); g.fillCircle(cx - 5, 1, 5); g.fillCircle(cx + 5, 1, 5);
+    g.fillStyle(0xffdd00, 1); g.fillCircle(cx - 5, 1, 3.5); g.fillCircle(cx + 5, 1, 3.5);
+    g.fillStyle(0x000000, 1); g.fillCircle(cx - 4, 1, 2); g.fillCircle(cx + 6, 1, 2);
+    g.fillStyle(0xffffff, 0.8); g.fillCircle(cx - 3, 0, 1); g.fillCircle(cx + 7, 0, 1);
+    // Smile (crooked)
+    g.fillStyle(0x115511, 1); g.fillRect(cx - 5, 8, 10, 3);
+    g.fillStyle(0xffffff, 1); g.fillRect(cx - 4, 8, 3, 2); g.fillRect(cx + 1, 8, 3, 2);
+    // Tall pointy black hat (brim + cone)
+    g.fillStyle(0x000000, 1); g.fillRect(cx - 17, 2, 34, 7); // brim
+    g.fillStyle(0x111111, 0.5); g.fillRect(cx - 15, 3, 14, 4);
+    g.fillStyle(0x000000, 1); g.fillTriangle(cx - 10, 2, cx + 10, 2, cx, -22); // cone
+    g.fillStyle(0x111111, 0.5); g.fillTriangle(cx - 7, 2, cx + 4, 2, cx - 2, -18);
+    // Hat band (purple)
+    g.fillStyle(0x9900cc, 1); g.fillRect(cx - 10, -2, 20, 5);
+    g.fillStyle(0xcc44ff, 0.5); g.fillRect(cx - 8, -1, 8, 3);
+    g.generateTexture('witch', 44, 60); g.destroy();
   }
 
   // ── Glitch ─────────────────────────────────────────────────────────────────
