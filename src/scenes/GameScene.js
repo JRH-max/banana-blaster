@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 
-const GRID = 120;
+const GRID = 50;
 const TW = 48, TH = 48;
 
 // ── Persistent save helpers ────────────────────────────────────────────────
@@ -255,82 +255,21 @@ export class GameScene extends Phaser.Scene {
   // ── map ────────────────────────────────────────────────────────────────────
   _genTrees() {
     this.trees = [];
-    const CX = GRID / 2, CY = GRID / 2;
-    const BORDER = 5;
-    const WATER_R = 28;
-
-    // Deterministic wall cluster layout (Brawl Stars style)
-    // Cluster positions are rotationally symmetric around center
-    const clusterSeeds = [];
-    const rng = (seed) => { let x = Math.sin(seed * 127.1 + 311.7) * 43758.5; return x - Math.floor(x); };
-
-    for (let i = 0; i < 18; i++) {
-      const angle = (i / 18) * Math.PI * 2 + 0.3;
-      const dist  = 10 + rng(i) * (GRID / 2 - 16);
-      const cx    = CX + Math.cos(angle) * dist;
-      const cy    = CY + Math.sin(angle) * dist;
-      const w     = 2 + Math.floor(rng(i + 0.5) * 4); // 2-5 wide
-      const h     = 2 + Math.floor(rng(i + 0.9) * 4); // 2-5 tall
-
-      // Add the cluster
-      for (let dx = 0; dx < w; dx++) {
-        for (let dy = 0; dy < h; dy++) {
-          const wx = Math.round(cx - w/2 + dx);
-          const wy = Math.round(cy - h/2 + dy);
-          if (wx < BORDER || wx >= GRID - BORDER || wy < BORDER || wy >= GRID - BORDER) continue;
-          const fromCenter = Math.hypot(wx - CX, wy - CY);
-          if (fromCenter < 8) continue; // keep center open
-          const edgeDist = Math.min(wx, GRID-1-wx, wy, GRID-1-wy);
-          if (edgeDist + edgeDist < WATER_R * 0.55 * 0.9) continue; // skip water corners
-          if (this.trees.some(t => Math.hypot(t.wx - wx, t.wy - wy) < 0.8)) continue;
-          this.trees.push({ wx, wy, scale: 0.9 + rng(wx * 7 + wy) * 0.3 });
-        }
-      }
-      // Symmetric counterpart (point symmetry)
-      for (let dx = 0; dx < w; dx++) {
-        for (let dy = 0; dy < h; dy++) {
-          const wx = Math.round(GRID - cx - w/2 + dx);
-          const wy = Math.round(GRID - cy - h/2 + dy);
-          if (wx < BORDER || wx >= GRID - BORDER || wy < BORDER || wy >= GRID - BORDER) continue;
-          const fromCenter = Math.hypot(wx - CX, wy - CY);
-          if (fromCenter < 8) continue;
-          const edgeDist = Math.min(wx, GRID-1-wx, wy, GRID-1-wy);
-          if (edgeDist + edgeDist < WATER_R * 0.55 * 0.9) continue;
-          if (this.trees.some(t => Math.hypot(t.wx - wx, t.wy - wy) < 0.8)) continue;
-          this.trees.push({ wx, wy, scale: 0.9 + rng(wx * 7 + wy) * 0.3 });
-        }
-      }
+    const BORDER = 3, MIN_D = 2.6, CX = GRID / 2, CY = GRID / 2;
+    let tries = 0;
+    while (this.trees.length < 68 && tries++ < 4000) {
+      const wx = BORDER + Math.random() * (GRID - 2 * BORDER);
+      const wy = BORDER + Math.random() * (GRID - 2 * BORDER);
+      if (Math.hypot(wx - CX, wy - CY) < 5) continue;
+      if (this.trees.some(t => Math.hypot(t.wx - wx, t.wy - wy) < MIN_D)) continue;
+      this.trees.push({ wx, wy, scale: 0.72 + Math.random() * 0.52 });
     }
-
-    // Also make corner water and border tiles impassable by adding tree-blockers invisibly
-    // (handled via _canMove checking BORDER)
   }
 
   _drawGround() {
-    const CX = GRID / 2, CY = GRID / 2;
-
-    // Generate bush zones (random clusters, symmetrical)
-    const bushZones = [];
-    const rng = (seed) => { let x = Math.sin(seed) * 10000; return x - Math.floor(x); };
-    for (let i = 0; i < 24; i++) {
-      const angle = rng(i * 7.3) * Math.PI * 2;
-      const dist  = 12 + rng(i * 3.7) * (GRID / 2 - 22);
-      const bx    = CX + Math.cos(angle) * dist;
-      const by    = CY + Math.sin(angle) * dist;
-      const rad   = 4 + rng(i * 5.1) * 5;
-      bushZones.push({ x: bx, y: by, r: rad });
-      // Rotationally symmetric counterpart
-      bushZones.push({ x: GRID - bx, y: GRID - by, r: rad });
-    }
-
     for (let x = 0; x < GRID; x++) {
       for (let y = 0; y < GRID; y++) {
         const s = iso(x, y);
-        const inBush = bushZones.some(z => Math.hypot(x - z.x, y - z.y) < z.r);
-        if (inBush) {
-          this.add.image(s.x, s.y, 'tile_bush').setOrigin(0.5, 0.5).setDepth(-10000);
-          continue;
-        }
         const key = (x + y) % 2 === 0 ? 'tile_grass' : 'tile_grass2';
         this.add.image(s.x, s.y, key).setOrigin(0.5, 0.5).setDepth(-10000);
       }
@@ -342,10 +281,8 @@ export class GameScene extends Phaser.Scene {
     for (const t of sorted) {
       const s = iso(t.wx, t.wy);
       const d = isoDepth(t.wx, t.wy);
-      // Stone shadow
-      this.add.ellipse(s.x, s.y + 4, 36 * t.scale, 12 * t.scale, 0x000000, 0.22).setDepth(d - 5);
-      // Stone wall block
-      t.sprite = this.add.image(s.x, s.y - 12, 'wall_block')
+      this.add.ellipse(s.x, s.y, 32 * t.scale, 10 * t.scale, 0x000000, 0.18).setDepth(d - 5);
+      t.sprite = this.add.image(s.x, s.y - 8, 'tree')
         .setOrigin(0.5, 1).setScale(t.scale).setDepth(d + 65);
     }
   }
@@ -355,9 +292,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   _canMove(wx, wy) {
-    const BORDER = 4;
-    if (wx < BORDER || wx >= GRID - BORDER || wy < BORDER || wy >= GRID - BORDER) return false;
-    return !this._treeAt(wx, wy);
+    return wx > 0.4 && wx < GRID - 0.4 && wy > 0.4 && wy < GRID - 0.4 && !this._treeAt(wx, wy);
   }
 
   _tryMove(e, dx, dy) {
@@ -370,7 +305,7 @@ export class GameScene extends Phaser.Scene {
   _spawnBots() {
     // Spread banana bots around different map corners so they naturally clash with raccoons
     const bananaStarts = [
-      [15, 15], [105, 15], [15, 105], [60, 15], [15, 60],
+      [8, 8], [42, 8], [8, 42], [25, 10], [10, 25],
     ];
     for (let i = 0; i < 5; i++)
       this._spawnBot('banana', 'normal', bananaStarts[i][0], bananaStarts[i][1]);
@@ -681,11 +616,7 @@ export class GameScene extends Phaser.Scene {
           this._tryMove(bot, px * bot.speed * 0.42 * dt, py * bot.speed * 0.42 * dt);
         }
 
-        if (dist < 13 && bot.fireCooldown <= 0) {
-          const w = WEAPONS[bot.weaponIdx];
-          bot.fireCooldown = w.fireRate + Phaser.Math.Between(-80, 180);
-          this._shootFrom(bot, bot.weaponIdx, bot.faction);
-        }
+        // Bots do not shoot
       } else {
         // Wander
         if (bot.aiTimer <= 0) {
