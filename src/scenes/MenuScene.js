@@ -77,12 +77,24 @@ export class MenuScene extends Phaser.Scene {
     this.charItems    = [];
     this.boomItems    = [];
 
-    // Daily Boom Drop gift — 2 free drops each new calendar day
-    const today = new Date().toDateString();
-    if (getSavedBoomDate() !== today) {
-      saveBoomDate(today);
+    // Boom Drop gift — 2 free drops every 10 minutes
+    const now     = Date.now();
+    const lastStr = getSavedBoomDate();
+    const last    = lastStr ? parseInt(lastStr, 10) : 0;
+    if (now - last >= 10 * 60 * 1000) {
+      saveBoomDate(String(now));
       saveBoomDrops(getSavedBoomDrops() + 2);
     }
+    // Schedule next grant while menu is open
+    this._boomGrantTimer = this.time.addEvent({
+      delay: 10 * 60 * 1000,
+      callback: () => {
+        saveBoomDate(String(Date.now()));
+        saveBoomDrops(getSavedBoomDrops() + 2);
+        this._refreshBoomBadge();
+      },
+      loop: true,
+    });
 
     this._buildMenu();
     this._buildShopPanel();
@@ -626,7 +638,7 @@ export class MenuScene extends Phaser.Scene {
     this.tweens.add({ targets: titleTxt, scaleX: { from:1, to:1.04 }, scaleY: { from:1, to:1.04 }, duration: 500, yoyo:true, repeat:-1 });
 
     // Remaining count
-    this.boomRemainingTxt = addB(this.add.text(PX, 95, `${getSavedBoomDrops()} remaining today`, {
+    this.boomRemainingTxt = addB(this.add.text(PX, 95, `${getSavedBoomDrops()} remaining  •  +2 every 10 min`, {
       fontSize: '14px', fontFamily: 'Arial Black', color: '#ff9966',
       stroke: '#000', strokeThickness: 2,
     }).setOrigin(0.5).setDepth(21));
@@ -799,7 +811,7 @@ export class MenuScene extends Phaser.Scene {
     // Deduct one drop
     saveBoomDrops(getSavedBoomDrops() - 1);
     this._refreshBoomBadge();
-    this.boomRemainingTxt.setText(`${getSavedBoomDrops()} remaining today`);
+    this.boomRemainingTxt.setText(`${getSavedBoomDrops()} remaining  •  +2 every 10 min`);
 
     // Explode the TNT outward
     this.tweens.add({
@@ -1113,25 +1125,25 @@ export class MenuScene extends Phaser.Scene {
 
       const BOX_DEFS = [
         {
-          id: 'small', label: '📦 SMALL BOX', cost: 500,
+          id: 'small', label: '📦 SMALL BOX', cost: 100,
           borderColor: 0x9955cc, glowColor: '#dd99ff',
           odds: [
-            { label: '???',       color: '#ff00ff', pct: '0.1%' },
-            { label: 'MYTHIC',    color: '#ff8800', pct: '1%'   },
-            { label: 'EPIC',      color: '#aa44ff', pct: '5%'   },
-            { label: 'RARE',      color: '#4488ff', pct: '10%'  },
-            { label: '500 COINS', color: '#ffd700', pct: '83.9%'},
+            { label: '???',    color: '#ff00ff', pct: '5%'  },
+            { label: 'MYTHIC', color: '#ff8800', pct: '15%' },
+            { label: 'EPIC',   color: '#aa44ff', pct: '30%' },
+            { label: 'RARE',   color: '#4488ff', pct: '40%' },
+            { label: 'COINS',  color: '#ffd700', pct: '10%' },
           ],
         },
         {
-          id: 'big', label: '🎁 BIG BOX', cost: 1000,
+          id: 'big', label: '🎁 BIG BOX', cost: 200,
           borderColor: 0xffaa00, glowColor: '#ffdd66',
           odds: [
-            { label: '???',       color: '#ff00ff', pct: '1%'  },
-            { label: 'MYTHIC',    color: '#ff8800', pct: '5%'  },
-            { label: 'EPIC',      color: '#aa44ff', pct: '10%' },
-            { label: 'RARE',      color: '#4488ff', pct: '20%' },
-            { label: '500 COINS', color: '#ffd700', pct: '64%' },
+            { label: '???',    color: '#ff00ff', pct: '5%'  },
+            { label: 'MYTHIC', color: '#ff8800', pct: '15%' },
+            { label: 'EPIC',   color: '#aa44ff', pct: '30%' },
+            { label: 'RARE',   color: '#4488ff', pct: '40%' },
+            { label: 'COINS',  color: '#ffd700', pct: '10%' },
           ],
         },
       ];
@@ -1209,33 +1221,24 @@ export class MenuScene extends Phaser.Scene {
   }
 
   _rollBox(boxId = 'small') {
-    const cost = boxId === 'big' ? 1000 : 500;
+    const cost = boxId === 'big' ? 200 : 100;
     const coins = getSavedCoins();
     if (coins < cost) return;
     saveCoins(coins - cost);
 
-    // Small box: 0.1% ???, 1% MYTHIC, 5% EPIC, 10% RARE, 83.9% = 500 coins
-    // Big box:   1%   ???, 5% MYTHIC, 10% EPIC, 20% RARE, 64%   = 500 coins
-    const roll = Math.random() * 1000; // use 1000 for 0.1% precision
+    // Both boxes: 5% ???, 15% MYTHIC, 30% EPIC, 40% RARE, 10% COINS
+    const roll = Math.random() * 100;
     let rarity;
-    if (boxId === 'big') {
-      if      (roll < 10)  rarity = '???';
-      else if (roll < 60)  rarity = 'MYTHIC';
-      else if (roll < 160) rarity = 'EPIC';
-      else if (roll < 360) rarity = 'RARE';
-      else                 rarity = 'COINS_500';
-    } else {
-      if      (roll < 1)   rarity = '???';
-      else if (roll < 11)  rarity = 'MYTHIC';
-      else if (roll < 61)  rarity = 'EPIC';
-      else if (roll < 161) rarity = 'RARE';
-      else                 rarity = 'COINS_500';
-    }
+    if      (roll < 5)  rarity = '???';
+    else if (roll < 20) rarity = 'MYTHIC';
+    else if (roll < 50) rarity = 'EPIC';
+    else if (roll < 90) rarity = 'RARE';
+    else                rarity = 'COINS_300';
 
     let reward;
-    if (rarity === 'COINS_500') {
-      saveCoins(getSavedCoins() + 500);
-      reward = { type: 'coins', amount: 500, rarity: 'COINS' };
+    if (rarity === 'COINS_300') {
+      saveCoins(getSavedCoins() + 300);
+      reward = { type: 'coins', amount: 300, rarity: 'COINS' };
     } else {
       const unlocked  = getSavedUnlocked();
       const available = CHARACTERS.filter(c => c.rarity === rarity && !unlocked.includes(c.key));
