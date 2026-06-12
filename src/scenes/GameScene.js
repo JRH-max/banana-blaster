@@ -250,7 +250,7 @@ export class GameScene extends Phaser.Scene {
     const SHOULDER = this.scoped ? 20  : 45;
     const tX = s.x + fx * LOOK + rx * SHOULDER;
     const tY = s.y + fy * LOOK + ry * SHOULDER;
-    const LERP = this.scoped ? 0.04 : 0.09;
+    const LERP = this.scoped ? 0.12 : 0.22;
     this._camX = Phaser.Math.Linear(this._camX, tX, LERP);
     this._camY = Phaser.Math.Linear(this._camY, tY, LERP);
     this.cameras.main.centerOn(this._camX, this._camY);
