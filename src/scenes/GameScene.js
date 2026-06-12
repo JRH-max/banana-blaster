@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 
-const GRID = 50;
+const GRID = 170;
 const TW = 48, TH = 48;
 
 // ── Persistent save helpers ────────────────────────────────────────────────
@@ -261,7 +261,7 @@ export class GameScene extends Phaser.Scene {
     this.trees = [];
     const BORDER = 3, MIN_D = 2.6, CX = GRID / 2, CY = GRID / 2;
     let tries = 0;
-    while (this.trees.length < 68 && tries++ < 4000) {
+    while (this.trees.length < 800 && tries++ < 40000) {
       const wx = BORDER + Math.random() * (GRID - 2 * BORDER);
       const wy = BORDER + Math.random() * (GRID - 2 * BORDER);
       if (Math.hypot(wx - CX, wy - CY) < 5) continue;
