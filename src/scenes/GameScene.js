@@ -1656,7 +1656,8 @@ export class GameScene extends Phaser.Scene {
         this.movJoyKnob.setPosition(JX, JY);
       }
       if (p.id === this.aimJoyPointerId) {
-        // Fire on release if joystick was dragged far enough
+        // Capture exact release position for firing direction
+        this._calcAimJoy(p);
         if (this.aimJoyActive) this.fireOnRelease = true;
         this.aimJoyActive = false;
         this.aimJoyBase.setPosition(AJX, AJY);
