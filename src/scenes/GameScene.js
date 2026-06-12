@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 
-const GRID = 50;
-const TW = 64, TH = 32;
+const GRID = 120;
+const TW = 48, TH = 48;
 
 // ── Persistent save helpers ────────────────────────────────────────────────
 const SAVE_KEY = 'bananaBlasterSave';
@@ -18,9 +18,9 @@ function saveCoins(c)       { writeSave({ ...loadSave(), coins: c }); }
 function saveUpgrades(ups)  { writeSave({ ...loadSave(), upgrades: ups }); }
 
 function iso(wx, wy) {
-  return { x: (wx - wy) * (TW / 2), y: (wx + wy) * (TH / 2) };
+  return { x: wx * TW, y: wy * TH };
 }
-function isoDepth(wx, wy) { return Math.round((wx + wy) * 100); }
+function isoDepth(wx, wy) { return Math.round(wy * 100 + wx * 0.1); }
 
 // Slot 1 is character-specific (set in create()). Slots 2+3 are the same for everyone.
 const WEAPONS = [
@@ -169,14 +169,10 @@ export class GameScene extends Phaser.Scene {
     this.phoenixInvincible = 0;
 
     // Camera — manual behind-character follow (no startFollow)
-    this.cameras.main.setBounds(
-      -(GRID * TW / 2 + 250), -250,
-       GRID * TW + 500,
-       GRID * TH + 500
-    );
+    this.cameras.main.setBounds(-200, -200, GRID * TW + 400, GRID * TH + 400);
     const _ps0 = iso(this.player.wx, this.player.wy);
     this._camX = _ps0.x;
-    this._camY = _ps0.y - 22;
+    this._camY = _ps0.y;
     this.cameras.main.centerOn(this._camX, this._camY);
 
     // Keyboard
@@ -229,28 +225,18 @@ export class GameScene extends Phaser.Scene {
     if (this.phoenixInvincible > 0) this.phoenixInvincible = Math.max(0, this.phoenixInvincible - delta);
   }
 
-  // ── over-the-shoulder third-person camera ─────────────────────────────────
+  // ── over-the-shoulder top-down camera ────────────────────────────────────
   _updateCamera() {
     const s = iso(this.player.wx, this.player.wy);
     const a = this.player.angle;
-
-    // Facing direction in isometric screen space
-    const fsx  = (Math.cos(a) - Math.sin(a)) * (TW / 2);
-    const fsy  = (Math.cos(a) + Math.sin(a)) * (TH / 2);
-    const flen = Math.hypot(fsx, fsy) || 1;
-    const fx   = fsx / flen;
-    const fy   = fsy / flen;
-
-    // Right-shoulder perpendicular (rotate facing 90° clockwise in screen space)
+    const fx = Math.cos(a);
+    const fy = Math.sin(a);
+    // Right-shoulder offset
     const rx = fy, ry = -fx;
-
-    // Camera sits forward of the player and offset to the right shoulder
-    const LOOK     = this.scoped ? 290 : 240;
-    const SHOULDER = this.scoped ? 30  : 70;
-
-    const tX = s.x      + fx * LOOK + rx * SHOULDER;
-    const tY = s.y - 22 + fy * LOOK + ry * SHOULDER;
-
+    const LOOK     = this.scoped ? 220 : 170;
+    const SHOULDER = this.scoped ? 20  : 45;
+    const tX = s.x + fx * LOOK + rx * SHOULDER;
+    const tY = s.y + fy * LOOK + ry * SHOULDER;
     const LERP = this.scoped ? 0.04 : 0.09;
     this._camX = Phaser.Math.Linear(this._camX, tX, LERP);
     this._camY = Phaser.Math.Linear(this._camY, tY, LERP);
@@ -262,7 +248,7 @@ export class GameScene extends Phaser.Scene {
     this.trees = [];
     const BORDER = 3, MIN_D = 2.6, CX = GRID / 2, CY = GRID / 2;
     let tries = 0;
-    while (this.trees.length < 68 && tries++ < 4000) {
+    while (this.trees.length < 400 && tries++ < 20000) {
       const wx = BORDER + Math.random() * (GRID - 2 * BORDER);
       const wy = BORDER + Math.random() * (GRID - 2 * BORDER);
       if (Math.hypot(wx - CX, wy - CY) < 5) continue;
