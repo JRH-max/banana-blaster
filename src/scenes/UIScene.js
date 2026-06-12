@@ -83,13 +83,7 @@ export class UIScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(21);
     scopeBtn.on('pointerdown', () => { const gs = this.scene.get('GameScene'); if (gs) gs.toggleScope(); });
 
-    // ── FIRE button ────────────────────────────────────────────────────────
-    const fireBtn = this.add.circle(SW - 70, SH - 110, 46, 0xcc1111, 0.5)
-      .setStrokeStyle(3, 0xff6666, 0.65).setInteractive().setDepth(20);
-    this.add.text(SW - 70, SH - 110, 'FIRE', { fontSize: '18px', fontFamily: 'Arial Black', color: '#ffffff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(21);
-    fireBtn.on('pointerdown', () => { const gs = this.scene.get('GameScene'); if (gs) gs.isFiring = true; });
-    fireBtn.on('pointerup',   () => { const gs = this.scene.get('GameScene'); if (gs) gs.isFiring = false; });
-    fireBtn.on('pointerout',  () => { const gs = this.scene.get('GameScene'); if (gs) gs.isFiring = false; });
+    // Fire button removed — aim joystick handles firing (drag right side, release to shoot)
 
     // ── RELOAD button ──────────────────────────────────────────────────────
     const reloadBtn = this.add.rectangle(SW - 70, SH - 52, 100, 28, 0x333333, 0.6)
