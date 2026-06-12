@@ -372,12 +372,23 @@ export class GameScene extends Phaser.Scene {
 
   // ── spawn bots ─────────────────────────────────────────────────────────────
   _spawnBots() {
+    // All available bot skins (every character except the player's and glitch ally)
+    const ALL_CHARS = [
+      'sloth_pirate','hot_dog','cactus','ghost','astronaut','penguin',
+      'taco','snowman','mushroom','pineapple','storm_cloud','mummy',
+      'rock_ninja','viking','robot','wizard','shark',
+      'samurai','werewolf','knight','alien','zombie','witch',
+      'trash_can','dragon','phoenix','kraken',
+      'mystery',
+    ];
+    // Shuffle and deal 2 chars to each enemy team (no repeats)
+    const pool = [...ALL_CHARS].sort(() => Math.random() - 0.5);
     const TEAM_CHARS = [
-      ['penguin'],                        // team 0: ally
-      ['hot_dog',   'cactus'],            // team 1
-      ['viking',    'rock_ninja'],        // team 2
-      ['ghost',     'mummy'],             // team 3
-      ['dragon',    'phoenix'],           // team 4
+      ['glitch'],               // team 0: ally always Glitch
+      [pool[0], pool[1]],       // team 1
+      [pool[2], pool[3]],       // team 2
+      [pool[4], pool[5]],       // team 3
+      [pool[6], pool[7]],       // team 4
     ];
     const TEAM_COLORS = [0x4488ff, 0xff4422, 0xff8800, 0xaa44ff, 0xffcc00];
     const SPAWNS = [
