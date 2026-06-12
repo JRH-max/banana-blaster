@@ -102,6 +102,43 @@ export class BootScene extends Phaser.Scene {
     g.lineStyle(1, 0x363636, 0.5); g.lineBetween(14,18,34,12); g.lineBetween(36,18,54,22);
     g.lineStyle(1, 0x383838, 0.35); g.strokePoints(PTS, true);
     g.generateTexture('tile_sidewalk', 64, 32); g.destroy();
+
+    // Bush tile — dark green for hiding spots
+    const PTS_B = [{ x:32,y:0 },{ x:64,y:16 },{ x:32,y:32 },{ x:0,y:16 }];
+    g = this._g();
+    g.fillStyle(0x1a5c0e, 1); g.fillPoints(PTS_B, true);
+    g.fillStyle(0x227010, 0.7); g.fillPoints(PTS_B, true);
+    g.fillStyle(0x2a8818, 0.4); g.fillEllipse(22, 12, 18, 8); g.fillEllipse(42, 20, 14, 6);
+    g.fillStyle(0x0e3a08, 0.5); g.fillEllipse(32, 16, 10, 5);
+    g.lineStyle(1, 0x0e3a08, 0.5); g.strokePoints(PTS_B, true);
+    g.generateTexture('tile_bush', 64, 32); g.destroy();
+
+    // Water tile — blue for corners
+    g = this._g();
+    g.fillStyle(0x1a4a8c, 1); g.fillPoints(PTS_B, true);
+    g.fillStyle(0x2060aa, 0.7); g.fillPoints(PTS_B, true);
+    g.fillStyle(0x3070cc, 0.35); g.fillEllipse(20, 12, 22, 8); g.fillEllipse(46, 18, 14, 6);
+    g.lineStyle(1, 0x0a2a5a, 0.6); g.strokePoints(PTS_B, true);
+    g.lineStyle(1, 0x4488dd, 0.3);
+    g.lineBetween(10,14,20,10); g.lineBetween(30,8,40,12); g.lineBetween(44,18,52,14);
+    g.generateTexture('tile_water', 64, 32); g.destroy();
+
+    // Stone wall block — isometric gray cube (48×56 sprite)
+    g = this._g();
+    // Top face
+    g.fillStyle(0x9e9e9e, 1); g.fillPoints([{x:24,y:0},{x:48,y:12},{x:24,y:24},{x:0,y:12}], true);
+    g.fillStyle(0xbbbbbb, 0.4); g.fillEllipse(24,10,20,8);
+    // Left face
+    g.fillStyle(0x707070, 1); g.fillPoints([{x:0,y:12},{x:24,y:24},{x:24,y:56},{x:0,y:44}], true);
+    g.fillStyle(0x505050, 0.3); g.fillRect(3,22,8,20);
+    // Right face
+    g.fillStyle(0x888888, 1); g.fillPoints([{x:24,y:24},{x:48,y:12},{x:48,y:44},{x:24,y:56}], true);
+    g.fillStyle(0x666666, 0.3); g.fillRect(30,22,8,20);
+    // Cracks/detail
+    g.lineStyle(1, 0x505050, 0.6); g.lineBetween(4,28,14,24); g.lineBetween(4,36,12,32);
+    g.lineStyle(1, 0x606060, 0.6); g.lineBetween(30,26,40,22); g.lineBetween(32,38,42,34);
+    g.lineStyle(1, 0x606060, 0.4); g.lineBetween(6,14,20,8); g.lineBetween(28,6,40,12);
+    g.generateTexture('wall_block', 48, 56); g.destroy();
   }
 
   // ── Tree ───────────────────────────────────────────────────────────────────
