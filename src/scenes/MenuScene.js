@@ -690,14 +690,15 @@ export class MenuScene extends Phaser.Scene {
 
     // Odds display above TNT
     const BOOM_ODDS = [
-      { label: '???',    color: '#ff00ff', pct: '5%'  },
-      { label: 'MYTHIC', color: '#ff8800', pct: '15%' },
-      { label: 'EPIC',   color: '#aa44ff', pct: '30%' },
-      { label: 'RARE',   color: '#4488ff', pct: '40%' },
-      { label: 'COINS',  color: '#ffd700', pct: '10%' },
+      { label: 'SKIN',   color: '#ff88ff', pct: '40%' },
+      { label: '???',    color: '#ff00ff', pct: '3%'  },
+      { label: 'MYTHIC', color: '#ff8800', pct: '9%'  },
+      { label: 'EPIC',   color: '#aa44ff', pct: '18%' },
+      { label: 'RARE',   color: '#4488ff', pct: '24%' },
+      { label: 'COINS',  color: '#ffd700', pct: '6%'  },
     ];
     const oddsY = 122;
-    const colW  = 110;
+    const colW  = 90;
     const totalW = BOOM_ODDS.length * colW;
     const oddsStartX = PX - totalW / 2 + colW / 2;
     BOOM_ODDS.forEach((o, i) => {
@@ -900,19 +901,31 @@ export class MenuScene extends Phaser.Scene {
   }
 
   _rollBoomDropReward() {
-    // 40% RARE, 30% EPIC, 15% MYTHIC, 5% ???, 10% coins
+    // 40% SKIN, 3% ???, 9% MYTHIC, 18% EPIC, 24% RARE, 6% COINS
     const roll = Math.random() * 100;
     let rarity;
-    if      (roll < 5)  rarity = '???';
-    else if (roll < 20) rarity = 'MYTHIC';
-    else if (roll < 50) rarity = 'EPIC';
-    else if (roll < 90) rarity = 'RARE';
+    if      (roll < 40) rarity = 'SKIN';
+    else if (roll < 43) rarity = '???';
+    else if (roll < 52) rarity = 'MYTHIC';
+    else if (roll < 70) rarity = 'EPIC';
+    else if (roll < 94) rarity = 'RARE';
     else                rarity = 'COINS';
 
+    if (rarity === 'SKIN') {
+      const owned     = getSavedUnlockedSkins();
+      const available = ALL_SKINS.filter(s => !owned.includes(s.key));
+      if (available.length === 0) {
+        saveCoins(getSavedCoins() + 500);
+        return { type: 'coins', amount: 500, alreadyOwned: true, rarity: 'SKIN' };
+      }
+      const skin = available[Math.floor(Math.random() * available.length)];
+      owned.push(skin.key);
+      saveUnlockedSkins(owned);
+      return { type: 'skin', skin, rarity: 'SKIN' };
+    }
     if (rarity === 'COINS') {
-      const amount = 300;
-      saveCoins(getSavedCoins() + amount);
-      return { type: 'coins', amount, rarity };
+      saveCoins(getSavedCoins() + 300);
+      return { type: 'coins', amount: 300, rarity };
     }
     const unlocked  = getSavedUnlocked();
     const available = CHARACTERS.filter(c => c.rarity === rarity && !unlocked.includes(c.key));
@@ -928,7 +941,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   _showBoomDropResult(reward) {
-    const RARITY_COLORS = { '???':'#ff00ff','MYTHIC':'#ff8800','EPIC':'#aa44ff','RARE':'#4488ff','COINS':'#ffd700' };
+    const RARITY_COLORS = { '???':'#ff00ff','MYTHIC':'#ff8800','EPIC':'#aa44ff','RARE':'#4488ff','COINS':'#ffd700','SKIN':'#ff88ff' };
     const colorStr = RARITY_COLORS[reward.rarity] || '#ffffff';
     const colorHex = parseInt(colorStr.slice(1), 16);
     const resultItems = [];
@@ -945,13 +958,25 @@ export class MenuScene extends Phaser.Scene {
     // Rarity banner
     const banner = addR(this.add.rectangle(PX, PY - 300 - 130, 400, 40, colorHex, 0.25).setDepth(31));
     this.tweens.add({ targets: banner, y: PY - 130, duration: 450, ease: 'Back.easeOut' });
-    const rarityTxt = addR(this.add.text(PX, PY - 300 - 130, reward.rarity, {
+    const rarityTxt = addR(this.add.text(PX, PY - 300 - 130, reward.rarity === 'SKIN' ? '✨ SKIN' : reward.rarity, {
       fontSize: '24px', fontFamily: 'Arial Black', color: colorStr,
       stroke: '#000000', strokeThickness: 5,
     }).setOrigin(0.5).setDepth(32));
     this.tweens.add({ targets: rarityTxt, y: PY - 130, duration: 450, ease: 'Back.easeOut' });
 
-    if (reward.type === 'character') {
+    if (reward.type === 'skin') {
+      const spr = addR(this.add.image(PX, PY - 300 - 30, reward.skin.charKey).setScale(2.6).setDepth(32).setTint(reward.skin.tint));
+      this.tweens.add({ targets: spr, y: PY - 30, duration: 450, ease: 'Back.easeOut' });
+      this.tweens.add({ targets: spr, scaleX: { from: 2.6, to: -2.6 }, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      const nameTxt = addR(this.add.text(PX, PY - 300 + 70, reward.skin.name, {
+        fontSize: '20px', fontFamily: 'Arial Black', color: '#ff88ff', stroke: '#000', strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(32));
+      this.tweens.add({ targets: nameTxt, y: PY + 70, duration: 450, ease: 'Back.easeOut' });
+      const unlockedTxt = addR(this.add.text(PX, PY - 300 + 96, '✨  SKIN UNLOCKED!', {
+        fontSize: '13px', fontFamily: 'Arial Black', color: '#ff88ff', stroke: '#000', strokeThickness: 2,
+      }).setOrigin(0.5).setDepth(32));
+      this.tweens.add({ targets: unlockedTxt, y: PY + 96, duration: 450, ease: 'Back.easeOut' });
+    } else if (reward.type === 'character') {
       const spr = addR(this.add.image(PX, PY - 300 - 30, reward.char.key).setScale(2.6).setDepth(32));
       this.tweens.add({ targets: spr, y: PY - 30, duration: 450, ease: 'Back.easeOut' });
       const nameTxt = addR(this.add.text(PX, PY - 300 + 70, reward.char.name + (reward.char.subtitle ? ' '+reward.char.subtitle : ''), {
