@@ -169,6 +169,7 @@ export class GameScene extends Phaser.Scene {
     this.phoenixInvincible = 0;
 
     // Camera — manual behind-character follow (no startFollow)
+    this.cameras.main.setBackgroundColor('#2e7d1a');
     this.cameras.main.setBounds(-200, -200, GRID * TW + 400, GRID * TH + 400);
     const _ps0 = iso(this.player.wx, this.player.wy);
     this._camX = _ps0.x;
@@ -280,25 +281,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   _drawGround() {
-    // Bake all tiles into one RenderTexture — 28 900 images → 1 draw call
-    const tw = this.textures.get('tile_grass').getSourceImage();
-    const th = this.textures.get('tile_grass').getSourceImage();
-    const tileW = tw.width  || TW;
-    const tileH = th.height || TH;
-
-    const rtW = GRID * TW + tileW;
-    const rtH = GRID * TH + tileH;
-    const rt  = this.add.renderTexture(0, 0, rtW, rtH)
-      .setOrigin(0, 0).setDepth(-10000);
-
-    // Stamp each tile at its iso position relative to rt origin (0,0)
-    for (let x = 0; x < GRID; x++) {
-      for (let y = 0; y < GRID; y++) {
-        const s   = iso(x, y);
-        const key = (x + y) % 2 === 0 ? 'tile_grass' : 'tile_grass2';
-        rt.stamp(key, 0, s.x, s.y);
-      }
-    }
+    // Single rectangle — camera background handles the green colour,
+    // this just gives the map a slightly darker border/boundary.
+    const w = GRID * TW, h = GRID * TH;
+    this.add.rectangle(w / 2, h / 2, w, h, 0x2e7d1a).setDepth(-10000);
   }
 
   _drawTrees() {
@@ -306,7 +292,6 @@ export class GameScene extends Phaser.Scene {
     for (const t of sorted) {
       const s = iso(t.wx, t.wy);
       const d = isoDepth(t.wx, t.wy);
-      this.add.ellipse(s.x, s.y, 32 * t.scale, 10 * t.scale, 0x000000, 0.18).setDepth(d - 5);
       t.sprite = this.add.image(s.x, s.y - 8, 'tree')
         .setOrigin(0.5, 1).setScale(t.scale).setDepth(d + 65);
     }
@@ -610,24 +595,31 @@ export class GameScene extends Phaser.Scene {
         this._updateBotSprite(bot);
         continue;
       }
-      bot.fireCooldown -= delta;
-      bot.aiTimer      -= delta;
+      bot.fireCooldown   -= delta;
+      bot.aiTimer        -= delta;
+      bot.targetTimer     = (bot.targetTimer || 0) - delta;
 
-      // Find nearest enemy — raccoons prefer banana bots unless player is very close
-      let best = null, bestD = 9999;
-      for (const b of this.bots) {
-        if (!b.alive || b.faction === bot.faction) continue;
-        const d = Math.hypot(b.wx - bot.wx, b.wy - bot.wy);
-        if (d < bestD) { best = b; bestD = d; }
-      }
-      if (bot.faction === 'raccoon') {
-        // Only switch to targeting player if they are noticeably closer
-        const pd = Math.hypot(this.player.wx - bot.wx, this.player.wy - bot.wy);
-        if (pd < bestD * 0.65) {
-          best = { wx: this.player.wx, wy: this.player.wy, _isPlayer: true };
-          bestD = pd;
+      // Re-scan for nearest enemy only every 400 ms (not every frame)
+      if (bot.targetTimer <= 0) {
+        bot.targetTimer = 350 + Math.random() * 150;
+        let best = null, bestD = 9999;
+        for (const b of this.bots) {
+          if (!b.alive || b.faction === bot.faction) continue;
+          const d = Math.hypot(b.wx - bot.wx, b.wy - bot.wy);
+          if (d < bestD) { best = b; bestD = d; }
         }
+        if (bot.faction === 'raccoon') {
+          const pd = Math.hypot(this.player.wx - bot.wx, this.player.wy - bot.wy);
+          if (pd < bestD * 0.65) {
+            best = { wx: this.player.wx, wy: this.player.wy, _isPlayer: true };
+            bestD = pd;
+          }
+        }
+        bot._cachedTarget = best;
+        bot._cachedTargetD = bestD;
       }
+      const best  = bot._cachedTarget  || null;
+      const bestD = bot._cachedTargetD || 9999;
 
       if (best) {
         const dx = best.wx - bot.wx, dy = best.wy - bot.wy;
