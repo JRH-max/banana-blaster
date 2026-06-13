@@ -59,6 +59,7 @@ const CHARACTERS = [
   // ???
   { key: 'mystery',      name: '???',       subtitle: '',          price: 10000,ability: 'OBLITERATE',     rarity: '???',     rarityColor: '#ff00ff', gun: 'Void Cannon',      gunIcon: '❓' },
   { key: 'glitch',       name: 'GLITCH',    subtitle: '',          price: 10000,ability: 'REALITY WARP',   rarity: '???',     rarityColor: '#ff00ff', gun: 'Glitch Cannon',    gunIcon: '💀' },
+  { key: 'void',         name: 'VOID',      subtitle: '',          price: 10000,ability: 'SINGULARITY',    rarity: '???',     rarityColor: '#ff00ff', gun: 'Dark Matter Gun',  gunIcon: '🕳️' },
 ];
 
 // ── Skins for MYTHIC & ??? characters ─────────────────────────────────────
@@ -69,6 +70,7 @@ const SKINS = {
   kraken:    [{ key: 'kraken_s1',    name: 'Lava Kraken',   tint: 0xff4400, cost: 7000  }],
   mystery:   [{ key: 'mystery_s1',   name: 'Void Form',     tint: 0x220088, cost: 10000 }],
   glitch:    [{ key: 'glitch_s1',    name: 'Neo Glitch',    tint: 0x00ffaa, cost: 10000 }],
+  void:      [{ key: 'void_s1',      name: 'Red Hole',      tint: 0xff2200, cost: 10000 }],
 };
 
 // ── Character lore & stats ─────────────────────────────────────────────────
@@ -103,6 +105,7 @@ const CHAR_INFO = {
   kraken:       { lore: 'Risen from the deepest trenches, Kraken\'s Tentacle Slam sends ink-black shockwaves across the arena, rooting everything in their path.',              strengths: ['Tentacle Slam wide root', 'Highest HP in the game'],                          weaknesses: ['Very slow movement', 'Weak projectile speed'] },
   mystery:      { lore: 'Nobody has ever seen this character\'s face. Nobody has ever survived long enough to report back. What lies beneath the mask is Obliteration.',        strengths: ['Obliterate instant kill burst', 'Mysterious aura buffs nearby allies'],       weaknesses: ['Obliterate has long cooldown', 'Fragile — all offence, no defence'] },
   glitch:       { lore: 'GLITCH does not obey the rules of the game. Reality Warp destabilises the map itself, teleporting enemies randomly and corrupting their aim.',         strengths: ['Reality Warp corrupts enemy positions', 'Unpredictable hitbox'],              weaknesses: ['Glitchy movement is hard to control', 'Unreliable at long range'] },
+  void:         { lore: 'VOID is not a character — it is an absence. A living singularity that consumes everything nearby. Singularity collapses the space around it, pulling every enemy into a single crushing point.',                                                                                                                                                              strengths: ['Singularity pulls ALL enemies inward', 'Dark Matter Gun ignores armour', 'Cannot be tracked by enemy AI'],    weaknesses: ['Extreme cooldown on Singularity', 'Self-destructs if ability is overcharged', 'Lowest HP in the game'] },
 };
 
 // Flat list of all skins for box rewards
@@ -113,6 +116,7 @@ const ALL_SKINS = [
   { key: 'kraken_s1',    name: 'Lava Kraken',  charKey: 'kraken',    tint: 0xff4400 },
   { key: 'mystery_s1',   name: 'Void Form',    charKey: 'mystery',   tint: 0x220088 },
   { key: 'glitch_s1',    name: 'Neo Glitch',   charKey: 'glitch',    tint: 0x00ffaa },
+  { key: 'void_s1',      name: 'Red Hole',     charKey: 'void',      tint: 0xff2200 },
 ];
 
 const WEAPON_NAMES  = ['Peel Launcher', 'Automatic Rifle', 'Sniper'];

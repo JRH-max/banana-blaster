@@ -21,6 +21,7 @@ function saveUpgrades(ups)  { writeSave({ ...loadSave(), upgrades: ups }); }
 const SKIN_TINTS = {
   trash_can_s1: 0xffd700, dragon_s1: 0x44ccff, phoenix_s1: 0xaa22ff,
   kraken_s1: 0xff4400, mystery_s1: 0x220088, glitch_s1: 0x00ffaa,
+  void_s1: 0xff2200,
 };
 
 function iso(wx, wy) {

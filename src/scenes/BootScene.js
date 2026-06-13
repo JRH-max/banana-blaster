@@ -52,6 +52,7 @@ export class BootScene extends Phaser.Scene {
     this._kraken();
     this._witch();
     this._glitch();
+    this._void();
     this.scene.start('MenuScene');
   }
 
@@ -1640,6 +1641,47 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xffffff, 0.7); g.fillRect(cx - 8, 21, 16, 3);
     g.fillStyle(0x000000, 0.8); g.fillRect(cx - 7, 21, 5, 2); g.fillRect(cx - 1, 21, 5, 2);
     g.generateTexture('glitch', 44, 60); g.destroy();
+  }
+
+  // ── VOID ─────────────────────────────────────────────────────────────────
+  _void() {
+    const g = this._g(), cx = 22;
+    // Outer singularity rings
+    g.fillStyle(0x000000, 0.9); g.fillEllipse(cx, 30, 44, 58);
+    g.lineStyle(2, 0x6600cc, 0.5); g.strokeEllipse(cx, 30, 44, 54);
+    g.lineStyle(1, 0x9900ff, 0.35); g.strokeEllipse(cx, 28, 36, 46);
+    // Body — deep black void
+    g.fillStyle(0x000000, 1); g.fillEllipse(cx, 34, 26, 40);
+    // Head — black sphere with gravitational distortion halo
+    g.fillStyle(0x1a0033, 0.5); g.fillCircle(cx, 13, 16);
+    g.fillStyle(0x000000, 1); g.fillCircle(cx, 13, 12);
+    // Event horizon ring around head
+    g.lineStyle(3, 0x8800ff, 0.8); g.strokeCircle(cx, 13, 13);
+    g.lineStyle(1, 0xcc44ff, 0.5); g.strokeCircle(cx, 13, 15);
+    // Eyes — swirling white stars being pulled in
+    g.fillStyle(0xffffff, 0.95); g.fillEllipse(cx - 5, 12, 8, 6); g.fillEllipse(cx + 5, 12, 8, 6);
+    g.fillStyle(0xcc00ff, 0.9); g.fillEllipse(cx - 5, 12, 5, 4); g.fillEllipse(cx + 5, 12, 5, 4);
+    g.fillStyle(0x000000, 1); g.fillCircle(cx - 5, 12, 2); g.fillCircle(cx + 5, 12, 2);
+    // Pulled-in matter streaks
+    g.lineStyle(1, 0x8800ff, 0.7);
+    g.lineBetween(cx - 18, 5,  cx - 8, 12);
+    g.lineBetween(cx + 18, 5,  cx + 8, 12);
+    g.lineBetween(cx - 18, 22, cx - 8, 15);
+    g.lineBetween(cx + 18, 22, cx + 8, 15);
+    g.lineStyle(1, 0xcc44ff, 0.4);
+    g.lineBetween(cx - 20, 14, cx - 10, 14);
+    g.lineBetween(cx + 10, 14, cx + 20, 14);
+    // Accretion disc (horizontal band around waist)
+    g.fillStyle(0x440088, 0.35); g.fillEllipse(cx, 30, 44, 8);
+    g.fillStyle(0x6600cc, 0.25); g.fillEllipse(cx, 30, 38, 5);
+    // Lower cloak — dissolving into void
+    g.fillStyle(0x000000, 1);
+    g.fillTriangle(cx - 13, 44, cx - 7, 58, cx - 1, 44);
+    g.fillTriangle(cx + 13, 44, cx + 7, 58, cx + 1, 44);
+    g.fillStyle(0x330055, 0.3);
+    g.fillTriangle(cx - 16, 44, cx - 8, 60, cx, 44);
+    g.fillTriangle(cx + 16, 44, cx + 8, 60, cx, 44);
+    g.generateTexture('void', 44, 60); g.destroy();
   }
 
   // ── TNT (Boom Drop) ────────────────────────────────────────────────────────
