@@ -131,14 +131,14 @@ export class MenuScene extends Phaser.Scene {
     const last    = lastStr ? parseInt(lastStr, 10) : 0;
     if (now - last >= 10 * 60 * 1000) {
       saveBoomDate(String(now));
-      saveBoomDrops(getSavedBoomDrops() + 2);
+      saveBoomDrops(getSavedBoomDrops() + 5);
     }
     // Schedule next grant while menu is open
     this._boomGrantTimer = this.time.addEvent({
       delay: 10 * 60 * 1000,
       callback: () => {
         saveBoomDate(String(Date.now()));
-        saveBoomDrops(getSavedBoomDrops() + 2);
+        saveBoomDrops(getSavedBoomDrops() + 5);
         this._refreshBoomBadge();
       },
       loop: true,
