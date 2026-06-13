@@ -15,6 +15,7 @@ function getSavedCoins()    { return loadSave().coins     || 0; }
 function getSavedUpgrades() { return loadSave().upgrades  || [[0,0,0],[0,0,0],[0,0,0]]; }
 function getSavedChar()          { return loadSave().character    || 'banana'; }
 function getSavedEquippedSkins() { return loadSave().equippedSkins || {}; }
+function getSavedSupercharged()  { return loadSave().supercharged  || []; }
 function saveCoins(c)       { writeSave({ ...loadSave(), coins: c }); }
 function saveUpgrades(ups)  { writeSave({ ...loadSave(), upgrades: ups }); }
 
@@ -134,6 +135,7 @@ export class GameScene extends Phaser.Scene {
     this.playerSpr    = this.add.image(ps.x, ps.y - 22, charKey).setOrigin(0.5, 1).setScale(0.55).setDepth(9000);
     const _equippedSkin = getSavedEquippedSkins()[charKey];
     if (_equippedSkin && SKIN_TINTS[_equippedSkin]) this.playerSpr.setTint(SKIN_TINTS[_equippedSkin]);
+    this.supercharged = getSavedSupercharged().includes(charKey);
     this.playerGun    = this.add.image(ps.x + 14, ps.y - 28, 'bot_gun').setOrigin(0, 0.5).setScale(1.2).setDepth(9001);
     this.playerShadow = this.add.ellipse(ps.x, ps.y - 4, 28, 10, 0x000000, 0.25).setDepth(8990);
     // Blue team ring under player
@@ -922,7 +924,8 @@ export class GameScene extends Phaser.Scene {
   // ── Special abilities ──────────────────────────────────────────────────────
   _useSpecial() {
     if (this.specialCD > 0 || this.shopOpen) return;
-    this.specialCD = this.specialMaxCD;
+    // Supercharge halves the cooldown too
+    this.specialCD = this.supercharged ? Math.round(this.specialMaxCD * 0.5) : this.specialMaxCD;
     const char = getSavedChar();
     if      (char === 'banana')       this._specialPeelTrap();
     else if (char === 'sloth_pirate') this._specialCannon();
@@ -959,40 +962,47 @@ export class GameScene extends Phaser.Scene {
   // Banana — drop 3 banana peels behind the player; bots that step on them
   // take 60 damage and are stunned for 1.5 s (slapstick theme ✓)
   _specialPeelTrap() {
-    for (let i = 0; i < 3; i++) {
-      const a  = this.player.angle + Math.PI + (i - 1) * 0.65;
+    const sc = this.supercharged;
+    const count = sc ? 8 : 3;
+    for (let i = 0; i < count; i++) {
+      const a  = this.player.angle + Math.PI + (i - Math.floor(count/2)) * (sc ? 0.42 : 0.65);
       const px = this.player.wx + Math.cos(a) * 1.9;
       const py = this.player.wy + Math.sin(a) * 1.9;
       if (px < 1 || px > GRID - 1 || py < 1 || py > GRID - 1) continue;
       const ps = iso(px, py);
       this.hazards.push({
         type: 'peel', wx: px, wy: py,
-        damage: 60, stun: 1500,
-        life: 9,
+        damage: sc ? 120 : 60, stun: sc ? 3000 : 1500,
+        life: sc ? 18 : 9,
         sprite: this.add.image(ps.x, ps.y - 6, 'peel')
-          .setScale(0.7).setDepth(isoDepth(px, py) + 5).setTint(0xffff44),
+          .setScale(sc ? 1.1 : 0.7).setDepth(isoDepth(px, py) + 5).setTint(sc ? 0xff4400 : 0xffff44),
         bob: Math.random() * Math.PI * 2,
       });
     }
-    this.cameras.main.flash(100, 255, 220, 0, 0.3);
+    this.cameras.main.flash(100, 255, sc ? 80 : 220, 0, sc ? 0.6 : 0.3);
   }
 
   // Sloth Pirate — fire a slow, massive cannonball with huge splash damage
   // (pirates have cannons ✓)
   _specialCannon() {
+    const sc = this.supercharged;
     const a = this.player.angle;
     const s = iso(this.player.wx, this.player.wy);
     const flash = this.add.image(s.x + Math.cos(a) * 24, s.y - 22 + Math.sin(a) * 9, 'muzzle_flash')
-      .setScale(0.95).setDepth(9100);
+      .setScale(sc ? 1.8 : 0.95).setDepth(9100);
     this.time.delayedCall(150, () => flash.destroy());
-    this.cameras.main.shake(200, 0.014);
-    this.bullets.push({
-      wx: this.player.wx + Math.cos(a) * 0.9,
-      wy: this.player.wy + Math.sin(a) * 0.9,
-      vx: Math.cos(a) * 5, vy: Math.sin(a) * 5,
-      damage: 130, faction: 'banana', splash: 3.5, life: 4.5,
-      sprite: this.add.image(0, 0, 'cannonball').setScale(1.2).setDepth(5000),
-    });
+    this.cameras.main.shake(sc ? 400 : 200, sc ? 0.03 : 0.014);
+    const shots = sc ? 3 : 1;
+    for (let i = 0; i < shots; i++) {
+      const sa = a + (i - 1) * 0.22;
+      this.bullets.push({
+        wx: this.player.wx + Math.cos(sa) * 0.9,
+        wy: this.player.wy + Math.sin(sa) * 0.9,
+        vx: Math.cos(sa) * 5, vy: Math.sin(sa) * 5,
+        damage: sc ? 260 : 130, faction: 'banana', splash: sc ? 6 : 3.5, life: sc ? 7 : 4.5,
+        sprite: this.add.image(0, 0, 'cannonball').setScale(sc ? 2.2 : 1.2).setDepth(5000),
+      });
+    }
   }
 
   // Rock Ninja — throw 8 shurikens in all directions simultaneously
@@ -1014,25 +1024,26 @@ export class GameScene extends Phaser.Scene {
   // Trash Can — instant AOE damage nearby + fling 6 pieces of trash outward
   // (trash can exploding with garbage ✓)
   _specialTrashWave() {
-    // Instant close-range blast
+    const sc = this.supercharged;
+    const radius = sc ? 7 : 3.5;
     for (const bot of this.bots) {
       if (!bot.alive) continue;
-      if (Math.hypot(bot.wx - this.player.wx, bot.wy - this.player.wy) < 3.5)
-        this._hitEntity(bot, 90, 'banana');
+      if (Math.hypot(bot.wx - this.player.wx, bot.wy - this.player.wy) < radius)
+        this._hitEntity(bot, sc ? 200 : 90, 'banana');
     }
-    // Fling 6 trash projectiles
-    for (let i = 0; i < 6; i++) {
-      const a = (i / 6) * Math.PI * 2;
+    const shots = sc ? 14 : 6;
+    for (let i = 0; i < shots; i++) {
+      const a = (i / shots) * Math.PI * 2;
       this.bullets.push({
         wx: this.player.wx + Math.cos(a) * 0.8,
         wy: this.player.wy + Math.sin(a) * 0.8,
-        vx: Math.cos(a) * 10, vy: Math.sin(a) * 10,
-        damage: 75, faction: 'banana', splash: 0.9, life: 2.0,
-        sprite: this.add.image(0, 0, 'pickup').setTint(0x886633).setScale(0.55).setDepth(5000),
+        vx: Math.cos(a) * (sc ? 15 : 10), vy: Math.sin(a) * (sc ? 15 : 10),
+        damage: sc ? 150 : 75, faction: 'banana', splash: sc ? 2.0 : 0.9, life: sc ? 3.5 : 2.0,
+        sprite: this.add.image(0, 0, 'pickup').setTint(sc ? 0xff4400 : 0x886633).setScale(sc ? 0.9 : 0.55).setDepth(5000),
       });
     }
-    this.cameras.main.shake(250, 0.02);
-    this.cameras.main.flash(180, 100, 180, 80, 0.35);
+    this.cameras.main.shake(sc ? 500 : 250, sc ? 0.04 : 0.02);
+    this.cameras.main.flash(180, 100, 180, 80, sc ? 0.7 : 0.35);
   }
 
   // Hot Dog — spray mustard in a wide cone, slowing + damaging bots
@@ -1073,36 +1084,37 @@ export class GameScene extends Phaser.Scene {
 
   // Ghost — soul scream: instant damage + stun to ALL bots on screen
   _specialSoulScream() {
+    const sc = this.supercharged;
     for (const bot of this.bots) {
       if (!bot.alive) continue;
-      this._hitEntity(bot, 50, 'banana');
-      bot.stunTimer = 2000;
+      this._hitEntity(bot, sc ? 120 : 50, 'banana');
+      bot.stunTimer = sc ? 5000 : 2000;
     }
-    this.cameras.main.flash(200, 200, 200, 255, 0.4);
-    this.cameras.main.shake(150, 0.010);
+    this.cameras.main.flash(sc ? 400 : 200, 200, 200, 255, sc ? 0.8 : 0.4);
+    this.cameras.main.shake(sc ? 350 : 150, sc ? 0.025 : 0.010);
   }
 
   // Astronaut — gravity bomb: suck all nearby bots toward player then explode
   _specialGravityBomb() {
+    const sc = this.supercharged;
     const { wx, wy } = this.player;
-    // Pull bots in
+    const pullRange = sc ? 18 : 8, pullDist = sc ? 7 : 3.5;
     for (const bot of this.bots) {
       if (!bot.alive) continue;
       const dx = wx - bot.wx, dy = wy - bot.wy;
       const dist = Math.hypot(dx, dy);
-      if (dist < 8) {
-        bot.wx += (dx / dist) * Math.min(dist, 3.5);
-        bot.wy += (dy / dist) * Math.min(dist, 3.5);
+      if (dist < pullRange) {
+        bot.wx += (dx / dist) * Math.min(dist, pullDist);
+        bot.wy += (dy / dist) * Math.min(dist, pullDist);
       }
     }
-    // Then explode
     for (const bot of this.bots) {
       if (!bot.alive) continue;
       const d = Math.hypot(bot.wx - wx, bot.wy - wy);
-      if (d < 4) this._hitEntity(bot, 100 - d * 12, 'banana');
+      if (d < (sc ? 8 : 4)) this._hitEntity(bot, (sc ? 220 : 100) - d * 12, 'banana');
     }
-    this.cameras.main.flash(250, 80, 180, 255, 0.5);
-    this.cameras.main.shake(300, 0.018);
+    this.cameras.main.flash(250, 80, 180, 255, sc ? 0.9 : 0.5);
+    this.cameras.main.shake(sc ? 600 : 300, sc ? 0.04 : 0.018);
   }
 
   // Penguin — ice slide: player dashes forward through enemies, freezing them
@@ -1128,38 +1140,42 @@ export class GameScene extends Phaser.Scene {
 
   // Viking — berserker: temporary speed + damage boost (handled via flag)
   _specialBerserker() {
-    this.berserkerTimer = 5000;
-    // Instant nearby melee damage
+    const sc = this.supercharged;
+    this.berserkerTimer = sc ? 12000 : 5000;
     for (const bot of this.bots) {
       if (!bot.alive) continue;
-      if (Math.hypot(bot.wx - this.player.wx, bot.wy - this.player.wy) < 2.5)
-        this._hitEntity(bot, 120, 'banana');
+      if (Math.hypot(bot.wx - this.player.wx, bot.wy - this.player.wy) < (sc ? 5 : 2.5))
+        this._hitEntity(bot, sc ? 280 : 120, 'banana');
     }
-    this.cameras.main.flash(150, 255, 60, 0, 0.4);
-    this.cameras.main.shake(200, 0.015);
+    this.cameras.main.flash(sc ? 300 : 150, 255, 60, 0, sc ? 0.7 : 0.4);
+    this.cameras.main.shake(sc ? 450 : 200, sc ? 0.03 : 0.015);
   }
 
   // Robot — laser beam: continuous hitscan line that damages all bots in a line
   _specialLaserBeam() {
+    const sc = this.supercharged;
     const a  = this.player.angle;
     const ox = this.player.wx, oy = this.player.wy;
-    let hit = 0;
-    for (const bot of this.bots) {
-      if (!bot.alive) continue;
-      // Project bot onto the laser line
-      const dx = bot.wx - ox, dy = bot.wy - oy;
-      const along = dx * Math.cos(a) + dy * Math.sin(a);
-      if (along < 0) continue;
-      const perp = Math.abs(-dx * Math.sin(a) + dy * Math.cos(a));
-      if (perp < 0.8) { this._hitEntity(bot, 160, 'banana'); hit++; }
-    }
-    this.cameras.main.flash(120, 0, 255, 200, 0.4);
-    this.cameras.main.shake(100, 0.008);
+    const beamOffsets = sc ? [-0.18, 0, 0.18] : [0];
+    beamOffsets.forEach(off => {
+      const ra = a + off;
+      for (const bot of this.bots) {
+        if (!bot.alive) continue;
+        const dx = bot.wx - ox, dy = bot.wy - oy;
+        const along = dx * Math.cos(ra) + dy * Math.sin(ra);
+        if (along < 0) continue;
+        const perp = Math.abs(-dx * Math.sin(ra) + dy * Math.cos(ra));
+        if (perp < (sc ? 1.5 : 0.8)) this._hitEntity(bot, sc ? 320 : 160, 'banana');
+      }
+    });
+    this.cameras.main.flash(sc ? 250 : 120, 0, 255, 200, sc ? 0.8 : 0.4);
+    this.cameras.main.shake(sc ? 250 : 100, sc ? 0.02 : 0.008);
   }
 
   // Wizard — meteor storm: 8 meteors rain down at random positions near bots
   _specialMeteorStorm() {
-    const targets = this.bots.filter(b => b.alive).slice(0, 8);
+    const sc = this.supercharged;
+    const targets = this.bots.filter(b => b.alive).slice(0, sc ? 20 : 8);
     targets.forEach((bot, i) => {
       this.time.delayedCall(i * 120, () => {
         const jx = bot.wx + (Math.random() - 0.5) * 2;
@@ -1167,8 +1183,8 @@ export class GameScene extends Phaser.Scene {
         // damage all bots near this impact
         for (const b2 of this.bots) {
           if (!b2.alive) continue;
-          if (Math.hypot(b2.wx - jx, b2.wy - jy) < 2.0)
-            this._hitEntity(b2, 90, 'banana');
+          if (Math.hypot(b2.wx - jx, b2.wy - jy) < (sc ? 4.0 : 2.0))
+            this._hitEntity(b2, sc ? 200 : 90, 'banana');
         }
         const ps = iso(jx, jy);
         const flash = this.add.image(ps.x, ps.y - 16, 'explosion').setScale(1.4).setDepth(9200).setTint(0xaa44ff);
@@ -1230,9 +1246,10 @@ export class GameScene extends Phaser.Scene {
 
   // Mystery — OBLITERATE: fully heal + restore all lives, then fire a random ability
   _specialObliterate() {
-    // ── Full heal ──────────────────────────────────────────────────────────
+    const sc = this.supercharged;
+    // ── Full heal (supercharge adds +1 life) ──────────────────────────────
     this.player.hp    = this.player.maxHp;
-    this.player.lives = 3;
+    this.player.lives = sc ? this.player.lives + 2 : 3;
     this._syncAll();
 
     // ── Random attack from all other characters' supers ───────────────────

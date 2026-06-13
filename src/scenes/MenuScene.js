@@ -16,10 +16,18 @@ function saveCharacter(k)     { writeSave({ ...loadSave(), character: k }); }
 function saveUnlocked(arr)    { writeSave({ ...loadSave(), unlocked: arr }); }
 function saveBoomDrops(n)     { writeSave({ ...loadSave(), boomDrops: n }); }
 function saveBoomDate(d)      { writeSave({ ...loadSave(), boomDate: d }); }
-function getSavedUnlockedSkins() { return loadSave().unlockedSkins || []; }
-function getSavedEquippedSkins() { return loadSave().equippedSkins || {}; }
-function saveUnlockedSkins(arr)  { writeSave({ ...loadSave(), unlockedSkins: arr }); }
-function saveEquippedSkins(obj)  { writeSave({ ...loadSave(), equippedSkins: obj }); }
+function getSavedUnlockedSkins() { return loadSave().unlockedSkins  || []; }
+function getSavedEquippedSkins() { return loadSave().equippedSkins  || {}; }
+function getSavedCharLevels()    { return loadSave().charLevels     || {}; }
+function getSavedSupercharged()  { return loadSave().supercharged   || []; }
+function saveUnlockedSkins(arr)  { writeSave({ ...loadSave(), unlockedSkins:  arr }); }
+function saveEquippedSkins(obj)  { writeSave({ ...loadSave(), equippedSkins:  obj }); }
+function saveCharLevels(obj)     { writeSave({ ...loadSave(), charLevels:     obj }); }
+function saveSupercharged(arr)   { writeSave({ ...loadSave(), supercharged:   arr }); }
+
+const MAX_LEVEL = 11;
+const UPGRADE_COSTS = [300, 600, 1000, 1500, 2200, 3000, 4500, 6500, 9000, 13000]; // lv1→2 … lv10→11
+const SUPERCHARGE_COST = 20000;
 
 const SW = 800, SH = 600;
 
@@ -1634,6 +1642,102 @@ export class MenuScene extends Phaser.Scene {
       }).setDepth(32));
     });
 
+    // ── Upgrade section (right panel, below weaknesses) ───────────────────
+    const upgradeY = weakY + 20 + info.weaknesses.length * 22 + 22;
+    const charLevels     = getSavedCharLevels();
+    const charLevel      = unlocked ? (charLevels[ch.key] || 1) : 1;
+    const isSupercharged = getSavedSupercharged().includes(ch.key);
+    const isMaxLevel     = charLevel >= MAX_LEVEL;
+    const upgCost        = isMaxLevel ? 0 : UPGRADE_COSTS[charLevel - 1];
+    const canUpgrade     = unlocked && !isMaxLevel && coins >= upgCost;
+
+    // Divider line
+    add(this.add.graphics().setDepth(31)
+      .lineStyle(1, 0x444444, 0.4).lineBetween(RX - RW / 2, upgradeY - 4, RX + RW / 2, upgradeY - 4));
+
+    add(this.add.text(RX, upgradeY + 4, '⬆  UPGRADES', {
+      fontSize: '11px', fontFamily: 'Arial Black', color: '#ffcc44',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(32));
+
+    // Star row showing level
+    const starRowY = upgradeY + 22;
+    const starSpacing = 20;
+    const starStartX = RX - (MAX_LEVEL / 2) * starSpacing + starSpacing / 2;
+    for (let i = 0; i < MAX_LEVEL; i++) {
+      const filled = i < charLevel;
+      add(this.add.text(starStartX + i * starSpacing, starRowY,
+        filled ? '★' : '☆', {
+          fontSize: '13px', fontFamily: 'Arial',
+          color: filled ? (isSupercharged ? '#ff4400' : '#ffcc00') : '#444444',
+        }).setOrigin(0.5).setDepth(32));
+    }
+
+    add(this.add.text(RX, starRowY + 16, `Level ${charLevel} / ${MAX_LEVEL}`, {
+      fontSize: '10px', fontFamily: 'Arial Black',
+      color: isMaxLevel ? '#ffcc00' : '#aaaaaa', stroke: '#000', strokeThickness: 1,
+    }).setOrigin(0.5).setDepth(32));
+
+    if (unlocked) {
+      if (!isMaxLevel) {
+        // UPGRADE button
+        const upBtnColor = canUpgrade ? 0x1a3a1a : 0x2a1a00;
+        const upBtnBrdr  = canUpgrade ? 0x66cc44 : 0x664400;
+        const upBg = add(this.add.rectangle(RX - 36, starRowY + 36, 120, 28, upBtnColor, 0.95)
+          .setStrokeStyle(2, upBtnBrdr, 0.9).setDepth(31));
+        add(this.add.text(RX - 36, starRowY + 36,
+          canUpgrade ? `⬆ UPGRADE` : `⬆ ${upgCost} 💰`, {
+            fontSize: '11px', fontFamily: 'Arial Black',
+            color: canUpgrade ? '#88ff44' : '#886633', stroke: '#000', strokeThickness: 2,
+          }).setOrigin(0.5).setDepth(32));
+        if (canUpgrade) {
+          upBg.setInteractive();
+          upBg.on('pointerover', () => upBg.setFillStyle(0x2a6a2a));
+          upBg.on('pointerout',  () => upBg.setFillStyle(upBtnColor));
+          upBg.on('pointerdown', () => this._upgradeCharacter(ch));
+        }
+        // Show cost label
+        add(this.add.text(RX + 56, starRowY + 36, `${upgCost} 💰`, {
+          fontSize: '10px', fontFamily: 'Arial', color: canUpgrade ? '#ffd700' : '#ff5555',
+          stroke: '#000', strokeThickness: 1,
+        }).setOrigin(0.5).setDepth(32));
+      } else if (!isSupercharged) {
+        // SUPERCHARGE unlock button
+        const scAfford = coins >= SUPERCHARGE_COST;
+        const scColor  = scAfford ? 0x330033 : 0x1a0011;
+        const scBrdr   = scAfford ? 0xff44ff : 0x882244;
+        const scBg = add(this.add.rectangle(RX, starRowY + 36, 220, 32, scColor, 0.95)
+          .setStrokeStyle(2, scBrdr, 0.9).setDepth(31));
+        add(this.add.text(RX, starRowY + 36,
+          scAfford ? `⚡ SUPERCHARGE  (${SUPERCHARGE_COST} 💰)` : `🔒 SUPERCHARGE  (${SUPERCHARGE_COST} 💰)`, {
+            fontSize: '11px', fontFamily: 'Arial Black',
+            color: scAfford ? '#ff88ff' : '#774466', stroke: '#000', strokeThickness: 2,
+          }).setOrigin(0.5).setDepth(32));
+        if (scAfford) {
+          scBg.setInteractive();
+          scBg.on('pointerover', () => scBg.setFillStyle(0x550055));
+          scBg.on('pointerout',  () => scBg.setFillStyle(scColor));
+          scBg.on('pointerdown', () => this._buySupercharge(ch));
+        }
+        add(this.add.text(RX, starRowY + 54, 'SUPERCHARGE makes your special ability twice as powerful!', {
+          fontSize: '8px', fontFamily: 'Arial', color: '#886688',
+          stroke: '#000', strokeThickness: 1, wordWrap: { width: RW },
+        }).setOrigin(0.5).setDepth(32));
+      } else {
+        // Already supercharged badge
+        add(this.add.rectangle(RX, starRowY + 36, 220, 32, 0x440022, 0.9)
+          .setStrokeStyle(2, 0xff4400, 0.9).setDepth(31));
+        add(this.add.text(RX, starRowY + 36, '⚡  SUPERCHARGED  ⚡', {
+          fontSize: '13px', fontFamily: 'Arial Black', color: '#ff6622',
+          stroke: '#000', strokeThickness: 3,
+        }).setOrigin(0.5).setDepth(32));
+        add(this.add.text(RX, starRowY + 54, 'Special ability is SUPERCHARGED!', {
+          fontSize: '8px', fontFamily: 'Arial', color: '#ff8844',
+          stroke: '#000', strokeThickness: 1,
+        }).setOrigin(0.5).setDepth(32));
+      }
+    }
+
     // ── Bottom buttons ────────────────────────────────────────────────────
     const btnY = SH - 42;
 
@@ -1717,6 +1821,33 @@ export class MenuScene extends Phaser.Scene {
     obj[ch.key] = skin.key;
     saveEquippedSkins(obj);
     if (spinSpr) spinSpr.setTint(skin.tint);
+    this._closeCharDetail();
+    this._openCharDetail(ch);
+  }
+
+  _upgradeCharacter(ch) {
+    const levels  = getSavedCharLevels();
+    const current = levels[ch.key] || 1;
+    if (current >= MAX_LEVEL) return;
+    const cost = UPGRADE_COSTS[current - 1];
+    const coins = getSavedCoins();
+    if (coins < cost) return;
+    saveCoins(coins - cost);
+    levels[ch.key] = current + 1;
+    saveCharLevels(levels);
+    this._refreshMenuCoins();
+    this._closeCharDetail();
+    this._openCharDetail(ch);
+  }
+
+  _buySupercharge(ch) {
+    const coins = getSavedCoins();
+    if (coins < SUPERCHARGE_COST) return;
+    saveCoins(coins - SUPERCHARGE_COST);
+    const arr = getSavedSupercharged();
+    if (!arr.includes(ch.key)) arr.push(ch.key);
+    saveSupercharged(arr);
+    this._refreshMenuCoins();
     this._closeCharDetail();
     this._openCharDetail(ch);
   }
