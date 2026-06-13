@@ -105,6 +105,16 @@ const CHAR_INFO = {
   glitch:       { lore: 'GLITCH does not obey the rules of the game. Reality Warp destabilises the map itself, teleporting enemies randomly and corrupting their aim.',         strengths: ['Reality Warp corrupts enemy positions', 'Unpredictable hitbox'],              weaknesses: ['Glitchy movement is hard to control', 'Unreliable at long range'] },
 };
 
+// Flat list of all skins for box rewards
+const ALL_SKINS = [
+  { key: 'trash_can_s1', name: 'Golden Can',   charKey: 'trash_can', tint: 0xffd700 },
+  { key: 'dragon_s1',    name: 'Ice Dragon',   charKey: 'dragon',    tint: 0x44ccff },
+  { key: 'phoenix_s1',   name: 'Dark Phoenix', charKey: 'phoenix',   tint: 0xaa22ff },
+  { key: 'kraken_s1',    name: 'Lava Kraken',  charKey: 'kraken',    tint: 0xff4400 },
+  { key: 'mystery_s1',   name: 'Void Form',    charKey: 'mystery',   tint: 0x220088 },
+  { key: 'glitch_s1',    name: 'Neo Glitch',   charKey: 'glitch',    tint: 0x00ffaa },
+];
+
 const WEAPON_NAMES  = ['Peel Launcher', 'Automatic Rifle', 'Sniper'];
 const WEAPON_COLORS = ['#c8960a', '#4caf50', '#2196f3'];
 const UPGRADES = [
@@ -1163,22 +1173,24 @@ export class MenuScene extends Phaser.Scene {
           id: 'small', label: '📦 SMALL BOX', cost: 100,
           borderColor: 0x9955cc, glowColor: '#dd99ff',
           odds: [
+            { label: 'SKIN',   color: '#ff88ff', pct: '40%' },
             { label: '???',    color: '#ff00ff', pct: '1%'  },
-            { label: 'MYTHIC', color: '#ff8800', pct: '5%'  },
-            { label: 'EPIC',   color: '#aa44ff', pct: '15%' },
-            { label: 'RARE',   color: '#4488ff', pct: '30%' },
-            { label: 'COINS',  color: '#ffd700', pct: '49%' },
+            { label: 'MYTHIC', color: '#ff8800', pct: '3%'  },
+            { label: 'EPIC',   color: '#aa44ff', pct: '9%'  },
+            { label: 'RARE',   color: '#4488ff', pct: '18%' },
+            { label: 'COINS',  color: '#ffd700', pct: '29%' },
           ],
         },
         {
           id: 'big', label: '🎁 BIG BOX', cost: 200,
           borderColor: 0xffaa00, glowColor: '#ffdd66',
           odds: [
-            { label: '???',    color: '#ff00ff', pct: '5%'  },
-            { label: 'MYTHIC', color: '#ff8800', pct: '15%' },
-            { label: 'EPIC',   color: '#aa44ff', pct: '30%' },
-            { label: 'RARE',   color: '#4488ff', pct: '40%' },
-            { label: 'COINS',  color: '#ffd700', pct: '10%' },
+            { label: 'SKIN',   color: '#ff88ff', pct: '40%' },
+            { label: '???',    color: '#ff00ff', pct: '3%'  },
+            { label: 'MYTHIC', color: '#ff8800', pct: '9%'  },
+            { label: 'EPIC',   color: '#aa44ff', pct: '18%' },
+            { label: 'RARE',   color: '#4488ff', pct: '24%' },
+            { label: 'COINS',  color: '#ffd700', pct: '6%'  },
           ],
         },
       ];
@@ -1264,23 +1276,37 @@ export class MenuScene extends Phaser.Scene {
     const roll = Math.random() * 100;
     let rarity;
     if (boxId === 'small') {
-      // Small box: 1% ???, 5% MYTHIC, 15% EPIC, 30% RARE, 49% COINS
-      if      (roll < 1)  rarity = '???';
-      else if (roll < 6)  rarity = 'MYTHIC';
-      else if (roll < 21) rarity = 'EPIC';
-      else if (roll < 51) rarity = 'RARE';
+      // 40% SKIN, 1% ???, 3% MYTHIC, 9% EPIC, 18% RARE, 29% COINS
+      if      (roll < 40) rarity = 'SKIN';
+      else if (roll < 41) rarity = '???';
+      else if (roll < 44) rarity = 'MYTHIC';
+      else if (roll < 53) rarity = 'EPIC';
+      else if (roll < 71) rarity = 'RARE';
       else                rarity = 'COINS_300';
     } else {
-      // Big box: 5% ???, 15% MYTHIC, 30% EPIC, 40% RARE, 10% COINS
-      if      (roll < 5)  rarity = '???';
-      else if (roll < 20) rarity = 'MYTHIC';
-      else if (roll < 50) rarity = 'EPIC';
-      else if (roll < 90) rarity = 'RARE';
+      // 40% SKIN, 3% ???, 9% MYTHIC, 18% EPIC, 24% RARE, 6% COINS
+      if      (roll < 40) rarity = 'SKIN';
+      else if (roll < 43) rarity = '???';
+      else if (roll < 52) rarity = 'MYTHIC';
+      else if (roll < 70) rarity = 'EPIC';
+      else if (roll < 94) rarity = 'RARE';
       else                rarity = 'COINS_300';
     }
 
     let reward;
-    if (rarity === 'COINS_300') {
+    if (rarity === 'SKIN') {
+      const owned     = getSavedUnlockedSkins();
+      const available = ALL_SKINS.filter(s => !owned.includes(s.key));
+      if (available.length === 0) {
+        saveCoins(getSavedCoins() + 500);
+        reward = { type: 'coins', amount: 500, alreadyOwned: true, rarity: 'SKIN' };
+      } else {
+        const skin = available[Math.floor(Math.random() * available.length)];
+        owned.push(skin.key);
+        saveUnlockedSkins(owned);
+        reward = { type: 'skin', skin, rarity: 'SKIN' };
+      }
+    } else if (rarity === 'COINS_300') {
       saveCoins(getSavedCoins() + 300);
       reward = { type: 'coins', amount: 300, rarity: 'COINS' };
     } else {
@@ -1304,14 +1330,14 @@ export class MenuScene extends Phaser.Scene {
   _showBoxResult(reward, rarity, boxId = 'small') {
     const RARITY_COLORS = {
       '???': '#ff00ff', 'MYTHIC': '#ff8800', 'EPIC': '#aa44ff',
-      'RARE': '#4488ff', 'COINS_500': '#ffd700', 'COINS': '#ffd700',
+      'RARE': '#4488ff', 'COINS_300': '#ffd700', 'COINS': '#ffd700', 'SKIN': '#ff88ff',
     };
     const colorStr = RARITY_COLORS[rarity] || '#ffffff';
     const colorHex = parseInt(colorStr.slice(1), 16);
 
     const PX = SW / 2, PY = SH / 2;
-    const spinLabels = ['???', 'MYTHIC', 'EPIC', 'RARE', '1000 💰', '500 💰'];
-    const spinColors = ['#ff00ff', '#ff8800', '#aa44ff', '#4488ff', '#ffd700', '#ccaa00'];
+    const spinLabels = ['SKIN ✨', '???', 'MYTHIC', 'EPIC', 'RARE', '300 💰'];
+    const spinColors = ['#ff88ff', '#ff00ff', '#ff8800', '#aa44ff', '#4488ff', '#ffd700'];
     let spinCount = 0;
     const totalSpins = 18;
 
@@ -1329,7 +1355,7 @@ export class MenuScene extends Phaser.Scene {
         spinTxt.setText(spinLabels[idx]).setColor(spinColors[idx]);
         if (spinCount > totalSpins - 5) spinTimer.delay = 130;
         if (spinCount === totalSpins - 1) {
-          const finalLabel = rarity === 'COINS_500' ? '500 💰' : rarity;
+          const finalLabel = rarity === 'SKIN' ? 'SKIN ✨' : rarity === 'COINS_300' ? '300 💰' : rarity;
           spinTxt.setText(finalLabel).setColor(colorStr);
           spinBox.setStrokeStyle(3, colorHex, 1);
         }
@@ -1353,12 +1379,22 @@ export class MenuScene extends Phaser.Scene {
 
     // Rarity banner
     addR(this.add.rectangle(PX, PY - 118, 380, 36, colorHex, 0.2).setDepth(31));
-    const displayRarity = rarity === 'COINS_500' ? '500 COINS' : rarity;
+    const displayRarity = rarity === 'COINS_300' ? '300 COINS' : rarity === 'SKIN' ? '✨ SKIN' : rarity;
     addR(this.add.text(PX, PY - 118, displayRarity, {
       fontSize: '22px', fontFamily: 'Arial Black', color: colorStr, stroke: '#000000', strokeThickness: 4,
     }).setOrigin(0.5).setDepth(32));
 
-    if (reward.type === 'character') {
+    if (reward.type === 'skin') {
+      const spr = addR(this.add.image(PX, PY - 38, reward.skin.charKey).setScale(2.4).setDepth(32).setTint(reward.skin.tint));
+      // Spin the skin preview
+      this.tweens.add({ targets: spr, scaleX: { from: 2.4, to: -2.4 }, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      addR(this.add.text(PX, PY + 58, reward.skin.name, {
+        fontSize: '18px', fontFamily: 'Arial Black', color: '#ff88ff', stroke: '#000', strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(32));
+      addR(this.add.text(PX, PY + 82, '✨  SKIN UNLOCKED!', {
+        fontSize: '12px', fontFamily: 'Arial Black', color: '#ff88ff', stroke: '#000', strokeThickness: 2,
+      }).setOrigin(0.5).setDepth(32));
+    } else if (reward.type === 'character') {
       addR(this.add.image(PX, PY - 38, reward.char.key).setScale(2.4).setDepth(32));
       addR(this.add.text(PX, PY + 58, reward.char.name + (reward.char.subtitle ? ' ' + reward.char.subtitle : ''), {
         fontSize: '18px', fontFamily: 'Arial Black', color: '#ffffff', stroke: '#000', strokeThickness: 3,
