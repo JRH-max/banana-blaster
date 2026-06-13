@@ -16,6 +16,10 @@ function saveCharacter(k)     { writeSave({ ...loadSave(), character: k }); }
 function saveUnlocked(arr)    { writeSave({ ...loadSave(), unlocked: arr }); }
 function saveBoomDrops(n)     { writeSave({ ...loadSave(), boomDrops: n }); }
 function saveBoomDate(d)      { writeSave({ ...loadSave(), boomDate: d }); }
+function getSavedUnlockedSkins() { return loadSave().unlockedSkins || []; }
+function getSavedEquippedSkins() { return loadSave().equippedSkins || {}; }
+function saveUnlockedSkins(arr)  { writeSave({ ...loadSave(), unlockedSkins: arr }); }
+function saveEquippedSkins(obj)  { writeSave({ ...loadSave(), equippedSkins: obj }); }
 
 const SW = 800, SH = 600;
 
@@ -56,6 +60,50 @@ const CHARACTERS = [
   { key: 'mystery',      name: '???',       subtitle: '',          price: 10000,ability: 'OBLITERATE',     rarity: '???',     rarityColor: '#ff00ff', gun: 'Void Cannon',      gunIcon: '❓' },
   { key: 'glitch',       name: 'GLITCH',    subtitle: '',          price: 10000,ability: 'REALITY WARP',   rarity: '???',     rarityColor: '#ff00ff', gun: 'Glitch Cannon',    gunIcon: '💀' },
 ];
+
+// ── Skins for MYTHIC & ??? characters ─────────────────────────────────────
+const SKINS = {
+  trash_can: [{ key: 'trash_can_s1', name: 'Golden Can',    tint: 0xffd700, cost: 7000  }],
+  dragon:    [{ key: 'dragon_s1',    name: 'Ice Dragon',    tint: 0x44ccff, cost: 7000  }],
+  phoenix:   [{ key: 'phoenix_s1',   name: 'Dark Phoenix',  tint: 0xaa22ff, cost: 7000  }],
+  kraken:    [{ key: 'kraken_s1',    name: 'Lava Kraken',   tint: 0xff4400, cost: 7000  }],
+  mystery:   [{ key: 'mystery_s1',   name: 'Void Form',     tint: 0x220088, cost: 10000 }],
+  glitch:    [{ key: 'glitch_s1',    name: 'Neo Glitch',    tint: 0x00ffaa, cost: 10000 }],
+};
+
+// ── Character lore & stats ─────────────────────────────────────────────────
+const CHAR_INFO = {
+  banana:       { lore: 'The undisputed champion of the jungle floor. Armed with nature\'s slipperiest weapon, Banana has been defending the grove since day one.',               strengths: ['High mobility', 'Crowd-control peel traps', 'Great splash damage'],         weaknesses: ['Below-average HP', 'Short trap range'] },
+  sloth_pirate: { lore: 'A swashbuckling sloth who moves slowly but fires devastating cannonballs. Don\'t let the yawning fool you — that flintlock never misses.',             strengths: ['Massive cannonball damage', 'Intimidating presence'],                        weaknesses: ['Very slow movement', 'Low fire rate'] },
+  hot_dog:      { lore: 'Slathered in mustard and pure aggression, Hot Dog blasts enemies with condiment-fuelled fury. Fast food, faster fights.',                               strengths: ['Area-denial mustard blast', 'High fire rate'],                                weaknesses: ['Short range', 'Weak at distance'] },
+  cactus:       { lore: 'A desert warrior covered in natural armour. Spike Burst turns every enemy who gets too close into a pincushion.',                                       strengths: ['Strong melee range', 'Spike Burst punishes rushers'],                         weaknesses: ['Slow projectiles', 'Poor mobility'] },
+  ghost:        { lore: 'Incorporeal and spooky, Ghost lets out a soul-shattering scream that stuns enemies. Enemies can\'t shoot what they can\'t see.',                        strengths: ['Soul Scream stuns enemies', 'Unpredictable movement'],                        weaknesses: ['Low damage output', 'Fragile in direct fights'] },
+  astronaut:    { lore: 'Trained in zero-g combat, Astronaut drops gravity bombs that warp the battlefield. Houston, we have a problem — for the raccoons.',                     strengths: ['Gravity Bomb disrupts enemy formations', 'Good range'],                       weaknesses: ['Slow bomb travel time', 'Needs positioning'] },
+  penguin:      { lore: 'A tuxedoed torpedo from the Antarctic. Ice Slide lets Penguin dash across the map, leaving enemies frozen in its wake.',                               strengths: ['Ice Slide high-speed dash', 'Slows enemies'],                                 weaknesses: ['Poor turning speed', 'Vulnerable after sliding'] },
+  taco:         { lore: 'Spicy, saucy, and absolutely unhinged. Taco\'s Salsa Splash coats the ground in a burning puddle that nobody wants to step in.',                       strengths: ['Zone-control salsa puddles', 'Persistent damage'],                            weaknesses: ['Slow firing', 'Needs setup time'] },
+  snowman:      { lore: 'Built from the coldest snow on the mountain, Snowman\'s Blizzard can freeze entire waves of enemies solid.',                                            strengths: ['Blizzard freezes multiple enemies', 'High durability'],                       weaknesses: ['Melts under fire (reduced speed when hit)', 'Slow reload'] },
+  mushroom:     { lore: 'Mysterious spores cloud the battlefield, confusing enemies and dealing damage over time. Mushroom thrives in the chaos it creates.',                    strengths: ['Spore Burst blinds & damages', 'Good area coverage'],                         weaknesses: ['Low burst damage', 'Weak solo'] },
+  pineapple:    { lore: 'Pineapple belongs on pizza AND the battlefield. Juice Blast is sticky, sweet, and slows every enemy it touches.',                                       strengths: ['Juice Blast slows enemies', 'Consistent DPS'],                               weaknesses: ['Average HP', 'No escape tool'] },
+  storm_cloud:  { lore: 'A living storm cell crackling with electricity. Thunderclap sends bolts chaining between nearby enemies — the closer they huddle, the worse it gets.', strengths: ['Thunderclap chains between enemies', 'High shock damage'],                     weaknesses: ['Indoors performance drops', 'Self-damage risk near allies'] },
+  mummy:        { lore: 'Wrapped in ancient bandages soaked in cursed ichor, Mummy lays traps that bind and drain enemies caught in them.',                                     strengths: ['Bandage Trap roots enemies', 'Good sustain'],                                 weaknesses: ['Trap-dependent playstyle', 'Weak when cornered'] },
+  rock_ninja:   { lore: 'Trained in the ancient art of throwing very hard things very fast. Shuriken Storm is a blizzard of spinning stone — there\'s no dodging it.',         strengths: ['Shuriken Storm hits all nearby foes', 'High projectile speed'],               weaknesses: ['Limited ammo', 'Must reload often'] },
+  viking:       { lore: 'This Norse legend charges into battle with reckless abandon. Berserker mode doubles damage output at the cost of defence.',                             strengths: ['Berserker massive damage burst', 'Intimidating axe launcher'],               weaknesses: ['Reckless — takes extra damage while berserk', 'Slow reload'] },
+  robot:        { lore: 'Precision-engineered for destruction. Robot\'s Laser Beam cuts through enemy lines in a straight line, piercing multiple targets.',                    strengths: ['Laser Beam pierces through enemies', 'High accuracy'],                        weaknesses: ['No splash damage', 'Stiff movement'] },
+  wizard:       { lore: 'A master of arcane arts who calls down meteors from the sky. Meteor Storm punishes enemies who stay in one place.',                                     strengths: ['Meteor Storm wide area damage', 'Unpredictable attack pattern'],              weaknesses: ['Requires aim prediction', 'Long cooldown'] },
+  shark:        { lore: 'A apex predator in a hoodie. Feeding Frenzy sends Shark into a wild spin attack that shreds anyone who gets in the way.',                              strengths: ['Feeding Frenzy shreds close-range enemies', 'Terrifying speed burst'],       weaknesses: ['Vulnerable at range', 'Frenzy hard to control'] },
+  samurai:      { lore: 'Disciplined, deadly, and wearing the best helmet in the game. Blade Rush closes distance in an instant and deals critical damage.',                    strengths: ['Blade Rush gap-closer + damage', 'High single-target DPS'],                   weaknesses: ['No crowd-control', 'Low HP'] },
+  werewolf:     { lore: 'Under the full moon (or just whenever it feels like it), Werewolf lets out a Howl that terrifies nearby enemies, causing them to scatter.',            strengths: ['Howl fears multiple enemies', 'Fast movement'],                               weaknesses: ['Fear only delays — doesn\'t kill', 'Glass cannon'] },
+  knight:       { lore: 'Clad in heavy armour and armed with a jousting lance, Knight charges down enemies with unstoppable force. Shield up, lance forward.',                  strengths: ['Shield Charge knocks back enemies', 'Highest base HP'],                       weaknesses: ['Slow movement speed', 'Easily kited'] },
+  alien:        { lore: 'Descended from a galaxy far away to abduct the strongest fighters. Abduction teleports a random enemy to a bad location — very rude.',                strengths: ['Abduction repositions enemies', 'Plasma Pistol high accuracy'],               weaknesses: ['Abduction is random', 'Low HP'] },
+  zombie:       { lore: 'Undead Surge lets Zombie rise from near-death with temporary invincibility. It\'s very hard to keep a good zombie down.',                              strengths: ['Undead Surge second-life mechanic', 'High sustain'],                          weaknesses: ['Slow speed', 'Predictable movement'] },
+  witch:        { lore: 'Brews curses on the fly and cackles while doing it. Witch\'s Curse reverses enemy controls, leading to hilarious and devastating chaos.',              strengths: ["Witch's Curse reverses controls", 'Spell Blaster high range'],               weaknesses: ['Curse duration is short', 'Low HP'] },
+  trash_can:    { lore: 'Nobody knows what is inside the Trash Can. Nobody wants to know. Trash Wave launches the unspeakable contents outward in all directions.',              strengths: ['Trash Wave 360° area clear', 'Durable chassis'],                              weaknesses: ['Slow speed', 'Short ability range'] },
+  dragon:       { lore: 'Ancient, powerful, and perpetually on fire. Dragon\'s Inferno Blaster sets the ground ablaze, melting through armoured foes with ease.',               strengths: ['Fire Breath ignites ground', 'Sustained auto-fire damage'],                   weaknesses: ['Ammo depletes fast', 'Weak against fast enemies'] },
+  phoenix:      { lore: 'Death is merely a minor inconvenience for Phoenix. Rebirth triggers an automatic revival with full HP — once per life.',                               strengths: ['Rebirth auto-revive is unique', 'High fire rate'],                            weaknesses: ['Rebirth only triggers once', 'Moderate HP'] },
+  kraken:       { lore: 'Risen from the deepest trenches, Kraken\'s Tentacle Slam sends ink-black shockwaves across the arena, rooting everything in their path.',              strengths: ['Tentacle Slam wide root', 'Highest HP in the game'],                          weaknesses: ['Very slow movement', 'Weak projectile speed'] },
+  mystery:      { lore: 'Nobody has ever seen this character\'s face. Nobody has ever survived long enough to report back. What lies beneath the mask is Obliteration.',        strengths: ['Obliterate instant kill burst', 'Mysterious aura buffs nearby allies'],       weaknesses: ['Obliterate has long cooldown', 'Fragile — all offence, no defence'] },
+  glitch:       { lore: 'GLITCH does not obey the rules of the game. Reality Warp destabilises the map itself, teleporting enemies randomly and corrupting their aim.',         strengths: ['Reality Warp corrupts enemy positions', 'Unpredictable hitbox'],              weaknesses: ['Glitchy movement is hard to control', 'Unreliable at long range'] },
+};
 
 const WEAPON_NAMES  = ['Peel Launcher', 'Automatic Rifle', 'Sniper'];
 const WEAPON_COLORS = ['#c8960a', '#4caf50', '#2196f3'];
@@ -435,28 +483,13 @@ export class MenuScene extends Phaser.Scene {
     const btnY = by + bh / 2 - (compact ? 18 : 22);
     const btnH = compact ? 26 : 30;
 
-    if (unlocked) {
-      const selBg = addC(this.add.rectangle(bx, btnY, bw - 16, btnH, 0x1a4c1a, 0.9)
-        .setStrokeStyle(2, 0x66ee66, 0.7).setInteractive().setDepth(12));
-      addC(this.add.text(bx, btnY, 'SELECT', {
-        fontSize: compact ? '10px' : '12px', fontFamily: 'Arial Black', color: '#88ff88',
-        stroke: '#000', strokeThickness: 2,
-      }).setOrigin(0.5).setDepth(13));
-      selBg.on('pointerover', () => selBg.setFillStyle(0x2a7c2a));
-      selBg.on('pointerout',  () => selBg.setFillStyle(0x1a4c1a));
-      selBg.on('pointerdown', () => {
-        this.selectedChar = ch.key; saveCharacter(ch.key);
-        this._updateCharSelect(); this._refreshPreview();
-      });
-      bg.setInteractive();
-      bg.on('pointerover', () => bg.setFillStyle(0x112211, 0.6));
-      bg.on('pointerout',  () => bg.setFillStyle(0x000000, 0.45));
-      bg.on('pointerdown', () => {
-        this.selectedChar = ch.key; saveCharacter(ch.key);
-        this._updateCharSelect(); this._refreshPreview();
-      });
-    } else {
-      // Locked overlay
+    // All characters open the detail page on click
+    const btnLabel = unlocked ? 'VIEW  ▶' : (canAfford ? `💰 ${ch.price}` : `🔒 ${ch.price}`);
+    const btnColor = unlocked ? 0x1a3a5c : (canAfford ? 0x1a5c1a : 0x3a1111);
+    const btnBrdr  = unlocked ? 0x4488cc : (canAfford ? 0x88ee88 : 0x884444);
+    const btnTxt   = unlocked ? '#88ccff' : (canAfford ? '#88ff88' : '#aa5555');
+
+    if (!unlocked) {
       const lockIconY = compact ? by - bh / 2 + 65 : by - bh / 2 + 120;
       addC(this.add.text(bx, lockIconY, '🔒', { fontSize: compact ? '20px' : '26px' })
         .setOrigin(0.5).setDepth(14));
@@ -466,21 +499,23 @@ export class MenuScene extends Phaser.Scene {
           color: canAfford ? '#ffd700' : '#ff5555', stroke: '#000', strokeThickness: 2,
         }).setOrigin(0.5).setDepth(14));
       }
-      const buyColor = canAfford ? 0x1a5c1a : 0x3a1111;
-      const buyBrdr  = canAfford ? 0x88ee88 : 0x884444;
-      const buyBg = addC(this.add.rectangle(bx, btnY, bw - 16, btnH, buyColor, 0.9)
-        .setStrokeStyle(2, buyBrdr, 0.8).setDepth(13));
-      addC(this.add.text(bx, btnY, canAfford ? `💰 ${ch.price}` : `🔒 ${ch.price}`, {
-        fontSize: compact ? '10px' : '12px', fontFamily: 'Arial Black',
-        color: canAfford ? '#88ff88' : '#aa5555', stroke: '#000', strokeThickness: 2,
-      }).setOrigin(0.5).setDepth(14));
-      if (canAfford) {
-        buyBg.setInteractive();
-        buyBg.on('pointerover', () => buyBg.setFillStyle(0x2a8c2a));
-        buyBg.on('pointerout',  () => buyBg.setFillStyle(0x1a5c1a));
-        buyBg.on('pointerdown', () => this._buyCharacter(ch.key, ch.price));
-      }
     }
+
+    const viewBg = addC(this.add.rectangle(bx, btnY, bw - 16, btnH, btnColor, 0.9)
+      .setStrokeStyle(2, btnBrdr, 0.8).setInteractive().setDepth(12));
+    addC(this.add.text(bx, btnY, btnLabel, {
+      fontSize: compact ? '10px' : '12px', fontFamily: 'Arial Black', color: btnTxt,
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(13));
+    const hoverC = unlocked ? 0x2a4a8c : (canAfford ? 0x2a8c2a : 0x3a1111);
+    viewBg.on('pointerover', () => viewBg.setFillStyle(hoverC));
+    viewBg.on('pointerout',  () => viewBg.setFillStyle(btnColor));
+    viewBg.on('pointerdown', () => this._openCharDetail(ch));
+
+    bg.setInteractive();
+    bg.on('pointerover', () => bg.setFillStyle(0x0a1a2a, 0.6));
+    bg.on('pointerout',  () => bg.setFillStyle(0x000000, 0.45));
+    bg.on('pointerdown', () => this._openCharDetail(ch));
   }
 
   _buyCharacter(key, price) {
@@ -1369,6 +1404,270 @@ export class MenuScene extends Phaser.Scene {
       this.shopItems = this.shopItems.filter(e => !resultItems.includes(e));
       this._switchShopTab('BOXES');
     });
+  }
+
+  // ── Character Detail Page ──────────────────────────────────────────────────
+  _openCharDetail(ch) {
+    // Hide char panel content
+    for (const el of (this.charTabContentItems || [])) el.setVisible(false);
+
+    this.detailItems = [];
+    const add = el => { this.detailItems.push(el); return el; };
+
+    const PX = SW / 2, PY = SH / 2;
+    const unlocked   = getSavedUnlocked().includes(ch.key);
+    const coins      = getSavedCoins();
+    const canAfford  = coins >= ch.price;
+    const info       = CHAR_INFO[ch.key] || { lore: 'A mysterious fighter.', strengths: [], weaknesses: [] };
+    const rarityHex  = parseInt((ch.rarityColor || '#aaaaaa').slice(1), 16);
+    const charSkins  = SKINS[ch.key] || [];
+
+    // Full overlay
+    add(this.add.rectangle(PX, PY, SW, SH, 0x000000, 0.96).setDepth(30));
+
+    // ── Left panel: spinning sprite + rarity + skins ──────────────────────
+    const LX = 185;
+
+    // Rarity banner
+    add(this.add.rectangle(LX, 48, 240, 28, rarityHex, 0.18)
+      .setStrokeStyle(1, rarityHex, 0.6).setDepth(31));
+    add(this.add.text(LX, 48, `✦  ${ch.rarity}  ✦`, {
+      fontSize: '13px', fontFamily: 'Arial Black', color: ch.rarityColor,
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(32));
+
+    // Character name
+    const fullName = ch.subtitle ? `${ch.name} ${ch.subtitle}` : ch.name;
+    add(this.add.text(LX, 80, fullName, {
+      fontSize: '22px', fontFamily: 'Arial Black', color: '#ffffff',
+      stroke: '#000000', strokeThickness: 5,
+    }).setOrigin(0.5).setDepth(32));
+
+    // Spinning sprite
+    const equippedSkins = getSavedEquippedSkins();
+    const equippedSkin  = equippedSkins[ch.key] ? charSkins.find(s => s.key === equippedSkins[ch.key]) : null;
+    const spinSpr = add(this.add.image(LX, 220, ch.key)
+      .setScale(4).setDepth(32).setOrigin(0.5));
+    if (equippedSkin) spinSpr.setTint(equippedSkin.tint);
+    if (!unlocked) spinSpr.setTint(0x333333);
+
+    // 360-spin: oscillate scaleX 1 → -1 → 1 (simulates turning around)
+    let spinFlipped = false;
+    this._spinTween = this.tweens.add({
+      targets: spinSpr,
+      scaleX: { from: 4, to: -4 },
+      duration: 900,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1,
+      onYoyo: () => {
+        spinFlipped = !spinFlipped;
+        spinSpr.setFlipX(spinFlipped);
+      },
+    });
+
+    // Ability badge
+    add(this.add.rectangle(LX, 318, 240, 26, 0x003322, 0.9)
+      .setStrokeStyle(1, 0x44ff88, 0.5).setDepth(31));
+    add(this.add.text(LX, 318, `⚡ ${ch.ability}`, {
+      fontSize: '11px', fontFamily: 'Arial Black', color: '#55ffaa',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(32));
+
+    // Gun badge
+    add(this.add.rectangle(LX, 348, 240, 26, 0x1a1a00, 0.9)
+      .setStrokeStyle(1, 0xccaa00, 0.5).setDepth(31));
+    add(this.add.text(LX, 348, `${ch.gunIcon} ${ch.gun}`, {
+      fontSize: '11px', fontFamily: 'Arial Black', color: '#ffdd44',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(32));
+
+    // ── Skins section (MYTHIC / ???) ──────────────────────────────────────
+    if (charSkins.length > 0 && unlocked) {
+      add(this.add.text(LX, 385, 'SKINS', {
+        fontSize: '11px', fontFamily: 'Arial Black', color: '#aaaaaa',
+        stroke: '#000', strokeThickness: 2,
+      }).setOrigin(0.5).setDepth(32));
+
+      const unlockedSkins = getSavedUnlockedSkins();
+      charSkins.forEach((skin, i) => {
+        const sx = LX - (charSkins.length - 1) * 55 / 2 + i * 55;
+        const sy = 430;
+        const skinOwned   = unlockedSkins.includes(skin.key);
+        const skinEquipped = equippedSkins[ch.key] === skin.key;
+        const skinAfford  = coins >= skin.cost;
+
+        // Skin sprite preview with tint
+        const skinBg = add(this.add.rectangle(sx, sy, 70, 80, 0x111111, 0.9)
+          .setStrokeStyle(2, skinEquipped ? 0xffd700 : (skinOwned ? skin.tint : 0x444444), skinEquipped ? 1 : 0.7)
+          .setInteractive().setDepth(31));
+        const skinSpr = add(this.add.image(sx, sy - 8, ch.key).setScale(2).setDepth(32).setTint(skin.tint));
+        add(this.add.text(sx, sy + 24, skin.name, {
+          fontSize: '8px', fontFamily: 'Arial Black', color: '#cccccc',
+          stroke: '#000', strokeThickness: 1,
+        }).setOrigin(0.5).setDepth(33));
+
+        if (!skinOwned) {
+          add(this.add.text(sx, sy + 36, `${skin.cost} 💰`, {
+            fontSize: '8px', fontFamily: 'Arial Black',
+            color: skinAfford ? '#ffd700' : '#ff5555', stroke: '#000', strokeThickness: 1,
+          }).setOrigin(0.5).setDepth(33));
+          if (skinAfford) {
+            skinBg.on('pointerover', () => skinBg.setFillStyle(0x222233));
+            skinBg.on('pointerout',  () => skinBg.setFillStyle(0x111111));
+            skinBg.on('pointerdown', () => this._buySkin(ch, skin, spinSpr));
+          }
+        } else if (skinEquipped) {
+          add(this.add.text(sx, sy + 36, '✓ ON', {
+            fontSize: '8px', fontFamily: 'Arial Black', color: '#ffd700', stroke: '#000', strokeThickness: 1,
+          }).setOrigin(0.5).setDepth(33));
+          skinBg.on('pointerover', () => skinBg.setFillStyle(0x221100));
+          skinBg.on('pointerout',  () => skinBg.setFillStyle(0x111111));
+          skinBg.on('pointerdown', () => this._unequipSkin(ch, spinSpr));
+        } else {
+          add(this.add.text(sx, sy + 36, 'EQUIP', {
+            fontSize: '8px', fontFamily: 'Arial Black', color: '#88ccff', stroke: '#000', strokeThickness: 1,
+          }).setOrigin(0.5).setDepth(33));
+          skinBg.on('pointerover', () => skinBg.setFillStyle(0x112233));
+          skinBg.on('pointerout',  () => skinBg.setFillStyle(0x111111));
+          skinBg.on('pointerdown', () => this._equipSkin(ch, skin, spinSpr));
+        }
+      });
+    }
+
+    // ── Right panel: lore + strengths + weaknesses ────────────────────────
+    const RX = 530, RW = 260;
+
+    add(this.add.text(RX, 72, '📖 BACKGROUND', {
+      fontSize: '11px', fontFamily: 'Arial Black', color: '#aaaaaa',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(32));
+
+    add(this.add.text(RX, 100, info.lore, {
+      fontSize: '10px', fontFamily: 'Arial', color: '#dddddd',
+      stroke: '#000', strokeThickness: 1,
+      wordWrap: { width: RW },
+    }).setOrigin(0.5, 0).setDepth(32));
+
+    add(this.add.text(RX, 215, '💪 STRENGTHS', {
+      fontSize: '11px', fontFamily: 'Arial Black', color: '#44ff88',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(32));
+
+    info.strengths.forEach((s, i) => {
+      add(this.add.text(RX - RW / 2 + 8, 235 + i * 22, `▶ ${s}`, {
+        fontSize: '10px', fontFamily: 'Arial', color: '#aaffcc',
+        stroke: '#000', strokeThickness: 1,
+      }).setDepth(32));
+    });
+
+    const weakY = 235 + info.strengths.length * 22 + 18;
+    add(this.add.text(RX, weakY, '⚠ WEAKNESSES', {
+      fontSize: '11px', fontFamily: 'Arial Black', color: '#ff5555',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(32));
+
+    info.weaknesses.forEach((w, i) => {
+      add(this.add.text(RX - RW / 2 + 8, weakY + 20 + i * 22, `▶ ${w}`, {
+        fontSize: '10px', fontFamily: 'Arial', color: '#ffaaaa',
+        stroke: '#000', strokeThickness: 1,
+      }).setDepth(32));
+    });
+
+    // ── Bottom buttons ────────────────────────────────────────────────────
+    const btnY = SH - 42;
+
+    // SELECT / BUY button
+    if (unlocked) {
+      const isSelected = ch.key === this.selectedChar;
+      const selBg = add(this.add.rectangle(PX - 80, btnY, 200, 36,
+        isSelected ? 0x2a6a00 : 0x1a4c1a, 0.95)
+        .setStrokeStyle(2, isSelected ? 0xaaffaa : 0x66ee66, 0.9).setInteractive().setDepth(31));
+      const selTxt = add(this.add.text(PX - 80, btnY,
+        isSelected ? '✓ SELECTED' : '▶ SELECT', {
+          fontSize: '14px', fontFamily: 'Arial Black',
+          color: isSelected ? '#ccffcc' : '#88ff88', stroke: '#000', strokeThickness: 3,
+        }).setOrigin(0.5).setDepth(32));
+      selBg.on('pointerover', () => selBg.setFillStyle(0x2a7c2a));
+      selBg.on('pointerout',  () => selBg.setFillStyle(isSelected ? 0x2a6a00 : 0x1a4c1a));
+      selBg.on('pointerdown', () => {
+        this.selectedChar = ch.key; saveCharacter(ch.key);
+        selTxt.setText('✓ SELECTED').setColor('#ccffcc');
+        selBg.setFillStyle(0x2a6a00).setStrokeStyle(2, 0xaaffaa, 0.9);
+        this._refreshPreview();
+        this._updateCharSelect();
+      });
+    } else {
+      const buyColor = canAfford ? 0x1a5c1a : 0x3a1111;
+      const buyBrdr  = canAfford ? 0x88ee88 : 0x884444;
+      const buyBg = add(this.add.rectangle(PX - 80, btnY, 200, 36, buyColor, 0.95)
+        .setStrokeStyle(2, buyBrdr, 0.9).setDepth(31));
+      add(this.add.text(PX - 80, btnY,
+        canAfford ? `💰 BUY  (${ch.price})` : `🔒 ${ch.price} coins`, {
+          fontSize: '13px', fontFamily: 'Arial Black',
+          color: canAfford ? '#88ff88' : '#aa5555', stroke: '#000', strokeThickness: 3,
+        }).setOrigin(0.5).setDepth(32));
+      if (canAfford) {
+        buyBg.setInteractive();
+        buyBg.on('pointerover', () => buyBg.setFillStyle(0x2a8c2a));
+        buyBg.on('pointerout',  () => buyBg.setFillStyle(0x1a5c1a));
+        buyBg.on('pointerdown', () => {
+          this._buyCharacter(ch.key, ch.price);
+          this._closeCharDetail();
+          this._openCharDetail(ch);
+        });
+      }
+    }
+
+    // BACK button
+    const backBg = add(this.add.rectangle(PX + 90, btnY, 150, 36, 0x331100, 0.95)
+      .setStrokeStyle(2, 0xaa6622, 0.8).setInteractive().setDepth(31));
+    add(this.add.text(PX + 90, btnY, '◀  BACK', {
+      fontSize: '14px', fontFamily: 'Arial Black', color: '#ffcc88',
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(32));
+    backBg.on('pointerover', () => backBg.setFillStyle(0x553300));
+    backBg.on('pointerout',  () => backBg.setFillStyle(0x331100));
+    backBg.on('pointerdown', () => this._closeCharDetail());
+  }
+
+  _closeCharDetail() {
+    if (this._spinTween) { this._spinTween.stop(); this._spinTween = null; }
+    for (const el of (this.detailItems || [])) { try { el.destroy(); } catch {} }
+    this.detailItems = [];
+    for (const el of (this.charTabContentItems || [])) el.setVisible(true);
+  }
+
+  _buySkin(ch, skin, spinSpr) {
+    const coins = getSavedCoins();
+    if (coins < skin.cost) return;
+    saveCoins(coins - skin.cost);
+    const arr = getSavedUnlockedSkins();
+    if (!arr.includes(skin.key)) arr.push(skin.key);
+    saveUnlockedSkins(arr);
+    this._equipSkin(ch, skin, spinSpr);
+    this._refreshMenuCoins();
+    // Rebuild detail to refresh skin UI
+    this._closeCharDetail();
+    this._openCharDetail(ch);
+  }
+
+  _equipSkin(ch, skin, spinSpr) {
+    const obj = getSavedEquippedSkins();
+    obj[ch.key] = skin.key;
+    saveEquippedSkins(obj);
+    if (spinSpr) spinSpr.setTint(skin.tint);
+    this._closeCharDetail();
+    this._openCharDetail(ch);
+  }
+
+  _unequipSkin(ch, spinSpr) {
+    const obj = getSavedEquippedSkins();
+    delete obj[ch.key];
+    saveEquippedSkins(obj);
+    if (spinSpr) spinSpr.clearTint();
+    this._closeCharDetail();
+    this._openCharDetail(ch);
   }
 
   _buyUpgrade(weaponIdx, type) {

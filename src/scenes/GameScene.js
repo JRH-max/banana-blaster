@@ -13,9 +13,15 @@ function writeSave(data) {
 }
 function getSavedCoins()    { return loadSave().coins     || 0; }
 function getSavedUpgrades() { return loadSave().upgrades  || [[0,0,0],[0,0,0],[0,0,0]]; }
-function getSavedChar()     { return loadSave().character || 'banana'; }
+function getSavedChar()          { return loadSave().character    || 'banana'; }
+function getSavedEquippedSkins() { return loadSave().equippedSkins || {}; }
 function saveCoins(c)       { writeSave({ ...loadSave(), coins: c }); }
 function saveUpgrades(ups)  { writeSave({ ...loadSave(), upgrades: ups }); }
+
+const SKIN_TINTS = {
+  trash_can_s1: 0xffd700, dragon_s1: 0x44ccff, phoenix_s1: 0xaa22ff,
+  kraken_s1: 0xff4400, mystery_s1: 0x220088, glitch_s1: 0x00ffaa,
+};
 
 function iso(wx, wy) {
   return { x: wx * TW, y: wy * TH };
@@ -125,6 +131,8 @@ export class GameScene extends Phaser.Scene {
     const ps = iso(this.player.wx, this.player.wy);
     const charKey = getSavedChar();
     this.playerSpr    = this.add.image(ps.x, ps.y - 22, charKey).setOrigin(0.5, 1).setScale(0.55).setDepth(9000);
+    const _equippedSkin = getSavedEquippedSkins()[charKey];
+    if (_equippedSkin && SKIN_TINTS[_equippedSkin]) this.playerSpr.setTint(SKIN_TINTS[_equippedSkin]);
     this.playerGun    = this.add.image(ps.x + 14, ps.y - 28, 'bot_gun').setOrigin(0, 0.5).setScale(1.2).setDepth(9001);
     this.playerShadow = this.add.ellipse(ps.x, ps.y - 4, 28, 10, 0x000000, 0.25).setDepth(8990);
     // Blue team ring under player
