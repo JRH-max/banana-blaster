@@ -135,15 +135,10 @@ export class MenuScene extends Phaser.Scene {
     this.charItems    = [];
     this.boomItems    = [];
 
-    // Boom Drop gift — 2 free drops every 10 minutes
-    const now     = Date.now();
-    const lastStr = getSavedBoomDate();
-    const last    = lastStr ? parseInt(lastStr, 10) : 0;
-    if (now - last >= 10 * 60 * 1000) {
-      saveBoomDate(String(now));
-      saveBoomDrops(getSavedBoomDrops() + 5);
-    }
-    // Schedule next grant while menu is open
+    // Boom Drop gift — 5 free drops every time the menu opens, then every 10 minutes
+    saveBoomDrops(getSavedBoomDrops() + 5);
+    saveBoomDate(String(Date.now()));
+    // Also grant every 10 minutes while staying on the menu
     this._boomGrantTimer = this.time.addEvent({
       delay: 10 * 60 * 1000,
       callback: () => {
