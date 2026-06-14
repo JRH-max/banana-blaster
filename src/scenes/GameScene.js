@@ -831,7 +831,7 @@ export class GameScene extends Phaser.Scene {
         }
       }
 
-      if (hit || b.life <= 0 || this._treeAt(b.wx, b.wy) ||
+      if (hit || b.life <= 0 ||
           b.wx < 0 || b.wx > GRID || b.wy < 0 || b.wy > GRID) {
         b.sprite.destroy();
         this.bullets.splice(i, 1);
@@ -1650,7 +1650,7 @@ export class GameScene extends Phaser.Scene {
     for (let tries = 0; tries < 200; tries++) {
       const tx = Phaser.Math.Clamp(px + Phaser.Math.Between(-8, 8), 3, GRID - 3);
       const ty = Phaser.Math.Clamp(py + Phaser.Math.Between(-8, 8), 3, GRID - 3);
-      if (!this._treeAt(tx, ty) && Math.hypot(tx - px, ty - py) > 3) {
+      if (Math.hypot(tx - px, ty - py) > 3) {
         wx = tx; wy = ty; break;
       }
     }
