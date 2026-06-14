@@ -1755,59 +1755,61 @@ export class GameScene extends Phaser.Scene {
       const kbLeft  = this.cursors.left.isDown  || this.keys.A.isDown;
       const kbRight = this.cursors.right.isDown || this.keys.D.isDown;
 
-      let inputX = 0, inputY = 0;
+      const hasKbInput = kbUp || kbDown || kbLeft || kbRight;
+      const hasInput = this.joystickActive || hasKbInput;
+
       if (this.joystickActive) {
-        inputX = this.joystickDir.x;
-        inputY = this.joystickDir.y;
+        // Joystick: drive in whatever direction it points
+        const inputX = this.joystickDir.x;
+        const inputY = this.joystickDir.y;
+        const inputLen = Math.hypot(inputX, inputY);
+        if (inputLen > 0.05) {
+          const nx2 = inputX / inputLen, ny2 = inputY / inputLen;
+          const worldDx = nx2 / TW + ny2 / TH;
+          const worldDy = ny2 / TH - nx2 / TW;
+          const wLen = Math.hypot(worldDx, worldDy) || 1;
+          const wdx = worldDx / wLen, wdy = worldDy / wLen;
+          this.carSpeed = Math.min(this.carSpeed + ACCEL * dt * inputLen, MAX_SPEED);
+          car.angle = Math.atan2(wdy, wdx);
+          const mx = car.wx + wdx * this.carSpeed * dt;
+          const my = car.wy + wdy * this.carSpeed * dt;
+          if (this._canMove(mx, my)) {
+            car.wx = mx; car.wy = my;
+          } else if (this._canMove(mx, car.wy)) {
+            car.wx = mx; this.carSpeed *= 0.6;
+          } else if (this._canMove(car.wx, my)) {
+            car.wy = my; this.carSpeed *= 0.6;
+          } else {
+            this.carSpeed *= 0.2;
+            this.cameras.main.shake(60, 0.006);
+          }
+        }
       } else {
-        if (kbUp)    inputY -= 1;
-        if (kbDown)  inputY += 1;
-        if (kbLeft)  inputX -= 1;
-        if (kbRight) inputX += 1;
-      }
-
-      const inputLen = Math.hypot(inputX, inputY);
-      const hasInput = inputLen > 0.05;
-
-      if (hasInput) {
-        // Normalise and convert screen-joystick direction to world direction
-        const nx2 = inputX / inputLen;
-        const ny2 = inputY / inputLen;
-        // Joystick up (ny2=-1) should move car up on screen (world -y)
-        const worldDx = nx2 / TW + ny2 / TH;
-        const worldDy = ny2 / TH - nx2 / TW;
-        const wLen = Math.hypot(worldDx, worldDy) || 1;
-        const wdx = worldDx / wLen, wdy = worldDy / wLen;
-
-        // Accelerate toward input direction
-        this.carSpeed = Math.min(this.carSpeed + ACCEL * dt * inputLen, MAX_SPEED);
-
-        // Point car in movement direction
-        car.angle = Math.atan2(wdy, wdx);
-
-        // Move
-        const mx = car.wx + wdx * this.carSpeed * dt;
-        const my = car.wy + wdy * this.carSpeed * dt;
-        if (this._canMove(mx, my)) {
-          car.wx = mx; car.wy = my;
-        } else if (this._canMove(mx, car.wy)) {
-          car.wx = mx; this.carSpeed *= 0.6;
-        } else if (this._canMove(car.wx, my)) {
-          car.wy = my; this.carSpeed *= 0.6;
+        // Keyboard: classic throttle + steer
+        const throttle = kbUp ? 1 : kbDown ? -0.5 : 0;
+        const steer    = kbLeft ? -1 : kbRight ? 1 : 0;
+        this.carSpeed += throttle * ACCEL * dt;
+        this.carSpeed *= (1 - dt * (hasKbInput ? st.friction : st.friction * 2.2));
+        this.carSpeed = Phaser.Math.Clamp(this.carSpeed, -MAX_SPEED * 0.45, MAX_SPEED);
+        if (Math.abs(this.carSpeed) > 0.3) car.angle += steer * 2.0 * dt * Math.sign(this.carSpeed);
+        const nx = car.wx + Math.cos(car.angle) * this.carSpeed * dt;
+        const ny = car.wy + Math.sin(car.angle) * this.carSpeed * dt;
+        if (this._canMove(nx, ny)) {
+          car.wx = nx; car.wy = ny;
+        } else if (this._canMove(nx, car.wy)) {
+          car.wx = nx; this.carSpeed *= 0.5;
+        } else if (this._canMove(car.wx, ny)) {
+          car.wy = ny; this.carSpeed *= 0.5;
         } else {
-          this.carSpeed *= 0.2;
+          this.carSpeed *= -0.35;
           this.cameras.main.shake(60, 0.006);
         }
-      } else {
-        // Decelerate when no input
+      }
+
+      // Decelerate when no input
+      if (!hasInput) {
         this.carSpeed *= (1 - dt * st.friction * 2.2);
-        if (Math.abs(this.carSpeed) > 0.05) {
-          const mx = car.wx + Math.cos(car.angle) * this.carSpeed * dt;
-          const my = car.wy + Math.sin(car.angle) * this.carSpeed * dt;
-          if (this._canMove(mx, my)) { car.wx = mx; car.wy = my; }
-        } else {
-          this.carSpeed = 0;
-        }
+        if (Math.abs(this.carSpeed) < 0.05) this.carSpeed = 0;
       }
 
       // Sync player to car
