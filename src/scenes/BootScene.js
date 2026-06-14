@@ -53,6 +53,7 @@ export class BootScene extends Phaser.Scene {
     this._witch();
     this._glitch();
     this._void();
+    this._ferrari();
     this.scene.start('MenuScene');
   }
 
@@ -1713,5 +1714,107 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xff8800, 0.7); g.fillCircle(22, 2, 2.5);
     g.fillStyle(0xffffff, 0.8); g.fillCircle(22, 1, 1.2);
     g.generateTexture('tnt', W, H); g.destroy();
+  }
+
+  // ── Ferrari top-down ───────────────────────────────────────────────────────
+  _ferrari() {
+    const g = this._g();
+    const W = 54, H = 96;
+
+    // Tires (black rubber)
+    g.fillStyle(0x111111, 1);
+    g.fillRoundedRect(1, 14, 10, 18, 3);       // front-left
+    g.fillRoundedRect(W - 11, 14, 10, 18, 3);  // front-right
+    g.fillRoundedRect(1, H - 32, 10, 18, 3);   // rear-left
+    g.fillRoundedRect(W - 11, H - 32, 10, 18, 3); // rear-right
+
+    // Wheel rims (silver spokes)
+    const rimC = [[5, 23], [W - 5, 23], [5, H - 23], [W - 5, H - 23]];
+    for (const [rx, ry] of rimC) {
+      g.fillStyle(0xaaaaaa, 1); g.fillCircle(rx, ry, 6);
+      g.fillStyle(0x666666, 1); g.fillCircle(rx, ry, 3);
+      g.fillStyle(0xcccccc, 0.6);
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2;
+        g.fillRect(rx + Math.cos(a) * 2.5 - 1, ry + Math.sin(a) * 2.5 - 1, 2, 2);
+      }
+    }
+
+    // Body shadow / underside
+    g.fillStyle(0x770000, 1);
+    g.fillRoundedRect(8, 5, W - 16, H - 10, 12);
+
+    // Main red body
+    g.fillStyle(0xdd1111, 1);
+    g.fillRoundedRect(9, 4, W - 18, H - 8, 11);
+
+    // Side skirts (darker red strip on edges)
+    g.fillStyle(0xaa0000, 1);
+    g.fillRect(9, 14, 4, H - 28);
+    g.fillRect(W - 13, 14, 4, H - 28);
+
+    // Front nose cone (narrower)
+    g.fillStyle(0xcc0000, 1);
+    g.fillRoundedRect(14, 4, W - 28, 18, 6);
+
+    // Front splitter / grille area
+    g.fillStyle(0x111111, 1);
+    g.fillRoundedRect(15, 5, W - 30, 9, 3);
+    // Grille slots
+    g.fillStyle(0x333333, 1);
+    g.fillRect(17, 6, 6, 3); g.fillRect(25, 6, 6, 3); g.fillRect(33, 6, 6, 3);
+
+    // Headlights (bright white with yellow DRL)
+    g.fillStyle(0xffffee, 1);
+    g.fillRoundedRect(10, 8, 10, 6, 2);
+    g.fillRoundedRect(W - 20, 8, 10, 6, 2);
+    g.fillStyle(0xffdd00, 0.8);
+    g.fillRect(11, 9, 4, 2); g.fillRect(W - 19, 9, 4, 2);
+
+    // Front windshield
+    g.fillStyle(0x1a2a44, 0.92);
+    g.fillRoundedRect(13, 20, W - 26, 18, 5);
+    // Windshield reflection glare
+    g.fillStyle(0xffffff, 0.12);
+    g.fillRoundedRect(15, 21, 10, 6, 3);
+
+    // Roof panel
+    g.fillStyle(0xbb0000, 1);
+    g.fillRoundedRect(14, 37, W - 28, 24, 5);
+    // Roof highlight
+    g.fillStyle(0xff3333, 0.18);
+    g.fillRoundedRect(18, 39, 14, 10, 3);
+
+    // Rear windshield
+    g.fillStyle(0x1a2a44, 0.88);
+    g.fillRoundedRect(13, 60, W - 26, 14, 4);
+
+    // Rear trunk / engine cover
+    g.fillStyle(0xcc0000, 1);
+    g.fillRoundedRect(13, 73, W - 26, 12, 4);
+    // Engine vents
+    g.fillStyle(0x880000, 1);
+    g.fillRect(17, 75, 4, 8); g.fillRect(23, 75, 4, 8); g.fillRect(29, 75, 4, 8);
+
+    // Rear spoiler
+    g.fillStyle(0x880000, 1);
+    g.fillRect(8, H - 12, W - 16, 6);
+    g.fillStyle(0x550000, 1);
+    g.fillRect(8, H - 13, W - 16, 3);
+
+    // Taillights (glowing red/orange)
+    g.fillStyle(0xff2200, 1);
+    g.fillRoundedRect(10, H - 18, 11, 6, 2);
+    g.fillRoundedRect(W - 21, H - 18, 11, 6, 2);
+    g.fillStyle(0xff6600, 0.7);
+    g.fillRoundedRect(11, H - 17, 5, 3, 1);
+    g.fillRoundedRect(W - 20, H - 17, 5, 3, 1);
+
+    // Center hood stripe (classic Ferrari touch)
+    g.fillStyle(0xff2222, 0.22);
+    g.fillRect(W / 2 - 3, 4, 6, H - 8);
+
+    g.generateTexture('ferrari', W, H);
+    g.destroy();
   }
 }

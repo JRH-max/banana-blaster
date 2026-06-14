@@ -148,6 +148,7 @@ export class GameScene extends Phaser.Scene {
     this.hazards = [];
 
     this._spawnBots();
+    this._spawnCar();
 
     // Apply character's custom slot-1 weapon
     WEAPONS[0] = { ...(CHAR_SLOT1[charKey] ?? CHAR_SLOT1.banana) };
@@ -201,7 +202,15 @@ export class GameScene extends Phaser.Scene {
     });
     this.input.keyboard.on('keydown-Q', () => this.toggleScope());
     this.input.keyboard.on('keydown-R', () => this._startReload());
-    this.input.keyboard.on('keydown-E', () => this._useSpecial());
+    this.input.keyboard.on('keydown-E', () => {
+      if (this.inCar) { this._exitCar(); return; }
+      const car = this.carObj;
+      if (car && Math.hypot(this.player.wx - car.wx, this.player.wy - car.wy) < 2.5) {
+        this._enterCar();
+      } else {
+        this._useSpecial();
+      }
+    });
     this.input.keyboard.on('keydown-ONE',   () => this.switchWeapon(0));
     this.input.keyboard.on('keydown-TWO',   () => this.switchWeapon(1));
     this.input.keyboard.on('keydown-THREE', () => this.switchWeapon(2));
@@ -223,7 +232,15 @@ export class GameScene extends Phaser.Scene {
     this.aimJoyAngle       = 0;
     this.fireOnRelease     = false;
     this.aimFireAngle      = 0;   // locked angle at the moment of release
+    // Car state
+    this.inCar           = false;
+    this.carSpeed        = 0;
+    this.carBoostActive  = false;
+    this.carBoostTimer   = 0;
+    this.carBoostCD      = 0;
+
     this._setupTouchJoy();
+    this._setupCarUI();
 
     // Aim laser
     this.aimLine = this.add.graphics().setDepth(9100);
@@ -235,7 +252,8 @@ export class GameScene extends Phaser.Scene {
   // ── update ─────────────────────────────────────────────────────────────────
   update(time, delta) {
     const dt = delta / 1000;
-    this._movePlayer(dt);
+    this._updateCar(dt);
+    if (!this.inCar) this._movePlayer(dt);
     this._aimPlayer();
     this._handleFire(delta);
     this._updateBots(delta, dt);
@@ -419,6 +437,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   _updatePlayerSprite() {
+    if (this.inCar) return;
     const s = iso(this.player.wx, this.player.wy);
     const d = isoDepth(this.player.wx, this.player.wy);
     this.playerSpr.setPosition(s.x, s.y - 22).setDepth(d + 12);
@@ -451,7 +470,7 @@ export class GameScene extends Phaser.Scene {
 
   // ── firing ─────────────────────────────────────────────────────────────────
   _handleFire(delta) {
-    if (this.reloading) return;
+    if (this.inCar || this.reloading) return;
     this.fireCooldown = Math.max(0, this.fireCooldown - delta);
     const w = WEAPONS[this.currentWeapon];
     const justFire = Phaser.Input.Keyboard.JustDown(this.keys.SPACE);
@@ -1481,7 +1500,7 @@ export class GameScene extends Phaser.Scene {
         this.joystickPointerId = p.id;
         this._calcJoy(p, JX, JY, JR);
       }
-      if (p.x >= SW * 0.45) {
+      if (p.x >= SW * 0.45 && !this.inCar) {
         this.aimJoyActive    = true;
         this.aimJoyPointerId = p.id;
         this.aimJoyOriginX   = p.x;
@@ -1542,5 +1561,247 @@ export class GameScene extends Phaser.Scene {
     const d  = Math.min(Math.hypot(dx, dy), r);
     const a  = Math.atan2(dy, dx);
     this.joystickDir = { x: Math.cos(a) * (d / r), y: Math.sin(a) * (d / r) };
+  }
+
+  // ── Ferrari car ────────────────────────────────────────────────────────────
+  _spawnCar() {
+    const BORDER = 6;
+    let wx = GRID / 2 + 8, wy = GRID / 2 + 8;
+    for (let tries = 0; tries < 200; tries++) {
+      const tx = BORDER + Math.random() * (GRID - BORDER * 2);
+      const ty = BORDER + Math.random() * (GRID - BORDER * 2);
+      if (!this._treeAt(tx, ty) &&
+          Math.hypot(tx - this.player.wx, ty - this.player.wy) > 12) {
+        wx = tx; wy = ty; break;
+      }
+    }
+    const s = iso(wx, wy);
+    const d = isoDepth(wx, wy);
+    this.carObj = {
+      wx, wy, angle: 0,
+      sprite: this.add.image(s.x, s.y - 18, 'ferrari')
+        .setOrigin(0.5, 0.5).setScale(0.9).setDepth(d + 10),
+      shadow: this.add.ellipse(s.x, s.y - 6, 58, 22, 0x000000, 0.32)
+        .setDepth(d - 1),
+    };
+  }
+
+  _setupCarUI() {
+    const SW = this.scale.width;
+    const SH = this.scale.height || 540;
+    const AJX = SW - 110, AJY = 478;
+
+    // DRIVE button (shown when player is near the car)
+    this._driveBg = this.add.graphics().setScrollFactor(0).setDepth(21000).setVisible(false);
+    this._driveBg.fillStyle(0x117711, 0.92);
+    this._driveBg.fillRoundedRect(-60, -26, 120, 52, 16);
+    this._driveBg.strokeRoundedRect(-60, -26, 120, 52, 16);
+    this._driveBg.lineStyle(2, 0x55ff55, 0.7);
+    this._driveBg.setPosition(SW / 2, SH - 120);
+    this._driveTxt = this.add.text(SW / 2, SH - 120, '🚗 DRIVE', {
+      fontSize: '22px', color: '#ffffff', fontStyle: 'bold',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(21001).setVisible(false);
+    // Make the whole area interactive
+    this._driveZone = this.add.zone(SW / 2, SH - 120, 120, 52)
+      .setScrollFactor(0).setDepth(21002).setInteractive().setVisible(false);
+    this._driveZone.on('pointerdown', () => this._enterCar());
+
+    // EXIT button (shown when in car)
+    this._exitBg = this.add.graphics().setScrollFactor(0).setDepth(21000).setVisible(false);
+    this._exitBg.fillStyle(0x881111, 0.92);
+    this._exitBg.fillRoundedRect(-60, -26, 120, 52, 16);
+    this._exitBg.lineStyle(2, 0xff5555, 0.7);
+    this._exitBg.strokeRoundedRect(-60, -26, 120, 52, 16);
+    this._exitBg.setPosition(SW / 2, SH - 120);
+    this._exitTxt = this.add.text(SW / 2, SH - 120, '🚪 EXIT', {
+      fontSize: '22px', color: '#ffffff', fontStyle: 'bold',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(21001).setVisible(false);
+    this._exitZone = this.add.zone(SW / 2, SH - 120, 120, 52)
+      .setScrollFactor(0).setDepth(21002).setInteractive().setVisible(false);
+    this._exitZone.on('pointerdown', () => this._exitCar());
+
+    // BOOST button — replaces aim joystick when in car
+    this._boostBg = this.add.graphics().setScrollFactor(0).setDepth(21000).setVisible(false);
+    this._boostBg.setPosition(AJX, AJY);
+    this._boostTxt = this.add.text(AJX, AJY, '⚡ BOOST', {
+      fontSize: '18px', color: '#ffffff', fontStyle: 'bold',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(21001).setVisible(false);
+    this._boostZone = this.add.zone(AJX, AJY, 110, 110)
+      .setScrollFactor(0).setDepth(21002).setInteractive().setVisible(false);
+    this._boostZone.on('pointerdown', () => this._carBoost());
+    this._redrawBoostBtn(false);
+  }
+
+  _redrawBoostBtn(ready) {
+    const AJX = this.scale.width - 110, AJY = 478;
+    this._boostBg.clear();
+    this._boostBg.fillStyle(ready ? 0xcc5500 : 0x444444, 0.88);
+    this._boostBg.fillCircle(0, 0, 52);
+    this._boostBg.lineStyle(2, ready ? 0xff9922 : 0x888888, 0.8);
+    this._boostBg.strokeCircle(0, 0, 52);
+  }
+
+  _updateCar(dt) {
+    if (!this.carObj) return;
+    const car = this.carObj;
+
+    // Boost timers
+    if (this.carBoostCD > 0) this.carBoostCD = Math.max(0, this.carBoostCD - dt);
+    if (this.carBoostActive) {
+      this.carBoostTimer = Math.max(0, this.carBoostTimer - dt);
+      if (this.carBoostTimer <= 0) this.carBoostActive = false;
+    }
+
+    if (this.inCar) {
+      // Update boost button appearance
+      const boostReady = this.carBoostCD <= 0;
+      this._redrawBoostBtn(boostReady);
+
+      const MAX_SPEED = this.carBoostActive ? 20 : 10;
+      const ACCEL = 22, STEER = 2.0;
+
+      const throttle = this.joystickActive ? -this.joystickDir.y : 0;
+      const steer    = this.joystickActive ?  this.joystickDir.x : 0;
+
+      this.carSpeed += throttle * ACCEL * dt;
+      // Friction / drag
+      this.carSpeed *= (1 - dt * (this.joystickActive ? 1.8 : 4.0));
+      this.carSpeed = Phaser.Math.Clamp(this.carSpeed, -MAX_SPEED * 0.45, MAX_SPEED);
+
+      // Steering scales with speed
+      if (Math.abs(this.carSpeed) > 0.3) {
+        car.angle += steer * STEER * dt * Math.sign(this.carSpeed);
+      }
+
+      // Try to move, bounce on collision
+      const nx = car.wx + Math.cos(car.angle) * this.carSpeed * dt;
+      const ny = car.wy + Math.sin(car.angle) * this.carSpeed * dt;
+      if (this._canMove(nx, ny)) {
+        car.wx = nx; car.wy = ny;
+      } else if (this._canMove(nx, car.wy)) {
+        car.wx = nx; this.carSpeed *= 0.5;
+      } else if (this._canMove(car.wx, ny)) {
+        car.wy = ny; this.carSpeed *= 0.5;
+      } else {
+        this.carSpeed *= -0.35;
+        this.cameras.main.shake(60, 0.006);
+      }
+
+      // Sync player to car
+      this.player.wx = car.wx;
+      this.player.wy = car.wy;
+      this.player.angle = car.angle;
+
+      // Bot collision damage
+      if (Math.abs(this.carSpeed) > 3) {
+        for (const bot of this.bots) {
+          if (!bot.alive) continue;
+          if (Math.hypot(bot.wx - car.wx, bot.wy - car.wy) < 1.4) {
+            this._hitEntity(bot, this.carBoostActive ? 400 : 200, 'banana');
+            this.carSpeed *= 0.55;
+            this.cameras.main.shake(140, 0.01);
+            // Knock bot back
+            const kx = bot.wx - car.wx, ky = bot.wy - car.wy;
+            const kd = Math.hypot(kx, ky) || 1;
+            bot.wx = Phaser.Math.Clamp(bot.wx + (kx / kd) * 2.5, 1, GRID - 1);
+            bot.wy = Phaser.Math.Clamp(bot.wy + (ky / kd) * 2.5, 1, GRID - 1);
+          }
+        }
+      }
+    }
+
+    // Update car sprite position + rotation
+    const s = iso(car.wx, car.wy);
+    const d = isoDepth(car.wx, car.wy);
+    car.sprite
+      .setPosition(s.x, s.y - 18)
+      .setDepth(this.inCar ? d + 11 : d + 10)
+      .setAngle(Phaser.Math.RadToDeg(car.angle) + 90);
+    car.shadow
+      .setPosition(s.x, s.y - 6)
+      .setDepth(d - 1)
+      .setAngle(Phaser.Math.RadToDeg(car.angle));
+
+    // DRIVE button: show when close enough and not in car
+    if (!this.inCar) {
+      const dist = Math.hypot(this.player.wx - car.wx, this.player.wy - car.wy);
+      const near = dist < 2.5;
+      this._driveBg.setVisible(near);
+      this._driveTxt.setVisible(near);
+      this._driveZone.setVisible(near);
+    }
+  }
+
+  _enterCar() {
+    if (this.inCar || !this.carObj) return;
+    this.inCar = true;
+    this.carSpeed = 0;
+
+    // Snap player to car
+    this.player.wx = this.carObj.wx;
+    this.player.wy = this.carObj.wy;
+
+    // Hide player visuals
+    this.playerSpr.setVisible(false);
+    this.playerGun.setVisible(false);
+    this.playerShadow.setVisible(false);
+    this.playerRing.setVisible(false);
+    if (this.aimLine) this.aimLine.clear();
+
+    // Hide aim joystick
+    this.aimJoyBase.setVisible(false);
+    this.aimJoyKnob.setVisible(false);
+    this.aimJoyActive = false;
+
+    // Hide drive button, show exit + boost
+    this._driveBg.setVisible(false);
+    this._driveTxt.setVisible(false);
+    this._driveZone.setVisible(false);
+    this._exitBg.setVisible(true);
+    this._exitTxt.setVisible(true);
+    this._exitZone.setVisible(true);
+    this._boostBg.setVisible(true);
+    this._boostTxt.setVisible(true);
+    this._boostZone.setVisible(true);
+  }
+
+  _exitCar() {
+    if (!this.inCar) return;
+    this.inCar = false;
+    this.carSpeed = 0;
+
+    // Place player just behind the car
+    const a = this.carObj.angle + Math.PI;
+    this.player.wx = Phaser.Math.Clamp(this.carObj.wx + Math.cos(a) * 2, 1, GRID - 1);
+    this.player.wy = Phaser.Math.Clamp(this.carObj.wy + Math.sin(a) * 2, 1, GRID - 1);
+
+    // Restore player visuals
+    this.playerSpr.setVisible(true);
+    this.playerGun.setVisible(true);
+    this.playerShadow.setVisible(true);
+    this.playerRing.setVisible(true);
+
+    // Restore aim joystick
+    this.aimJoyBase.setVisible(true);
+    this.aimJoyKnob.setVisible(true);
+
+    // Hide car UI
+    this._exitBg.setVisible(false);
+    this._exitTxt.setVisible(false);
+    this._exitZone.setVisible(false);
+    this._boostBg.setVisible(false);
+    this._boostTxt.setVisible(false);
+    this._boostZone.setVisible(false);
+  }
+
+  _carBoost() {
+    if (this.carBoostCD > 0 || !this.inCar) return;
+    this.carBoostActive = true;
+    this.carBoostTimer  = 2.5;
+    this.carBoostCD     = 9;
+    // Kick the speed
+    this.carSpeed = Math.max(this.carSpeed, 6) * 1.6;
+    this.cameras.main.shake(160, 0.014);
+    this.cameras.main.flash(180, 255, 150, 0, 0.3);
   }
 }
