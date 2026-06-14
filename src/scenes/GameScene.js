@@ -274,6 +274,7 @@ export class GameScene extends Phaser.Scene {
     this._updatePlayerSprite();
     this._updateCamera();
     this._waveCheck(delta);
+    this._maintainNearbyEnemies(delta);
     if (this.specialCD > 0) this.specialCD = Math.max(0, this.specialCD - delta);
     if (this.phoenixInvincible > 0) this.phoenixInvincible = Math.max(0, this.phoenixInvincible - delta);
   }
@@ -895,19 +896,46 @@ export class GameScene extends Phaser.Scene {
 
   _spawnWave() {
     const count = 8 + this.waveNum * 2;
-    const BORDER = 2, MIN_DIST_FROM_PLAYER = 18;
     for (let i = 0; i < count; i++) {
       const r    = Math.random();
       const type = this.waveNum >= 3 ? (r < 0.12 ? 'boss' : r < 0.38 ? 'armored' : 'normal') : 'normal';
-      let wx, wy, tries = 0;
-      do {
-        wx = BORDER + Math.random() * (GRID - BORDER * 2);
-        wy = BORDER + Math.random() * (GRID - BORDER * 2);
-        tries++;
-      } while (
-        Math.hypot(wx - this.player.wx, wy - this.player.wy) < MIN_DIST_FROM_PLAYER &&
-        tries < 30
-      );
+      const { wx, wy } = this._randomNearPlayer(18, 45);
+      this._spawnBot('raccoon', type, wx, wy);
+    }
+  }
+
+  _randomNearPlayer(minDist, maxDist) {
+    for (let tries = 0; tries < 40; tries++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist  = minDist + Math.random() * (maxDist - minDist);
+      const wx = Phaser.Math.Clamp(this.player.wx + Math.cos(angle) * dist, 2, GRID - 2);
+      const wy = Phaser.Math.Clamp(this.player.wy + Math.sin(angle) * dist, 2, GRID - 2);
+      return { wx, wy };
+    }
+    return { wx: this.player.wx + minDist, wy: this.player.wy };
+  }
+
+  // Keep at least 6 raccoons within ramming range at all times
+  _maintainNearbyEnemies(delta) {
+    this._nearbySpawnTimer = (this._nearbySpawnTimer || 0) + delta;
+    if (this._nearbySpawnTimer < 2000) return;
+    this._nearbySpawnTimer = 0;
+
+    const NEARBY = 60;
+    let nearbyCount = 0;
+    for (const b of this.bots) {
+      if (b.alive && b.faction === 'raccoon' &&
+          Math.hypot(b.wx - this.player.wx, b.wy - this.player.wy) < NEARBY) {
+        nearbyCount++;
+      }
+    }
+
+    const want = 6 + Math.floor(this.waveNum * 0.5);
+    const toSpawn = want - nearbyCount;
+    for (let i = 0; i < toSpawn; i++) {
+      const r    = Math.random();
+      const type = this.waveNum >= 3 ? (r < 0.12 ? 'boss' : r < 0.38 ? 'armored' : 'normal') : 'normal';
+      const { wx, wy } = this._randomNearPlayer(20, 50);
       this._spawnBot('raccoon', type, wx, wy);
     }
   }
