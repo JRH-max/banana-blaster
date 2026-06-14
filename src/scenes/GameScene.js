@@ -26,7 +26,7 @@ const CAR_STATS = {
   ferrari: { maxSpeed: 11, boostSpeed: 20, damage: 200, boostDamage: 400, boostCD: 9,  scale: 0.90, accel: 22, friction: 1.8 },
   muscle:  { maxSpeed: 9,  boostSpeed: 17, damage: 280, boostDamage: 520, boostCD: 10, scale: 0.88, accel: 20, friction: 2.0 },
   monster: { maxSpeed: 7,  boostSpeed: 13, damage: 380, boostDamage: 700, boostCD: 11, scale: 1.05, accel: 14, friction: 2.8 },
-  racer:   { maxSpeed: 55, boostSpeed: 90, damage: 140, boostDamage: 260, boostCD: 7,  scale: 0.80, accel: 90, friction: 0.6 },
+  racer:   { maxSpeed: 40, boostSpeed: 65, damage: 140, boostDamage: 260, boostCD: 7,  scale: 0.80, accel: 70, friction: 0.6 },
 };
 
 const SKIN_TINTS = {
