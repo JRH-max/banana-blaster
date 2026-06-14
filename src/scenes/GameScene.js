@@ -22,11 +22,11 @@ function saveCoins(c)       { writeSave({ ...loadSave(), coins: c }); }
 function saveUpgrades(ups)  { writeSave({ ...loadSave(), upgrades: ups }); }
 
 const CAR_STATS = {
-  jalopy:  { maxSpeed: 7,  boostSpeed: 12, damage: 100, boostDamage: 180, boostCD: 12, scale: 0.85 },
-  ferrari: { maxSpeed: 11, boostSpeed: 20, damage: 200, boostDamage: 400, boostCD: 9,  scale: 0.90 },
-  muscle:  { maxSpeed: 9,  boostSpeed: 17, damage: 280, boostDamage: 520, boostCD: 10, scale: 0.88 },
-  monster: { maxSpeed: 7,  boostSpeed: 13, damage: 380, boostDamage: 700, boostCD: 11, scale: 1.05 },
-  racer:   { maxSpeed: 55, boostSpeed: 90, damage: 140, boostDamage: 260, boostCD: 7,  scale: 0.80 },
+  jalopy:  { maxSpeed: 7,  boostSpeed: 12, damage: 100, boostDamage: 180, boostCD: 12, scale: 0.85, accel: 18, friction: 2.2 },
+  ferrari: { maxSpeed: 11, boostSpeed: 20, damage: 200, boostDamage: 400, boostCD: 9,  scale: 0.90, accel: 22, friction: 1.8 },
+  muscle:  { maxSpeed: 9,  boostSpeed: 17, damage: 280, boostDamage: 520, boostCD: 10, scale: 0.88, accel: 20, friction: 2.0 },
+  monster: { maxSpeed: 7,  boostSpeed: 13, damage: 380, boostDamage: 700, boostCD: 11, scale: 1.05, accel: 14, friction: 2.8 },
+  racer:   { maxSpeed: 55, boostSpeed: 90, damage: 140, boostDamage: 260, boostCD: 7,  scale: 0.80, accel: 90, friction: 0.6 },
 };
 
 const SKIN_TINTS = {
@@ -1747,7 +1747,8 @@ export class GameScene extends Phaser.Scene {
 
       const st = CAR_STATS[car.key] || CAR_STATS.jalopy;
       const MAX_SPEED = this.carBoostActive ? st.boostSpeed : st.maxSpeed;
-      const ACCEL = 22, STEER = 2.0;
+      const ACCEL = this.carBoostActive ? st.accel * 1.6 : st.accel;
+      const STEER = 2.0;
 
       const kbUp    = this.cursors.up.isDown    || this.keys.W.isDown;
       const kbDown  = this.cursors.down.isDown  || this.keys.S.isDown;
@@ -1767,7 +1768,7 @@ export class GameScene extends Phaser.Scene {
       const hasInput = this.joystickActive || hasKbInput;
       this.carSpeed += throttle * ACCEL * dt;
       // Friction / drag
-      this.carSpeed *= (1 - dt * (hasInput ? 1.8 : 4.0));
+      this.carSpeed *= (1 - dt * (hasInput ? st.friction : st.friction * 2.2));
       this.carSpeed = Phaser.Math.Clamp(this.carSpeed, -MAX_SPEED * 0.45, MAX_SPEED);
 
       // Steering scales with speed
