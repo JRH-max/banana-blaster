@@ -26,8 +26,25 @@ function saveUnlockedSkins(arr)  { writeSave({ ...loadSave(), unlockedSkins:  ar
 function saveEquippedSkins(obj)  { writeSave({ ...loadSave(), equippedSkins:  obj }); }
 function saveCharLevels(obj)     { writeSave({ ...loadSave(), charLevels:     obj }); }
 function saveSupercharged(arr)   { writeSave({ ...loadSave(), supercharged:   arr }); }
-function saveOwnedCars(arr)      { writeSave({ ...loadSave(), ownedCars:      arr }); }
-function saveEquippedCar(k)      { writeSave({ ...loadSave(), equippedCar:    k   }); }
+function saveOwnedCars(arr)         { writeSave({ ...loadSave(), ownedCars:       arr }); }
+function saveEquippedCar(k)         { writeSave({ ...loadSave(), equippedCar:     k   }); }
+function getSavedOwnedCarColors()   { return loadSave().ownedCarColors   || {}; }
+function getSavedEquippedCarColors(){ return loadSave().equippedCarColors || {}; }
+function saveOwnedCarColors(obj)    { writeSave({ ...loadSave(), ownedCarColors:   obj }); }
+function saveEquippedCarColors(obj) { writeSave({ ...loadSave(), equippedCarColors: obj }); }
+
+// Colors available for all cars (tint: null = original texture colors)
+const CAR_COLORS = [
+  { key: 'default', name: 'Default', tint: null,     cost: 0   },
+  { key: 'white',   name: 'White',   tint: 0xffffff, cost: 500 },
+  { key: 'black',   name: 'Jet Black', tint: 0x333344, cost: 500 },
+  { key: 'gold',    name: 'Gold',    tint: 0xffcc00, cost: 500 },
+  { key: 'blue',    name: 'Cobalt',  tint: 0x2255ff, cost: 500 },
+  { key: 'green',   name: 'Viper',   tint: 0x22cc44, cost: 500 },
+  { key: 'purple',  name: 'Royal',   tint: 0xaa22ff, cost: 500 },
+  { key: 'pink',    name: 'Bubblegum', tint: 0xff66bb, cost: 500 },
+  { key: 'orange',  name: 'Inferno', tint: 0xff7722, cost: 500 },
+];
 
 const CARS = [
   {
@@ -674,7 +691,7 @@ export class MenuScene extends Phaser.Scene {
     this.carItems = [];
     const add = el => { this.carItems.push(el); return el; };
 
-    const PW = 780, PH = 510, PX = SW / 2, PY = SH / 2;
+    const PW = 780, PH = 560, PX = SW / 2, PY = SH / 2;
     add(this.add.rectangle(PX, SH / 2, SW, SH, 0x000000, 0.78).setDepth(9));
     add(this.add.rectangle(PX, PY, PW, PH, 0x0d0a00).setDepth(10).setStrokeStyle(2, 0xff8822, 0.9));
 
@@ -707,10 +724,11 @@ export class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5, 0.5).setDepth(11));
 
     // Car cards grid (5 cars, 2 rows: 3 + 2)
-    const cardW = 225, cardH = 185, hGap = 18, vGap = 16;
+    // cardH = 215: top section 155px for stats/info, bottom 60px for color strip
+    const cardW = 230, cardH = 215, hGap = 14, vGap = 12;
     const row1 = CARS.slice(0, 3);
     const row2 = CARS.slice(3);
-    const row1Y = PY - PH / 2 + 90 + cardH / 2;
+    const row1Y = PY - PH / 2 + 88 + cardH / 2;
     const row2Y = row1Y + cardH + vGap;
     const row1StartX = PX - (row1.length * cardW + (row1.length - 1) * hGap) / 2 + cardW / 2;
     const row2StartX = PX - (row2.length * cardW + (row2.length - 1) * hGap) / 2 + cardW / 2;
@@ -719,12 +737,22 @@ export class MenuScene extends Phaser.Scene {
       const owned    = getSavedOwnedCars().includes(car.key);
       const equipped = getSavedEquippedCar() === car.key;
       const canBuy   = getSavedCoins() >= car.price;
+      const ownedColors   = getSavedOwnedCarColors()[car.key] || [];
+      const equippedColor = (getSavedEquippedCarColors()[car.key]) || 'default';
+      const activeColorDef = CAR_COLORS.find(c => c.key === equippedColor) || CAR_COLORS[0];
 
       // Card background
       const borderCol = equipped ? 0xff8822 : owned ? 0x446644 : 0x332222;
       const bgCol     = equipped ? 0x1a0d00 : owned ? 0x0a1408 : 0x0a0808;
       add(this.add.rectangle(cx, cy, cardW, cardH, bgCol, 0.95)
         .setStrokeStyle(2, borderCol, 0.9).setDepth(12));
+
+      // Color strip divider (bottom 60px)
+      const stripY = cy + cardH / 2 - 60;
+      const divG = this.add.graphics().setDepth(12);
+      divG.lineStyle(1, 0x333333, 0.8);
+      divG.lineBetween(cx - cardW / 2 + 8, stripY, cx + cardW / 2 - 8, stripY);
+      add(divG);
 
       // Equipped star
       if (equipped) {
@@ -733,24 +761,25 @@ export class MenuScene extends Phaser.Scene {
         }).setOrigin(0.5).setDepth(13));
       }
 
-      // Car sprite preview
-      add(this.add.image(cx - cardW / 2 + 56, cy - 10, car.key)
-        .setScale(0.9).setDepth(13).setAngle(90));
+      // Car sprite preview (tinted with equipped color)
+      const previewSpr = add(this.add.image(cx - cardW / 2 + 52, cy - cardH / 2 + 78, car.key)
+        .setScale(0.85).setDepth(13).setAngle(90));
+      if (activeColorDef.tint !== null && owned) previewSpr.setTint(activeColorDef.tint);
 
       // Name + emoji
-      add(this.add.text(cx - cardW / 2 + 112, cy - cardH / 2 + 20, `${car.emoji} ${car.name}`, {
+      add(this.add.text(cx - cardW / 2 + 106, cy - cardH / 2 + 20, `${car.emoji} ${car.name}`, {
         fontSize: '14px', fontFamily: 'Arial Black', color: '#ffffff',
         stroke: '#000', strokeThickness: 2,
       }).setOrigin(0, 0.5).setDepth(13));
 
-      // Price
+      // Price / owned badge
       if (!owned) {
-        add(this.add.text(cx - cardW / 2 + 112, cy - cardH / 2 + 38, `💰 ${car.price}`, {
+        add(this.add.text(cx - cardW / 2 + 106, cy - cardH / 2 + 38, `💰 ${car.price}`, {
           fontSize: '12px', fontFamily: 'Arial', color: canBuy ? '#ffd700' : '#cc6666',
           stroke: '#000', strokeThickness: 2,
         }).setOrigin(0, 0.5).setDepth(13));
       } else {
-        add(this.add.text(cx - cardW / 2 + 112, cy - cardH / 2 + 38, '✅ Owned', {
+        add(this.add.text(cx - cardW / 2 + 106, cy - cardH / 2 + 38, '✅ Owned', {
           fontSize: '12px', fontFamily: 'Arial', color: '#88cc88',
           stroke: '#000', strokeThickness: 2,
         }).setOrigin(0, 0.5).setDepth(13));
@@ -763,26 +792,20 @@ export class MenuScene extends Phaser.Scene {
         { label: 'BOOST', val: car.boost },
       ];
       stats.forEach(({ label, val }, i) => {
-        const sy = cy - cardH / 2 + 58 + i * 22;
-        const sx = cx - cardW / 2 + 112;
+        const sy = cy - cardH / 2 + 56 + i * 20;
+        const sx = cx - cardW / 2 + 106;
         add(this.add.text(sx, sy, label, {
           fontSize: '10px', fontFamily: 'Arial Black', color: '#aaaaaa',
           stroke: '#000', strokeThickness: 2,
         }).setOrigin(0, 0.5).setDepth(13));
-        const barBg = add(this.add.rectangle(sx + 52, sy, 80, 8, 0x222222).setOrigin(0, 0.5).setDepth(13));
-        add(this.add.rectangle(sx + 52, sy, val * 16, 8, Phaser.Display.Color.HexStringToColor(car.statColor).color)
+        add(this.add.rectangle(sx + 50, sy, 78, 7, 0x222222).setOrigin(0, 0.5).setDepth(13));
+        add(this.add.rectangle(sx + 50, sy, val * 15, 7, Phaser.Display.Color.HexStringToColor(car.statColor).color)
           .setOrigin(0, 0.5).setDepth(14));
       });
 
-      // Description
-      add(this.add.text(cx - cardW / 2 + 112, cy + 40, car.desc, {
-        fontSize: '10px', fontFamily: 'Arial', color: '#888888',
-        wordWrap: { width: cardW - 120 },
-      }).setOrigin(0, 0).setDepth(13));
-
-      // Action button
-      const btnY2 = cy + cardH / 2 - 24;
-      const btnX2 = cx + cardW / 2 - 54;
+      // Action button (equip/buy car)
+      const btnY2 = cy - cardH / 2 + 136;
+      const btnX2 = cx - cardW / 2 + 168;
       let btnLabel, btnColor, btnHover;
       if (equipped) {
         btnLabel = 'UNEQUIP'; btnColor = 0x664400; btnHover = 0x885500;
@@ -793,14 +816,12 @@ export class MenuScene extends Phaser.Scene {
       } else {
         btnLabel = `💰${car.price}`; btnColor = 0x442222; btnHover = 0x442222;
       }
-
-      const actionBg = add(this.add.rectangle(btnX2, btnY2, 96, 30, btnColor, 0.95)
+      const actionBg = add(this.add.rectangle(btnX2, btnY2, 100, 28, btnColor, 0.95)
         .setStrokeStyle(1, 0xffffff, 0.2).setInteractive().setDepth(14));
       add(this.add.text(btnX2, btnY2, btnLabel, {
         fontSize: '12px', fontFamily: 'Arial Black', color: '#ffffff',
         stroke: '#000', strokeThickness: 2,
       }).setOrigin(0.5).setDepth(15));
-
       if (equipped || owned || canBuy) {
         actionBg.on('pointerover', () => actionBg.setFillStyle(btnHover));
         actionBg.on('pointerout',  () => actionBg.setFillStyle(btnColor));
@@ -813,12 +834,90 @@ export class MenuScene extends Phaser.Scene {
             const coins = getSavedCoins();
             if (coins < car.price) return;
             saveCoins(coins - car.price);
-            const owned2 = getSavedOwnedCars();
-            if (!owned2.includes(car.key)) { owned2.push(car.key); saveOwnedCars(owned2); }
+            const ownedArr = getSavedOwnedCars();
+            if (!ownedArr.includes(car.key)) { ownedArr.push(car.key); saveOwnedCars(ownedArr); }
             saveEquippedCar(car.key);
           }
           this._buildCarsPanel();
         });
+      }
+
+      // ── Color swatches (bottom strip) ──────────────────────────────────────
+      const swatchY = cy + cardH / 2 - 32;
+      // "PAINT" label
+      add(this.add.text(cx - cardW / 2 + 10, stripY + 8, owned ? 'PAINT' : '', {
+        fontSize: '9px', fontFamily: 'Arial Black', color: '#888888',
+      }).setOrigin(0, 0).setDepth(13));
+
+      if (owned) {
+        const swatchR  = 10;
+        const swatchGap = 5;
+        const totalSwW = CAR_COLORS.length * (swatchR * 2) + (CAR_COLORS.length - 1) * swatchGap;
+        const swatchStartX = cx - totalSwW / 2 + swatchR;
+
+        CAR_COLORS.forEach((col, ci) => {
+          const sx2 = swatchStartX + ci * (swatchR * 2 + swatchGap);
+          const isOwned2   = col.cost === 0 || ownedColors.includes(col.key);
+          const isEquipped2 = equippedColor === col.key;
+          const displayColor = col.tint !== null ? col.tint : car.color;
+
+          // Outer ring if equipped
+          if (isEquipped2) {
+            add(this.add.circle(sx2, swatchY, swatchR + 3, 0xffffff, 0.9).setDepth(13));
+          }
+
+          // Swatch circle
+          const swatch = add(this.add.circle(sx2, swatchY, swatchR, displayColor, isOwned2 ? 1 : 0.3)
+            .setDepth(14).setInteractive());
+
+          // Lock icon overlay for unowned
+          if (!isOwned2) {
+            add(this.add.text(sx2, swatchY, '🔒', { fontSize: '8px' }).setOrigin(0.5).setDepth(15));
+          }
+
+          swatch.on('pointerdown', () => {
+            if (isOwned2) {
+              // Equip this color
+              const ec = getSavedEquippedCarColors();
+              ec[car.key] = col.key;
+              saveEquippedCarColors(ec);
+            } else {
+              // Buy this color
+              const coins = getSavedCoins();
+              if (coins < col.cost) return;
+              saveCoins(coins - col.cost);
+              const occ = getSavedOwnedCarColors();
+              if (!occ[car.key]) occ[car.key] = [];
+              if (!occ[car.key].includes(col.key)) occ[car.key].push(col.key);
+              saveOwnedCarColors(occ);
+              const ec = getSavedEquippedCarColors();
+              ec[car.key] = col.key;
+              saveEquippedCarColors(ec);
+            }
+            this._buildCarsPanel();
+          });
+
+          // Tooltip on hover
+          swatch.on('pointerover', () => {
+            const tipTxt = isOwned2
+              ? (isEquipped2 ? `${col.name} (equipped)` : `${col.name} — click to equip`)
+              : `${col.name} — 💰${col.cost}`;
+            if (!this._carTip) {
+              this._carTip = this.add.text(0, 0, '', {
+                fontSize: '10px', fontFamily: 'Arial', color: '#ffffff',
+                backgroundColor: '#000000cc', padding: { x: 5, y: 3 },
+              }).setDepth(20);
+              this.carItems.push(this._carTip);
+            }
+            this._carTip.setText(tipTxt).setPosition(sx2, swatchY - 20).setOrigin(0.5, 1).setVisible(true);
+          });
+          swatch.on('pointerout', () => { if (this._carTip) this._carTip.setVisible(false); });
+        });
+      } else {
+        // Not owned — show "Buy car first" note
+        add(this.add.text(cx, swatchY, 'Buy car to unlock paint colors', {
+          fontSize: '9px', fontFamily: 'Arial', color: '#555555',
+        }).setOrigin(0.5).setDepth(13));
       }
     };
 
@@ -826,9 +925,9 @@ export class MenuScene extends Phaser.Scene {
     row2.forEach((car, i) => drawCard(car, row2StartX + i * (cardW + hGap), row2Y));
 
     // Back button
-    const backBtn = add(this.add.rectangle(PX, PY + PH / 2 - 26, 160, 38, 0x221100)
+    const backBtn = add(this.add.rectangle(PX, PY + PH / 2 - 24, 160, 36, 0x221100)
       .setStrokeStyle(2, 0xff8822, 0.7).setInteractive().setDepth(11));
-    add(this.add.text(PX, PY + PH / 2 - 26, '← BACK', {
+    add(this.add.text(PX, PY + PH / 2 - 24, '← BACK', {
       fontSize: '16px', fontFamily: 'Arial Black', color: '#ffaa44',
       stroke: '#000', strokeThickness: 3,
     }).setOrigin(0.5).setDepth(12));

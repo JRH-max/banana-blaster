@@ -16,7 +16,8 @@ function getSavedUpgrades() { return loadSave().upgrades  || [[0,0,0],[0,0,0],[0
 function getSavedChar()          { return loadSave().character    || 'banana'; }
 function getSavedEquippedSkins() { return loadSave().equippedSkins || {}; }
 function getSavedSupercharged()  { return loadSave().supercharged  || []; }
-function getSavedEquippedCar()   { return loadSave().equippedCar   || null; }
+function getSavedEquippedCar()        { return loadSave().equippedCar        || null; }
+function getSavedEquippedCarColors()  { return loadSave().equippedCarColors  || {}; }
 function saveCoins(c)       { writeSave({ ...loadSave(), coins: c }); }
 function saveUpgrades(ups)  { writeSave({ ...loadSave(), upgrades: ups }); }
 
@@ -1590,10 +1591,19 @@ export class GameScene extends Phaser.Scene {
     }
     const s = iso(wx, wy);
     const d = isoDepth(wx, wy);
+    const _carColors = {
+      white: 0xffffff, black: 0x333344, gold: 0xffcc00,
+      blue: 0x2255ff, green: 0x22cc44, purple: 0xaa22ff,
+      pink: 0xff66bb, orange: 0xff7722,
+    };
+    const _colorKey = getSavedEquippedCarColors()[carKey];
+    const _tint = _colorKey && _carColors[_colorKey] ? _carColors[_colorKey] : null;
+    const _spr = this.add.image(s.x, s.y - 18, carKey)
+      .setOrigin(0.5, 0.5).setScale(st.scale).setDepth(d + 10);
+    if (_tint) _spr.setTint(_tint);
     this.carObj = {
       wx, wy, angle: 0, key: carKey,
-      sprite: this.add.image(s.x, s.y - 18, carKey)
-        .setOrigin(0.5, 0.5).setScale(st.scale).setDepth(d + 10),
+      sprite: _spr,
       shadow: this.add.ellipse(s.x, s.y - 6, 58, 22, 0x000000, 0.32)
         .setDepth(d - 1),
     };
