@@ -134,12 +134,10 @@ export class GameScene extends Phaser.Scene {
 
   // ── create ─────────────────────────────────────────────────────────────────
   create() {
-    this._genTrees();
     this._drawGround();
-    this._drawTrees();
 
-    // Player
-    this.player = { wx: GRID / 2, wy: GRID / 2, angle: 0, hp: 300, maxHp: 300, lives: 3, score: 0, coins: getSavedCoins() };
+    // Player — start on the bottom straight of the oval track
+    this.player = { wx: GRID / 2, wy: GRID / 2 + 33, angle: 0, hp: 300, maxHp: 300, lives: 3, score: 0, coins: getSavedCoins() };
     const ps = iso(this.player.wx, this.player.wy);
     const charKey = getSavedChar();
     this.playerSpr    = this.add.image(ps.x, ps.y - 22, charKey).setOrigin(0.5, 1).setScale(0.55).setDepth(9000);
@@ -299,56 +297,123 @@ export class GameScene extends Phaser.Scene {
   }
 
   // ── map ────────────────────────────────────────────────────────────────────
-  _genTrees() {
-    this.trees = [];
-    const BORDER = 3, MIN_D = 2.6, CX = GRID / 2, CY = GRID / 2;
-    let tries = 0;
-    while (this.trees.length < 800 && tries++ < 40000) {
-      const wx = BORDER + Math.random() * (GRID - 2 * BORDER);
-      const wy = BORDER + Math.random() * (GRID - 2 * BORDER);
-      if (Math.hypot(wx - CX, wy - CY) < 5) continue;
-      if (this.trees.some(t => Math.hypot(t.wx - wx, t.wy - wy) < MIN_D)) continue;
-      this.trees.push({ wx, wy, scale: 0.72 + Math.random() * 0.52 });
+  _drawGround() {
+    const W = GRID * TW, H = GRID * TH;
+    const cx = W / 2, cy = H / 2;
+
+    // Outer grass (camera bg handles colour; this rectangle seals the border)
+    this.add.rectangle(cx, cy, W, H, 0x1e6010).setDepth(-10000);
+
+    const g = this.add.graphics().setDepth(-9800);
+
+    // Track dims (pixels)
+    const OR_X = 2500, OR_Y = 1980;   // outer ellipse radii
+    const IR_X = 1870, IR_Y = 1340;   // inner ellipse radii
+    const MR_X = (OR_X + IR_X) / 2;
+    const MR_Y = (OR_Y + IR_Y) / 2;
+    const KERB  = 18;                  // kerb stripe width
+    const STEPS = 90;                  // segments for kerbs / dashes
+
+    // ── Asphalt oval ────────────────────────────────────────────────────────
+    g.fillStyle(0x3c3c3c, 1);
+    g.fillEllipse(cx, cy, OR_X * 2, OR_Y * 2);
+
+    // ── Infield grass ───────────────────────────────────────────────────────
+    g.fillStyle(0x1e7010, 1);
+    g.fillEllipse(cx, cy, IR_X * 2, IR_Y * 2);
+
+    // infield texture variation
+    g.fillStyle(0x246814, 0.45);
+    g.fillEllipse(cx - 300, cy - 200, IR_X * 0.9, IR_Y * 0.7);
+    g.fillStyle(0x196010, 0.35);
+    g.fillEllipse(cx + 400, cy + 250, IR_X * 0.7, IR_Y * 0.55);
+
+    // ── Outer kerbs (red / white alternating) ───────────────────────────────
+    for (let i = 0; i < STEPS; i++) {
+      const t0 = (i / STEPS) * Math.PI * 2;
+      const t1 = ((i + 1) / STEPS) * Math.PI * 2;
+      g.fillStyle(i % 2 === 0 ? 0xdd2222 : 0xffffff, 0.92);
+      g.fillPoints([
+        { x: cx + Math.cos(t0) * (OR_X - 1),       y: cy + Math.sin(t0) * (OR_Y - 1) },
+        { x: cx + Math.cos(t1) * (OR_X - 1),       y: cy + Math.sin(t1) * (OR_Y - 1) },
+        { x: cx + Math.cos(t1) * (OR_X - KERB),    y: cy + Math.sin(t1) * (OR_Y - KERB) },
+        { x: cx + Math.cos(t0) * (OR_X - KERB),    y: cy + Math.sin(t0) * (OR_Y - KERB) },
+      ], true);
     }
-    // Build integer-cell lookup set for O(1) collision checks
-    this._treeSet = new Set();
-    for (const t of this.trees) {
-      for (let dx = -1; dx <= 1; dx++) {
-        for (let dy = -1; dy <= 1; dy++) {
-          this._treeSet.add(`${Math.round(t.wx + dx)},${Math.round(t.wy + dy)}`);
-        }
+
+    // ── Inner kerbs ─────────────────────────────────────────────────────────
+    for (let i = 0; i < STEPS; i++) {
+      const t0 = (i / STEPS) * Math.PI * 2;
+      const t1 = ((i + 1) / STEPS) * Math.PI * 2;
+      g.fillStyle(i % 2 === 0 ? 0xdd2222 : 0xffffff, 0.92);
+      g.fillPoints([
+        { x: cx + Math.cos(t0) * (IR_X + 1),       y: cy + Math.sin(t0) * (IR_Y + 1) },
+        { x: cx + Math.cos(t1) * (IR_X + 1),       y: cy + Math.sin(t1) * (IR_Y + 1) },
+        { x: cx + Math.cos(t1) * (IR_X + KERB),    y: cy + Math.sin(t1) * (IR_Y + KERB) },
+        { x: cx + Math.cos(t0) * (IR_X + KERB),    y: cy + Math.sin(t0) * (IR_Y + KERB) },
+      ], true);
+    }
+
+    // ── White edge lines ─────────────────────────────────────────────────────
+    g.lineStyle(5, 0xffffff, 0.85);
+    g.strokeEllipse(cx, cy, (OR_X - KERB) * 2, (OR_Y - KERB) * 2);
+    g.strokeEllipse(cx, cy, (IR_X + KERB) * 2, (IR_Y + KERB) * 2);
+
+    // ── Dashed yellow centre line ────────────────────────────────────────────
+    const DASH = 130;
+    for (let i = 0; i < DASH; i++) {
+      if (i % 4 < 2) continue;   // 2-on / 2-off pattern
+      const t0 = (i / DASH) * Math.PI * 2;
+      const t1 = ((i + 1) / DASH) * Math.PI * 2;
+      g.fillStyle(0xffee00, 0.7);
+      const perp0x = -Math.sin(t0) * 4, perp0y = Math.cos(t0) * 4;
+      const perp1x = -Math.sin(t1) * 4, perp1y = Math.cos(t1) * 4;
+      g.fillPoints([
+        { x: cx + Math.cos(t0) * MR_X + perp0x, y: cy + Math.sin(t0) * MR_Y + perp0y },
+        { x: cx + Math.cos(t1) * MR_X + perp1x, y: cy + Math.sin(t1) * MR_Y + perp1y },
+        { x: cx + Math.cos(t1) * MR_X - perp1x, y: cy + Math.sin(t1) * MR_Y - perp1y },
+        { x: cx + Math.cos(t0) * MR_X - perp0x, y: cy + Math.sin(t0) * MR_Y - perp0y },
+      ], true);
+    }
+
+    // ── Start / finish line (checkered) — bottom straight ───────────────────
+    const SF_COLS = 7, SF_ROWS = 2;
+    const sfX = cx - SF_ROWS * 12;
+    const sfYstart = cy + IR_Y + KERB;
+    const sfYend   = cy + OR_Y - KERB;
+    const sqH = (sfYend - sfYstart) / SF_COLS;
+    for (let r = 0; r < SF_ROWS; r++) {
+      for (let c = 0; c < SF_COLS; c++) {
+        g.fillStyle((r + c) % 2 === 0 ? 0x000000 : 0xffffff, 0.95);
+        g.fillRect(sfX + r * 24, sfYstart + c * sqH, 24, sqH);
       }
     }
-  }
 
-  _drawGround() {
-    // Single rectangle — camera background handles the green colour,
-    // this just gives the map a slightly darker border/boundary.
-    const w = GRID * TW, h = GRID * TH;
-    this.add.rectangle(w / 2, h / 2, w, h, 0x2e7d1a).setDepth(-10000);
-  }
-
-  _drawTrees() {
-    const sorted = [...this.trees].sort((a, b) => (a.wx + a.wy) - (b.wx + b.wy));
-    for (const t of sorted) {
-      const s = iso(t.wx, t.wy);
-      const d = isoDepth(t.wx, t.wy);
-      t.sprite = this.add.image(s.x, s.y - 8, 'tree')
-        .setOrigin(0.5, 1).setScale(t.scale).setDepth(d + 65);
+    // ── Pit lane (small side straight on the right) ──────────────────────────
+    const pitY = cy - 80;
+    const pitX1 = cx + OR_X - KERB - 2;
+    const pitX2 = cx + OR_X + 180;
+    g.fillStyle(0x484848, 1);
+    g.fillRect(pitX1, pitY - 120, pitX2 - pitX1, 240);
+    g.lineStyle(3, 0xffffff, 0.6);
+    g.lineBetween(pitX1, pitY - 120, pitX2, pitY - 120);
+    g.lineBetween(pitX1, pitY + 120, pitX2, pitY + 120);
+    // Pit lane dividers
+    g.lineStyle(1, 0x888888, 0.5);
+    for (let i = 1; i < 5; i++) {
+      g.lineBetween(pitX1 + i * (pitX2 - pitX1) / 5, pitY - 120, pitX1 + i * (pitX2 - pitX1) / 5, pitY + 120);
     }
-  }
 
-  _treeAt(wx, wy) {
-    // Fast O(1) lookup via pre-built cell set
-    if (this._treeSet) {
-      const cx = Math.round(wx), cy = Math.round(wy);
-      if (!this._treeSet.has(`${cx},${cy}`)) return false;
-    }
-    return this.trees.some(t => Math.hypot(t.wx - wx, t.wy - wy) < 0.55);
+    // ── "PIT LANE" text via graphics (simple pixel look) ────────────────────
+    // (just a coloured label rectangle as signage)
+    g.fillStyle(0x0044cc, 0.85);
+    g.fillRoundedRect(pitX2 - 5, pitY - 22, 90, 44, 6);
+    g.lineStyle(2, 0xffffff, 0.8);
+    g.strokeRoundedRect(pitX2 - 5, pitY - 22, 90, 44, 6);
   }
 
   _canMove(wx, wy) {
-    return wx > 0.4 && wx < GRID - 0.4 && wy > 0.4 && wy < GRID - 0.4 && !this._treeAt(wx, wy);
+    return wx > 0.4 && wx < GRID - 0.4 && wy > 0.4 && wy < GRID - 0.4;
   }
 
   _tryMove(e, dx, dy) {
@@ -860,7 +925,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     this.player.hp = this.player.maxHp;
-    this.player.wx = GRID / 2; this.player.wy = GRID / 2;
+    this.player.wx = GRID / 2; this.player.wy = GRID / 2 + 33;
     this.registry.set('health', this.player.hp);
     this.cameras.main.flash(500, 255, 0, 0);
   }
