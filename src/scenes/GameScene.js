@@ -432,18 +432,20 @@ export class GameScene extends Phaser.Scene {
       .setFlipY(Math.cos(this.player.angle) < 0)
       .setDepth(d + 13);
 
-    // Aim laser
+    // Aim laser — only show while aim joystick is actively held
     if (this.aimLine) {
       this.aimLine.clear();
-      const a = this.player.angle, len = 180;
-      const ex = gx + Math.cos(a) * len, ey = gy + Math.sin(a) * len;
-      for (let i = 0; i < 6; i++) {
-        const t0 = i / 6, t1 = (i + 0.55) / 6;
-        this.aimLine.lineStyle(1.5, 0xff3333, 0.55 - i * 0.08);
-        this.aimLine.lineBetween(gx + Math.cos(a)*len*t0, gy + Math.sin(a)*len*t0, gx + Math.cos(a)*len*t1, gy + Math.sin(a)*len*t1);
+      if (this.aimJoyActive) {
+        const a = this.player.angle, len = 180;
+        const ex = gx + Math.cos(a) * len, ey = gy + Math.sin(a) * len;
+        for (let i = 0; i < 6; i++) {
+          const t0 = i / 6, t1 = (i + 0.55) / 6;
+          this.aimLine.lineStyle(1.5, 0xff3333, 0.55 - i * 0.08);
+          this.aimLine.lineBetween(gx + Math.cos(a)*len*t0, gy + Math.sin(a)*len*t0, gx + Math.cos(a)*len*t1, gy + Math.sin(a)*len*t1);
+        }
+        this.aimLine.fillStyle(0xff3333, 0.75);
+        this.aimLine.fillCircle(ex, ey, 4);
       }
-      this.aimLine.fillStyle(0xff3333, 0.75);
-      this.aimLine.fillCircle(ex, ey, 4);
     }
   }
 
