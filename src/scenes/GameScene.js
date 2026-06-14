@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 
-const GRID = 120;
+const GRID = 130;
 const TW = 48, TH = 48;
 
 // ── Persistent save helpers ────────────────────────────────────────────────
