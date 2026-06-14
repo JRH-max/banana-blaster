@@ -54,6 +54,10 @@ export class BootScene extends Phaser.Scene {
     this._glitch();
     this._void();
     this._ferrari();
+    this._jalopy();
+    this._muscleCar();
+    this._monsterTruck();
+    this._f1Racer();
     this.scene.start('MenuScene');
   }
 
@@ -1815,6 +1819,206 @@ export class BootScene extends Phaser.Scene {
     g.fillRect(W / 2 - 3, 4, 6, H - 8);
 
     g.generateTexture('ferrari', W, H);
+    g.destroy();
+  }
+
+  // ── Rusty Jalopy ───────────────────────────────────────────────────────────
+  _jalopy() {
+    const g = this._g();
+    const W = 50, H = 80;
+    // Tires
+    g.fillStyle(0x111111, 1);
+    g.fillRoundedRect(1, 10, 9, 15, 3); g.fillRoundedRect(W-10, 10, 9, 15, 3);
+    g.fillRoundedRect(1, H-27, 9, 15, 3); g.fillRoundedRect(W-10, H-27, 9, 15, 3);
+    // Rusty rims
+    g.fillStyle(0x886633, 1);
+    g.fillCircle(5, 17, 5); g.fillCircle(W-5, 17, 5);
+    g.fillCircle(5, H-20, 5); g.fillCircle(W-5, H-20, 5);
+    g.fillStyle(0x553311, 1);
+    g.fillCircle(5, 17, 2); g.fillCircle(W-5, 17, 2);
+    g.fillCircle(5, H-20, 2); g.fillCircle(W-5, H-20, 2);
+    // Body shadow
+    g.fillStyle(0x5a3311, 1); g.fillRoundedRect(7, 3, W-14, H-6, 8);
+    // Main body — rust brown
+    g.fillStyle(0x8b4513, 1); g.fillRoundedRect(8, 2, W-16, H-4, 7);
+    // Rust patches
+    g.fillStyle(0x6b3010, 0.7);
+    g.fillCircle(14, 20, 5); g.fillCircle(W-14, 55, 4); g.fillCircle(20, 65, 3);
+    // Windshield (cracked look)
+    g.fillStyle(0x334455, 0.8); g.fillRoundedRect(11, 16, W-22, 14, 3);
+    g.lineStyle(1, 0x223344, 0.5);
+    g.lineBetween(18, 17, 15, 29); g.lineBetween(22, 17, 24, 30);
+    // Roof (dented)
+    g.fillStyle(0x6b3a0a, 1); g.fillRoundedRect(12, 29, W-24, 18, 4);
+    // Rear window
+    g.fillStyle(0x334455, 0.7); g.fillRoundedRect(12, 46, W-24, 11, 3);
+    // Headlights (one busted)
+    g.fillStyle(0xffffcc, 0.9); g.fillRoundedRect(9, 4, 8, 5, 2);
+    g.fillStyle(0x888855, 0.6); g.fillRoundedRect(W-17, 4, 8, 5, 2);
+    // Taillights
+    g.fillStyle(0xcc2200, 1); g.fillRoundedRect(9, H-10, 8, 4, 1); g.fillRoundedRect(W-17, H-10, 8, 4, 1);
+    // Front bumper (bent)
+    g.fillStyle(0x554422, 1); g.fillRect(10, 2, W-20, 4);
+    // Rear bumper
+    g.fillStyle(0x554422, 1); g.fillRect(10, H-6, W-20, 4);
+    g.generateTexture('jalopy', W, H);
+    g.destroy();
+  }
+
+  // ── Muscle Car ─────────────────────────────────────────────────────────────
+  _muscleCar() {
+    const g = this._g();
+    const W = 56, H = 92;
+    // Wide tires (muscle cars have fat tires)
+    g.fillStyle(0x111111, 1);
+    g.fillRoundedRect(0, 12, 12, 20, 4); g.fillRoundedRect(W-12, 12, 12, 20, 4);
+    g.fillRoundedRect(0, H-34, 12, 20, 4); g.fillRoundedRect(W-12, H-34, 12, 20, 4);
+    // Rims (chrome)
+    g.fillStyle(0xdddddd, 1);
+    g.fillCircle(6, 22, 7); g.fillCircle(W-6, 22, 7);
+    g.fillCircle(6, H-24, 7); g.fillCircle(W-6, H-24, 7);
+    g.fillStyle(0x888888, 1);
+    g.fillCircle(6, 22, 4); g.fillCircle(W-6, 22, 4);
+    g.fillCircle(6, H-24, 4); g.fillCircle(W-6, H-24, 4);
+    g.fillStyle(0x222222, 1);
+    g.fillCircle(6, 22, 2); g.fillCircle(W-6, 22, 2);
+    g.fillCircle(6, H-24, 2); g.fillCircle(W-6, H-24, 2);
+    // Body shadow
+    g.fillStyle(0x0a1266, 1); g.fillRoundedRect(9, 4, W-18, H-8, 11);
+    // Main body — deep midnight blue
+    g.fillStyle(0x1a22cc, 1); g.fillRoundedRect(10, 3, W-20, H-6, 10);
+    // Side scoops / air intakes
+    g.fillStyle(0x0c14aa, 1); g.fillRect(10, 35, 5, 22); g.fillRect(W-15, 35, 5, 22);
+    // Hood scoop
+    g.fillStyle(0x111177, 1); g.fillRoundedRect(W/2-8, 10, 16, 14, 4);
+    g.fillStyle(0x000033, 1); g.fillRoundedRect(W/2-5, 12, 10, 8, 2);
+    // Front windshield
+    g.fillStyle(0x1a2a55, 0.92); g.fillRoundedRect(13, 22, W-26, 17, 5);
+    g.fillStyle(0xffffff, 0.08); g.fillRoundedRect(15, 23, 12, 7, 3);
+    // Roof (wide, fastback style)
+    g.fillStyle(0x1520bb, 1); g.fillRoundedRect(13, 38, W-26, 22, 4);
+    // Rear windshield
+    g.fillStyle(0x1a2a55, 0.88); g.fillRoundedRect(13, 59, W-26, 14, 4);
+    // Headlights (quad headlights)
+    g.fillStyle(0xffffee, 1);
+    g.fillRoundedRect(10, 5, 8, 5, 2); g.fillRoundedRect(19, 5, 8, 5, 2);
+    g.fillRoundedRect(W-18, 5, 8, 5, 2); g.fillRoundedRect(W-27, 5, 8, 5, 2);
+    // Taillights (long strip)
+    g.fillStyle(0xff2200, 1); g.fillRect(10, H-12, W-20, 6);
+    g.fillStyle(0xff6600, 0.6); g.fillRect(12, H-11, W-24, 3);
+    // Racing stripe down center
+    g.fillStyle(0xffffff, 0.15); g.fillRect(W/2-3, 3, 6, H-6);
+    g.generateTexture('muscle', W, H);
+    g.destroy();
+  }
+
+  // ── Monster Truck ──────────────────────────────────────────────────────────
+  _monsterTruck() {
+    const g = this._g();
+    const W = 68, H = 88;
+    // Massive tires
+    g.fillStyle(0x111111, 1);
+    g.fillRoundedRect(0, 14, 16, 26, 5); g.fillRoundedRect(W-16, 14, 16, 26, 5);
+    g.fillRoundedRect(0, H-42, 16, 26, 5); g.fillRoundedRect(W-16, H-42, 16, 26, 5);
+    // Tire tread lines
+    g.lineStyle(1, 0x333333, 0.6);
+    for (let i = 0; i < 4; i++) {
+      g.lineBetween(1, 19+i*4, 15, 19+i*4);
+      g.lineBetween(W-15, 19+i*4, W-1, 19+i*4);
+      g.lineBetween(1, H-37+i*4, 15, H-37+i*4);
+      g.lineBetween(W-15, H-37+i*4, W-1, H-37+i*4);
+    }
+    // Big chrome rims
+    g.fillStyle(0xcccccc, 1);
+    g.fillCircle(8, 27, 8); g.fillCircle(W-8, 27, 8);
+    g.fillCircle(8, H-29, 8); g.fillCircle(W-8, H-29, 8);
+    g.fillStyle(0x555555, 1);
+    g.fillCircle(8, 27, 4); g.fillCircle(W-8, 27, 4);
+    g.fillCircle(8, H-29, 4); g.fillCircle(W-8, H-29, 4);
+    // Lifted body (sits high)
+    g.fillStyle(0x1a4408, 1); g.fillRoundedRect(13, 10, W-26, H-20, 10);
+    // Main body — dark army green
+    g.fillStyle(0x336611, 1); g.fillRoundedRect(14, 8, W-28, H-16, 9);
+    // Front brush guard (black metal bars)
+    g.fillStyle(0x222222, 1); g.fillRect(16, 6, W-32, 5);
+    g.lineStyle(2, 0x333333, 1);
+    g.lineBetween(22, 6, 22, 14); g.lineBetween(W/2-3, 6, W/2-3, 14);
+    g.lineBetween(W/2+3, 6, W/2+3, 14); g.lineBetween(W-22, 6, W-22, 14);
+    // Windshield
+    g.fillStyle(0x1a3322, 0.88); g.fillRoundedRect(17, 18, W-34, 15, 4);
+    g.fillStyle(0xffffff, 0.07); g.fillRoundedRect(19, 19, 12, 6, 3);
+    // Cab roof
+    g.fillStyle(0x285510, 1); g.fillRoundedRect(17, 32, W-34, 18, 4);
+    // Rear window
+    g.fillStyle(0x1a3322, 0.8); g.fillRoundedRect(17, 49, W-34, 12, 3);
+    // Roll cage bars (visible through cab)
+    g.lineStyle(1, 0x444422, 0.6);
+    g.lineBetween(22, 18, 22, 62); g.lineBetween(W-22, 18, W-22, 62);
+    // Headlights (big rectangle lights)
+    g.fillStyle(0xffffcc, 1); g.fillRoundedRect(15, 9, 12, 7, 2); g.fillRoundedRect(W-27, 9, 12, 7, 2);
+    g.fillStyle(0xffffaa, 0.6); g.fillRoundedRect(17, 10, 8, 4, 1); g.fillRoundedRect(W-25, 10, 8, 4, 1);
+    // Taillights
+    g.fillStyle(0xff2200, 1); g.fillRect(15, H-17, 12, 6); g.fillRect(W-27, H-17, 12, 6);
+    // Rear bumper (heavy duty)
+    g.fillStyle(0x333333, 1); g.fillRect(14, H-12, W-28, 5);
+    // Exhaust pipes on sides
+    g.fillStyle(0x444444, 1);
+    g.fillRect(13, 32, 4, 18); g.fillRect(W-17, 32, 4, 18);
+    g.fillStyle(0x666666, 0.5);
+    g.fillRect(14, 33, 2, 16); g.fillRect(W-16, 33, 2, 16);
+    g.generateTexture('monster', W, H);
+    g.destroy();
+  }
+
+  // ── F1 Racer ───────────────────────────────────────────────────────────────
+  _f1Racer() {
+    const g = this._g();
+    const W = 44, H = 100;
+    // Slick tires (Formula 1 — very wide, no tread)
+    g.fillStyle(0x111111, 1);
+    g.fillRoundedRect(0, 16, 11, 22, 4);  g.fillRoundedRect(W-11, 16, 11, 22, 4);
+    g.fillRoundedRect(0, H-40, 11, 22, 4); g.fillRoundedRect(W-11, H-40, 11, 22, 4);
+    // Rim (red + silver)
+    g.fillStyle(0xcc2200, 1);
+    g.fillCircle(5, 27, 6); g.fillCircle(W-5, 27, 6);
+    g.fillCircle(5, H-29, 6); g.fillCircle(W-5, H-29, 6);
+    g.fillStyle(0xeeeeee, 1);
+    g.fillCircle(5, 27, 3); g.fillCircle(W-5, 27, 3);
+    g.fillCircle(5, H-29, 3); g.fillCircle(W-5, H-29, 3);
+    // Nose cone (very long and narrow)
+    g.fillStyle(0xccaa00, 1);
+    g.fillTriangle(W/2-4, 2, W/2+4, 2, W/2, -8);
+    g.fillRoundedRect(12, 2, W-24, 20, 4);
+    // Front wing (wide flat piece)
+    g.fillStyle(0x111111, 1);
+    g.fillRect(2, 14, W-4, 5);
+    g.fillStyle(0xccaa00, 1);
+    g.fillRect(4, 15, W-8, 3);
+    // Main chassis — yellow
+    g.fillStyle(0xeecc00, 1); g.fillRoundedRect(10, 2, W-20, H-4, 8);
+    // Cockpit opening
+    g.fillStyle(0x111122, 0.95); g.fillRoundedRect(W/2-7, 28, 14, 22, 6);
+    // Driver helmet
+    g.fillStyle(0xcc2200, 1); g.fillCircle(W/2, 36, 7);
+    g.fillStyle(0x111111, 0.8); g.fillRoundedRect(W/2-5, 34, 10, 5, 3);
+    // Side pods (air intakes)
+    g.fillStyle(0xddbb00, 1);
+    g.fillRoundedRect(8, 30, 5, 22, 2); g.fillRoundedRect(W-13, 30, 5, 22, 2);
+    g.fillStyle(0x000011, 0.9);
+    g.fillRoundedRect(9, 32, 3, 14, 2); g.fillRoundedRect(W-12, 32, 3, 14, 2);
+    // Engine cover / rear
+    g.fillStyle(0xccaa00, 1); g.fillRoundedRect(11, 52, W-22, 28, 5);
+    // Rear wing (large spoiler)
+    g.fillStyle(0x111111, 1); g.fillRect(5, H-22, W-10, 7);
+    g.fillStyle(0xcc2200, 1); g.fillRect(6, H-20, W-12, 4);
+    // Rear diffuser
+    g.fillStyle(0x333333, 1); g.fillRect(12, H-14, W-24, 9);
+    // Taillights / brake lights
+    g.fillStyle(0xff2200, 1); g.fillRect(14, H-8, 6, 4); g.fillRect(W-20, H-8, 6, 4);
+    // Racing numbers / livery accent
+    g.fillStyle(0xcc2200, 1);
+    g.fillRect(W/2-3, 56, 6, 20);
+    g.generateTexture('racer', W, H);
     g.destroy();
   }
 }

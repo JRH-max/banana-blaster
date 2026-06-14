@@ -16,8 +16,17 @@ function getSavedUpgrades() { return loadSave().upgrades  || [[0,0,0],[0,0,0],[0
 function getSavedChar()          { return loadSave().character    || 'banana'; }
 function getSavedEquippedSkins() { return loadSave().equippedSkins || {}; }
 function getSavedSupercharged()  { return loadSave().supercharged  || []; }
+function getSavedEquippedCar()   { return loadSave().equippedCar   || null; }
 function saveCoins(c)       { writeSave({ ...loadSave(), coins: c }); }
 function saveUpgrades(ups)  { writeSave({ ...loadSave(), upgrades: ups }); }
+
+const CAR_STATS = {
+  jalopy:  { maxSpeed: 7,  boostSpeed: 12, damage: 100, boostDamage: 180, boostCD: 12, scale: 0.85 },
+  ferrari: { maxSpeed: 11, boostSpeed: 20, damage: 200, boostDamage: 400, boostCD: 9,  scale: 0.90 },
+  muscle:  { maxSpeed: 9,  boostSpeed: 17, damage: 280, boostDamage: 520, boostCD: 10, scale: 0.88 },
+  monster: { maxSpeed: 7,  boostSpeed: 13, damage: 380, boostDamage: 700, boostCD: 11, scale: 1.05 },
+  racer:   { maxSpeed: 15, boostSpeed: 27, damage: 140, boostDamage: 260, boostCD: 7,  scale: 0.80 },
+};
 
 const SKIN_TINTS = {
   trash_can_s1: 0xffd700, dragon_s1: 0x44ccff, phoenix_s1: 0xaa22ff,
@@ -148,7 +157,8 @@ export class GameScene extends Phaser.Scene {
     this.hazards = [];
 
     this._spawnBots();
-    this._spawnCar();
+    this._equippedCarKey = getSavedEquippedCar();
+    if (this._equippedCarKey) this._spawnCar();
 
     // Apply character's custom slot-1 weapon
     WEAPONS[0] = { ...(CHAR_SLOT1[charKey] ?? CHAR_SLOT1.banana) };
@@ -1565,22 +1575,24 @@ export class GameScene extends Phaser.Scene {
 
   // ── Ferrari car ────────────────────────────────────────────────────────────
   _spawnCar() {
-    const BORDER = 6;
-    let wx = GRID / 2 + 8, wy = GRID / 2 + 8;
+    const carKey = this._equippedCarKey || 'jalopy';
+    const st = CAR_STATS[carKey] || CAR_STATS.jalopy;
+    // Spawn near the player's starting position
+    const px = this.player.wx, py = this.player.wy;
+    let wx = px + 4, wy = py;
     for (let tries = 0; tries < 200; tries++) {
-      const tx = BORDER + Math.random() * (GRID - BORDER * 2);
-      const ty = BORDER + Math.random() * (GRID - BORDER * 2);
-      if (!this._treeAt(tx, ty) &&
-          Math.hypot(tx - this.player.wx, ty - this.player.wy) > 12) {
+      const tx = Phaser.Math.Clamp(px + Phaser.Math.Between(-8, 8), 3, GRID - 3);
+      const ty = Phaser.Math.Clamp(py + Phaser.Math.Between(-8, 8), 3, GRID - 3);
+      if (!this._treeAt(tx, ty) && Math.hypot(tx - px, ty - py) > 3) {
         wx = tx; wy = ty; break;
       }
     }
     const s = iso(wx, wy);
     const d = isoDepth(wx, wy);
     this.carObj = {
-      wx, wy, angle: 0,
-      sprite: this.add.image(s.x, s.y - 18, 'ferrari')
-        .setOrigin(0.5, 0.5).setScale(0.9).setDepth(d + 10),
+      wx, wy, angle: 0, key: carKey,
+      sprite: this.add.image(s.x, s.y - 18, carKey)
+        .setOrigin(0.5, 0.5).setScale(st.scale).setDepth(d + 10),
       shadow: this.add.ellipse(s.x, s.y - 6, 58, 22, 0x000000, 0.32)
         .setDepth(d - 1),
     };
@@ -1657,7 +1669,8 @@ export class GameScene extends Phaser.Scene {
       const boostReady = this.carBoostCD <= 0;
       this._redrawBoostBtn(boostReady);
 
-      const MAX_SPEED = this.carBoostActive ? 20 : 10;
+      const st = CAR_STATS[car.key] || CAR_STATS.jalopy;
+      const MAX_SPEED = this.carBoostActive ? st.boostSpeed : st.maxSpeed;
       const ACCEL = 22, STEER = 2.0;
 
       const throttle = this.joystickActive ? -this.joystickDir.y : 0;
@@ -1694,10 +1707,11 @@ export class GameScene extends Phaser.Scene {
 
       // Bot collision damage
       if (Math.abs(this.carSpeed) > 3) {
+        const dmgSt = CAR_STATS[car.key] || CAR_STATS.jalopy;
         for (const bot of this.bots) {
           if (!bot.alive) continue;
           if (Math.hypot(bot.wx - car.wx, bot.wy - car.wy) < 1.4) {
-            this._hitEntity(bot, this.carBoostActive ? 400 : 200, 'banana');
+            this._hitEntity(bot, this.carBoostActive ? dmgSt.boostDamage : dmgSt.damage, 'banana');
             this.carSpeed *= 0.55;
             this.cameras.main.shake(140, 0.01);
             // Knock bot back
@@ -1796,9 +1810,10 @@ export class GameScene extends Phaser.Scene {
 
   _carBoost() {
     if (this.carBoostCD > 0 || !this.inCar) return;
+    const st = CAR_STATS[this.carObj?.key] || CAR_STATS.jalopy;
     this.carBoostActive = true;
     this.carBoostTimer  = 2.5;
-    this.carBoostCD     = 9;
+    this.carBoostCD     = st.boostCD;
     // Kick the speed
     this.carSpeed = Math.max(this.carSpeed, 6) * 1.6;
     this.cameras.main.shake(160, 0.014);

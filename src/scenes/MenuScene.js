@@ -20,10 +20,47 @@ function getSavedUnlockedSkins() { return loadSave().unlockedSkins  || []; }
 function getSavedEquippedSkins() { return loadSave().equippedSkins  || {}; }
 function getSavedCharLevels()    { return loadSave().charLevels     || {}; }
 function getSavedSupercharged()  { return loadSave().supercharged   || []; }
+function getSavedOwnedCars()     { return loadSave().ownedCars      || ['jalopy']; }
+function getSavedEquippedCar()   { return loadSave().equippedCar    ?? null; }
 function saveUnlockedSkins(arr)  { writeSave({ ...loadSave(), unlockedSkins:  arr }); }
 function saveEquippedSkins(obj)  { writeSave({ ...loadSave(), equippedSkins:  obj }); }
 function saveCharLevels(obj)     { writeSave({ ...loadSave(), charLevels:     obj }); }
 function saveSupercharged(arr)   { writeSave({ ...loadSave(), supercharged:   arr }); }
+function saveOwnedCars(arr)      { writeSave({ ...loadSave(), ownedCars:      arr }); }
+function saveEquippedCar(k)      { writeSave({ ...loadSave(), equippedCar:    k   }); }
+
+const CARS = [
+  {
+    key: 'jalopy',  name: 'Rusty Jalopy', price: 0,    emoji: '🚙',
+    desc: 'A trusty rust-bucket that somehow still runs.',
+    speed: 2, power: 1, boost: 2,
+    color: 0x8b4513, statColor: '#cc8844',
+  },
+  {
+    key: 'ferrari', name: 'Ferrari',      price: 500,  emoji: '🏎️',
+    desc: 'Sleek, iconic, and blazing fast. Pure red fury.',
+    speed: 4, power: 3, boost: 4,
+    color: 0xdd1111, statColor: '#ff4444',
+  },
+  {
+    key: 'muscle',  name: 'Muscle Car',   price: 800,  emoji: '💪',
+    desc: 'Raw American horsepower. Wide tires, big V8.',
+    speed: 3, power: 4, boost: 3,
+    color: 0x1a22cc, statColor: '#4466ff',
+  },
+  {
+    key: 'monster', name: 'Monster Truck', price: 1500, emoji: '🚛',
+    desc: 'Crushes everything. Slow, but devastating on impact.',
+    speed: 2, power: 5, boost: 3,
+    color: 0x336611, statColor: '#44bb22',
+  },
+  {
+    key: 'racer',   name: 'F1 Racer',     price: 2500, emoji: '🏁',
+    desc: 'The fastest thing on the map. Built for pure speed.',
+    speed: 5, power: 2, boost: 5,
+    color: 0xeecc00, statColor: '#ffee44',
+  },
+];
 
 const MAX_LEVEL = 11;
 const UPGRADE_COSTS = [300, 600, 1000, 1500, 2200, 3000, 4500, 6500, 9000, 13000]; // lv1→2 … lv10→11
@@ -146,6 +183,7 @@ export class MenuScene extends Phaser.Scene {
     this.shopItems    = [];
     this.charItems    = [];
     this.boomItems    = [];
+    this.carItems     = [];
 
     // Boom Drop gift — 5 free drops every time the menu opens, then every 10 minutes
     saveBoomDrops(getSavedBoomDrops() + 5);
@@ -220,13 +258,16 @@ export class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5));
     this._refreshMenuCoins();
 
-    // ── Three buttons: PLAY  CHARACTERS  SHOP ────────────────────────────────
-    const btnY = 506, btnH = 52;
+    // ── Four buttons: PLAY  CHARACTERS  CARS  SHOP ───────────────────────────
+    const btnY = 506, btnH = 52, btnW = 168, btnGap = 14;
+    const btnsTotal = 4 * btnW + 3 * btnGap;
+    const btn1X = (SW - btnsTotal) / 2 + btnW / 2;
+    const [b1, b2, b3, b4] = [0, 1, 2, 3].map(i => btn1X + i * (btnW + btnGap));
 
-    const playBtn = push(this.add.rectangle(142, btnY, 200, btnH, 0x228822)
+    const playBtn = push(this.add.rectangle(b1, btnY, btnW, btnH, 0x228822)
       .setStrokeStyle(3, 0x88ff88, 0.9).setInteractive().setDepth(1));
-    push(this.add.text(142, btnY, '▶  PLAY', {
-      fontSize: '22px', fontFamily: 'Arial Black', color: '#ffffff',
+    push(this.add.text(b1, btnY, '▶ PLAY', {
+      fontSize: '20px', fontFamily: 'Arial Black', color: '#ffffff',
       stroke: '#000000', strokeThickness: 5,
     }).setOrigin(0.5).setDepth(2));
     playBtn.on('pointerover', () => playBtn.setFillStyle(0x33cc33));
@@ -235,9 +276,9 @@ export class MenuScene extends Phaser.Scene {
     this.input.keyboard.once('keydown-SPACE', () => this._go());
     this.input.keyboard.once('keydown-ENTER', () => this._go());
 
-    const charBtn = push(this.add.rectangle(400, btnY, 210, btnH, 0x1a2a6c)
+    const charBtn = push(this.add.rectangle(b2, btnY, btnW, btnH, 0x1a2a6c)
       .setStrokeStyle(3, 0x66aaff, 0.9).setInteractive().setDepth(1));
-    push(this.add.text(400, btnY, '🎮  CHARACTERS', {
+    push(this.add.text(b2, btnY, '🎮 CHARS', {
       fontSize: '19px', fontFamily: 'Arial Black', color: '#aaddff',
       stroke: '#000000', strokeThickness: 4,
     }).setOrigin(0.5).setDepth(2));
@@ -245,10 +286,20 @@ export class MenuScene extends Phaser.Scene {
     charBtn.on('pointerout',  () => charBtn.setFillStyle(0x1a2a6c));
     charBtn.on('pointerdown', () => this._openCharPanel());
 
-    const shopBtn = push(this.add.rectangle(658, btnY, 200, btnH, 0x886600)
+    const carsBtn = push(this.add.rectangle(b3, btnY, btnW, btnH, 0x4a1a00)
+      .setStrokeStyle(3, 0xff8822, 0.9).setInteractive().setDepth(1));
+    push(this.add.text(b3, btnY, '🚗 CARS', {
+      fontSize: '20px', fontFamily: 'Arial Black', color: '#ffaa44',
+      stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(2));
+    carsBtn.on('pointerover', () => carsBtn.setFillStyle(0x6a2a00));
+    carsBtn.on('pointerout',  () => carsBtn.setFillStyle(0x4a1a00));
+    carsBtn.on('pointerdown', () => this._openCarsPanel());
+
+    const shopBtn = push(this.add.rectangle(b4, btnY, btnW, btnH, 0x886600)
       .setStrokeStyle(3, 0xffcc00, 0.8).setInteractive().setDepth(1));
-    push(this.add.text(658, btnY, '🛒  SHOP', {
-      fontSize: '22px', fontFamily: 'Arial Black', color: '#ffdd44',
+    push(this.add.text(b4, btnY, '🛒 SHOP', {
+      fontSize: '20px', fontFamily: 'Arial Black', color: '#ffdd44',
       stroke: '#000000', strokeThickness: 5,
     }).setOrigin(0.5).setDepth(2));
     shopBtn.on('pointerover', () => shopBtn.setFillStyle(0xaa8800));
@@ -584,6 +635,7 @@ export class MenuScene extends Phaser.Scene {
     for (const el of (this.charTabContentItems || [])) el.setVisible(false);
     for (const el of this.shopItems) el.setVisible(false);
     for (const el of (this.boomItems || [])) el.setVisible(false);
+    for (const el of (this.carItems || [])) el.setVisible(false);
     this._refreshMenuCoins();
     this._refreshPreview();
   }
@@ -594,6 +646,7 @@ export class MenuScene extends Phaser.Scene {
     for (const el of this.charItems) el.setVisible(true);
     for (const el of (this.charTabContentItems || [])) el.setVisible(true);
     for (const el of this.shopItems) el.setVisible(false);
+    for (const el of (this.carItems || [])) el.setVisible(false);
     if (this.charPanelCoinTxt) this.charPanelCoinTxt.setText('💰 ' + getSavedCoins());
   }
 
@@ -603,7 +656,185 @@ export class MenuScene extends Phaser.Scene {
     for (const el of this.menuItems) el.setVisible(false);
     for (const el of (this.charTabContentItems || [])) el.setVisible(false);
     for (const el of this.charItems) el.setVisible(false);
+    for (const el of (this.carItems || [])) el.setVisible(false);
     for (const el of this.shopItems) el.setVisible(true);
+  }
+
+  _openCarsPanel() {
+    this._buildCarsPanel();
+    for (const el of this.menuItems) el.setVisible(false);
+    for (const el of this.charItems) el.setVisible(false);
+    for (const el of (this.charTabContentItems || [])) el.setVisible(false);
+    for (const el of this.shopItems) el.setVisible(false);
+    for (const el of (this.carItems || [])) el.setVisible(true);
+  }
+
+  _buildCarsPanel() {
+    for (const el of (this.carItems || [])) { try { el.destroy(); } catch {} }
+    this.carItems = [];
+    const add = el => { this.carItems.push(el); return el; };
+
+    const PW = 780, PH = 510, PX = SW / 2, PY = SH / 2;
+    add(this.add.rectangle(PX, SH / 2, SW, SH, 0x000000, 0.78).setDepth(9));
+    add(this.add.rectangle(PX, PY, PW, PH, 0x0d0a00).setDepth(10).setStrokeStyle(2, 0xff8822, 0.9));
+
+    // Header
+    add(this.add.text(PX - PW / 2 + 18, PY - PH / 2 + 24, '🚗  GARAGE', {
+      fontSize: '22px', fontFamily: 'Arial Black', color: '#ffaa44',
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(0, 0.5).setDepth(11));
+
+    this._carCoinTxt = add(this.add.text(PX + PW / 2 - 14, PY - PH / 2 + 24, '💰 0', {
+      fontSize: '18px', fontFamily: 'Arial Black', color: '#ffd700',
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(1, 0.5).setDepth(11));
+    this._carCoinTxt.setText('💰 ' + getSavedCoins());
+
+    // Divider
+    const hdiv = this.add.graphics().setDepth(11);
+    hdiv.lineStyle(1, 0xff8822, 0.5);
+    hdiv.lineBetween(PX - PW / 2 + 12, PY - PH / 2 + 42, PX + PW / 2 - 12, PY - PH / 2 + 42);
+    add(hdiv);
+
+    // Equipped label
+    const eqKey = getSavedEquippedCar();
+    const eqCar = eqKey ? CARS.find(c => c.key === eqKey) : null;
+    const eqTxt = eqCar ? `Equipped: ${eqCar.emoji} ${eqCar.name}` : 'No car equipped — pick one below';
+    add(this.add.text(PX, PY - PH / 2 + 58, eqTxt, {
+      fontSize: '14px', fontFamily: 'Arial Black',
+      color: eqCar ? '#88ffaa' : '#888888',
+      stroke: '#000', strokeThickness: 2,
+    }).setOrigin(0.5, 0.5).setDepth(11));
+
+    // Car cards grid (5 cars, 2 rows: 3 + 2)
+    const cardW = 225, cardH = 185, hGap = 18, vGap = 16;
+    const row1 = CARS.slice(0, 3);
+    const row2 = CARS.slice(3);
+    const row1Y = PY - PH / 2 + 90 + cardH / 2;
+    const row2Y = row1Y + cardH + vGap;
+    const row1StartX = PX - (row1.length * cardW + (row1.length - 1) * hGap) / 2 + cardW / 2;
+    const row2StartX = PX - (row2.length * cardW + (row2.length - 1) * hGap) / 2 + cardW / 2;
+
+    const drawCard = (car, cx, cy) => {
+      const owned    = getSavedOwnedCars().includes(car.key);
+      const equipped = getSavedEquippedCar() === car.key;
+      const canBuy   = getSavedCoins() >= car.price;
+
+      // Card background
+      const borderCol = equipped ? 0xff8822 : owned ? 0x446644 : 0x332222;
+      const bgCol     = equipped ? 0x1a0d00 : owned ? 0x0a1408 : 0x0a0808;
+      add(this.add.rectangle(cx, cy, cardW, cardH, bgCol, 0.95)
+        .setStrokeStyle(2, borderCol, 0.9).setDepth(12));
+
+      // Equipped star
+      if (equipped) {
+        add(this.add.text(cx + cardW / 2 - 14, cy - cardH / 2 + 12, '★', {
+          fontSize: '18px', color: '#ffaa00',
+        }).setOrigin(0.5).setDepth(13));
+      }
+
+      // Car sprite preview
+      add(this.add.image(cx - cardW / 2 + 56, cy - 10, car.key)
+        .setScale(0.9).setDepth(13).setAngle(90));
+
+      // Name + emoji
+      add(this.add.text(cx - cardW / 2 + 112, cy - cardH / 2 + 20, `${car.emoji} ${car.name}`, {
+        fontSize: '14px', fontFamily: 'Arial Black', color: '#ffffff',
+        stroke: '#000', strokeThickness: 2,
+      }).setOrigin(0, 0.5).setDepth(13));
+
+      // Price
+      if (!owned) {
+        add(this.add.text(cx - cardW / 2 + 112, cy - cardH / 2 + 38, `💰 ${car.price}`, {
+          fontSize: '12px', fontFamily: 'Arial', color: canBuy ? '#ffd700' : '#cc6666',
+          stroke: '#000', strokeThickness: 2,
+        }).setOrigin(0, 0.5).setDepth(13));
+      } else {
+        add(this.add.text(cx - cardW / 2 + 112, cy - cardH / 2 + 38, '✅ Owned', {
+          fontSize: '12px', fontFamily: 'Arial', color: '#88cc88',
+          stroke: '#000', strokeThickness: 2,
+        }).setOrigin(0, 0.5).setDepth(13));
+      }
+
+      // Stat bars: SPEED, POWER, BOOST
+      const stats = [
+        { label: 'SPEED', val: car.speed },
+        { label: 'POWER', val: car.power },
+        { label: 'BOOST', val: car.boost },
+      ];
+      stats.forEach(({ label, val }, i) => {
+        const sy = cy - cardH / 2 + 58 + i * 22;
+        const sx = cx - cardW / 2 + 112;
+        add(this.add.text(sx, sy, label, {
+          fontSize: '10px', fontFamily: 'Arial Black', color: '#aaaaaa',
+          stroke: '#000', strokeThickness: 2,
+        }).setOrigin(0, 0.5).setDepth(13));
+        const barBg = add(this.add.rectangle(sx + 52, sy, 80, 8, 0x222222).setOrigin(0, 0.5).setDepth(13));
+        add(this.add.rectangle(sx + 52, sy, val * 16, 8, Phaser.Display.Color.HexStringToColor(car.statColor).color)
+          .setOrigin(0, 0.5).setDepth(14));
+      });
+
+      // Description
+      add(this.add.text(cx - cardW / 2 + 112, cy + 40, car.desc, {
+        fontSize: '10px', fontFamily: 'Arial', color: '#888888',
+        wordWrap: { width: cardW - 120 },
+      }).setOrigin(0, 0).setDepth(13));
+
+      // Action button
+      const btnY2 = cy + cardH / 2 - 24;
+      const btnX2 = cx + cardW / 2 - 54;
+      let btnLabel, btnColor, btnHover;
+      if (equipped) {
+        btnLabel = 'UNEQUIP'; btnColor = 0x664400; btnHover = 0x885500;
+      } else if (owned) {
+        btnLabel = 'EQUIP';   btnColor = 0x226622; btnHover = 0x338833;
+      } else if (canBuy) {
+        btnLabel = 'BUY';     btnColor = 0x886600; btnHover = 0xaa8800;
+      } else {
+        btnLabel = `💰${car.price}`; btnColor = 0x442222; btnHover = 0x442222;
+      }
+
+      const actionBg = add(this.add.rectangle(btnX2, btnY2, 96, 30, btnColor, 0.95)
+        .setStrokeStyle(1, 0xffffff, 0.2).setInteractive().setDepth(14));
+      add(this.add.text(btnX2, btnY2, btnLabel, {
+        fontSize: '12px', fontFamily: 'Arial Black', color: '#ffffff',
+        stroke: '#000', strokeThickness: 2,
+      }).setOrigin(0.5).setDepth(15));
+
+      if (equipped || owned || canBuy) {
+        actionBg.on('pointerover', () => actionBg.setFillStyle(btnHover));
+        actionBg.on('pointerout',  () => actionBg.setFillStyle(btnColor));
+        actionBg.on('pointerdown', () => {
+          if (equipped) {
+            saveEquippedCar(null);
+          } else if (owned) {
+            saveEquippedCar(car.key);
+          } else {
+            const coins = getSavedCoins();
+            if (coins < car.price) return;
+            saveCoins(coins - car.price);
+            const owned2 = getSavedOwnedCars();
+            if (!owned2.includes(car.key)) { owned2.push(car.key); saveOwnedCars(owned2); }
+            saveEquippedCar(car.key);
+          }
+          this._buildCarsPanel();
+        });
+      }
+    };
+
+    row1.forEach((car, i) => drawCard(car, row1StartX + i * (cardW + hGap), row1Y));
+    row2.forEach((car, i) => drawCard(car, row2StartX + i * (cardW + hGap), row2Y));
+
+    // Back button
+    const backBtn = add(this.add.rectangle(PX, PY + PH / 2 - 26, 160, 38, 0x221100)
+      .setStrokeStyle(2, 0xff8822, 0.7).setInteractive().setDepth(11));
+    add(this.add.text(PX, PY + PH / 2 - 26, '← BACK', {
+      fontSize: '16px', fontFamily: 'Arial Black', color: '#ffaa44',
+      stroke: '#000', strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(12));
+    backBtn.on('pointerover', () => backBtn.setFillStyle(0x442200));
+    backBtn.on('pointerout',  () => backBtn.setFillStyle(0x221100));
+    backBtn.on('pointerdown', () => this._showMenu());
   }
 
   // ── Boom Drop ──────────────────────────────────────────────────────────────
