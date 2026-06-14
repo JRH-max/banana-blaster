@@ -225,6 +225,7 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-TWO',   () => this.switchWeapon(1));
     this.input.keyboard.on('keydown-THREE', () => this.switchWeapon(2));
     this.input.keyboard.on('keydown-U', () => this.toggleShop());
+    this.input.keyboard.on('keydown-SPACE', () => { if (this.inCar) this._carBoost(); });
     // Mouse click fires on desktop only
     this.input.on('pointerdown', p => { if (!this.sys.game.device.input.touch && p.x > 200) this.isFiring = true; });
     this.input.on('pointerup',   p => { if (!this.sys.game.device.input.touch) this.isFiring = false; });
@@ -1673,12 +1674,25 @@ export class GameScene extends Phaser.Scene {
       const MAX_SPEED = this.carBoostActive ? st.boostSpeed : st.maxSpeed;
       const ACCEL = 22, STEER = 2.0;
 
-      const throttle = this.joystickActive ? -this.joystickDir.y : 0;
-      const steer    = this.joystickActive ?  this.joystickDir.x : 0;
+      const kbUp    = this.cursors.up.isDown    || this.keys.W.isDown;
+      const kbDown  = this.cursors.down.isDown  || this.keys.S.isDown;
+      const kbLeft  = this.cursors.left.isDown  || this.keys.A.isDown;
+      const kbRight = this.cursors.right.isDown || this.keys.D.isDown;
+      const hasKbInput = kbUp || kbDown || kbLeft || kbRight;
 
+      const throttle = this.joystickActive ? -this.joystickDir.y
+                     : kbUp   ? 1
+                     : kbDown ? -0.5
+                     : 0;
+      const steer    = this.joystickActive ?  this.joystickDir.x
+                     : kbLeft  ? -1
+                     : kbRight ?  1
+                     : 0;
+
+      const hasInput = this.joystickActive || hasKbInput;
       this.carSpeed += throttle * ACCEL * dt;
       // Friction / drag
-      this.carSpeed *= (1 - dt * (this.joystickActive ? 1.8 : 4.0));
+      this.carSpeed *= (1 - dt * (hasInput ? 1.8 : 4.0));
       this.carSpeed = Phaser.Math.Clamp(this.carSpeed, -MAX_SPEED * 0.45, MAX_SPEED);
 
       // Steering scales with speed
